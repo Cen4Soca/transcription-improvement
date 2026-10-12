@@ -1,0 +1,7 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    "Non-blocking: the submit-time self-demotion guard fires whenever a self-admin's selected role is not ADMIN rather than strictly when the role changed. Unreachable through the UI (the select is disabled and seeded to ADMIN) and consistent with the plan's defensive intent; optionally gate on `editForm.role !== user.role` for symmetry with the payload diff logic."
+  ],
+  "reviewDoc": "/Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/.agents/tasks/user-role-change-ui/review.md"
+}

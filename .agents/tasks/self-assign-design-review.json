@@ -1,0 +1,38 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "id": 1,
+      "severity": "NIT",
+      "title": "property-based test が steering の必須対象だという根拠は不正確（計画自体は妥当）",
+      "location": "self-assign-design.md 3. NFR-5 / 7. Testing Strategy / 10 対応表",
+      "problem": "steering(tech.md) の property-based test 必須リスト(Correction, Consensus, Score, Search, IP filtering, Upload, Download, Deletion, Language Model, Transcription Job)に join/self-assign は含まれないが、設計は『steering 上 join 系は必須対象』と記述している。テスト追加自体は有益だが根拠付けが誤り。",
+      "fix": "文言を『steering の必須リストには self-assign は含まれないが、中核不変条件(冪等性 FR-2 / スコープ健全性 FR-1・NFR-1)を保証するため property-based test を自主的に追加する』に修正。テスト内容(numRuns:100)は現状のまま。"
+    },
+    {
+      "id": 2,
+      "severity": "NIT",
+      "title": "SessionAssignmentControls の参加ボタン表示条件の最終結合式が未確定",
+      "location": "self-assign-design.md 5.8",
+      "problem": "default は『onClaim && !isClaimed を維持』、joinable は『isJoinableCandidate で表示』と文章指示だが、既存 JSX {onClaim && !isClaimed && (...)} をどの単一式に置き換えるかが明示されず、!isClaimed と isJoinableCandidate の合成に解釈余地が残る。",
+      "fix": "showJoinButton = scope==='joinable' ? isJoinableCandidate : !isClaimed に確定し、isJoinableCandidate = session.status==='PENDING' && Boolean(session.assignedTeamId) && !(session.assignedUserId===currentUserId)。render は {onClaim && showJoinButton && (...)}。ラベルは scope==='joinable' ? '参加' : '引き受ける'。"
+    },
+    {
+      "id": 3,
+      "severity": "NIT",
+      "title": "レスポンス型 SessionRecord とフロント ReviewSession 必須フィールドの不一致が未言及（既存踏襲で実害なし）",
+      "location": "self-assign-design.md 5.3 / 5.6",
+      "problem": "backend SessionRecord は transcriptionJobId / partialAggregationEnabled を持たないが frontend ReviewSession は両者を required とする。設計はレスポンスを ReviewSession[] で受けるがこの既存ギャップに触れていない。既存 GET /sessions と同一パターンのため新規欠陥ではない。",
+      "fix": "5.6 に『SessionRecord には transcriptionJobId / partialAggregationEnabled が無く frontend ReviewSession は required だが、既存 GET /sessions と同一の既存ギャップであり本機能では現状踏襲(Out of Scope)』と 1 文追記。実装変更不要。"
+    },
+    {
+      "id": 4,
+      "severity": "NIT",
+      "title": "AC-5 の『PENDING』表現と selfAssignSession のステータス非制約の文言ギャップ",
+      "location": "self-assign-design.md 6. AC-5 / 5.2 ステータス前提",
+      "problem": "AC-5 は『自チーム割り当て PENDING セッションに self-assign すると 200』と書くが、selfAssignSession 自体はステータスを問わない(既存 joinSession と一致)。字面どおり読むと IN_PROGRESS への 200 返却と矛盾して見える。",
+      "fix": "AC-5 を『自チーム割り当てセッション(候補一覧には PENDING のみ出るが API 自体はステータスを問わず join 可能＝既存 join と同じ)に self-assign すると 200 + participant 登録』に補足。候補一覧(AC-1)の PENDING 限定は維持。"
+    }
+  ],
+  "reviewDoc": "/Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/.agents/tasks/self-assign-design-review.md"
+}

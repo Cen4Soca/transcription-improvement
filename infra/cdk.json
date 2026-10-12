@@ -1,0 +1,46 @@
+{
+  "app": "npx ts-node bin/app.ts",
+  "watch": {
+    "include": ["**"],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "**/*.d.ts",
+      "**/*.js",
+      "tsconfig.json",
+      "package*.json",
+      "node_modules",
+      "dist"
+    ]
+  },
+  "context": {
+    "env": "dev",
+    "account": "",
+    "region": "ap-northeast-1",
+    "cognitoUserPoolId": "",
+    "cognitoUserPoolClientId": "",
+    "cognitoDomain": "",
+    "cloudFrontDistributionId": "",
+    "cloudFrontKeyPairId": "",
+    "cloudFrontPrivateKeyParam": "",
+    "basePath": "",
+    "bedrockModelId": "jp.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "allowedIpCidrs": [],
+    "kmsKeyAdminArns": [],
+    "initialAdminEmail": "",
+    "transcribeDataAccessRoleArn": "",
+    "mediaGlacierTransitionDays": 14,
+    "dataTranscriptionExpirationDays": 30,
+    "allowedUploadOrigins": "",
+    "presignedUrlExpirySeconds": 300,
+    "wafAuthRateLimitPer5Min": 25,
+    "wafGeneralRateLimitPer5Min": 500,
+    "wafGeneralIpRateLimitPer5Min": 2000,
+    "alarmLambdaErrorRatePercent": 5,
+    "alarmDynamoThrottleCount": 10,
+    "alarm4xxRatePercent": 10,
+    "alarm5xxRatePercent": 1,
+    "cloudFrontGeoAllowlist": ["JP"],
+    "minReviewersForAutoConsensus": 3
+  }
+}

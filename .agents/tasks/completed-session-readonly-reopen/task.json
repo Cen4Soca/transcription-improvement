@@ -1,0 +1,7 @@
+{
+  "task_id": "task-completed-session-readonly-reopen",
+  "task_description": "Make the COMPLETED review session read-only (frontend review screen + backend editable-session guard across correction/speaker-label/consensus-resolve mutation paths), and add an ADMIN/TEAM_LEADER 'reopen to IN_PROGRESS' (進行中に戻す) action on the session list backed by a COMPLETED→IN_PROGRESS transition API with policy-A data preservation and SESSION_REOPENED audit logging. Approved design at .agents/tasks/completed-session-readonly-reopen/design.md.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

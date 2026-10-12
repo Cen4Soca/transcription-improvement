@@ -1,0 +1,30 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "severity": "NIT",
+      "where": "design.md §2.6 (frontend reopenSession return type)",
+      "problem": "The service function snippet returns an inline shape { data: { sessionId, status } } while the adjacent 型 subsection defines ReopenSessionResult and says the return should be Result<{ data: ReopenSessionResult }, AppError>. Structurally identical, cosmetic inconsistency.",
+      "fix": "Use the named alias ReopenSessionResult in both the service return type and the client.post generic."
+    },
+    {
+      "severity": "NIT",
+      "where": "design.md §2.6 (frontend/src/utils/reopen-error.ts)",
+      "problem": "describeReopenError references AppError without specifying the import path.",
+      "fix": "Add `import type { AppError } from '../types/api';` matching aggregate-error.ts."
+    },
+    {
+      "severity": "NIT",
+      "where": "design.md §2.6 describeReopenError 400 branch",
+      "problem": "All 400/VALIDATION_ERROR map to the non-COMPLETED message, but a 400 could also be a missing sessionId path param. Acceptable since the frontend always supplies sessionId.",
+      "fix": "Optionally distinguish non-state 400s via error.message/details, or accept the generic mapping as-is."
+    },
+    {
+      "severity": "NIT",
+      "where": "design.md §2.5 ReviewPage JSDoc",
+      "problem": "Adds sessionStatus prop but does not mention updating the ReviewPage JSDoc Requirements line (currently lists 5.8 etc.).",
+      "fix": "Append 2.18, 2.19 to the ReviewPage JSDoc Requirements trace."
+    }
+  ],
+  "reviewDoc": "/Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/.agents/tasks/completed-session-readonly-reopen/design-review.md"
+}

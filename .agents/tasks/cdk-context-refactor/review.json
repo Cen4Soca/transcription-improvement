@@ -1,0 +1,11 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "severity": "non-blocking",
+      "label": "Residual construct-level region fallback",
+      "detail": "bedrock-comprehend.ts keeps `region = props.region ?? 'ap-northeast-1'`. This was explicitly in-scope-to-leave per the plan and is now dead at runtime (api-stack passes this.region), so no action is required; noted only for completeness."
+    }
+  ],
+  "reviewDoc": "/Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/.agents/tasks/cdk-context-refactor/review.md"
+}

@@ -1,0 +1,7 @@
+{
+  "task_id": "task-session-name-edit",
+  "task_description": "校閲セッション（ReviewSession）の名前を編集できる機能をフルスタックで実装する。backend の name 編集 API（PATCH /sessions/{sessionId}/name）、Bedrock によるセッション名提案 API（GET /sessions/{sessionId}/name-suggestion）、CDK ルート追加、frontend の編集 UI（詳細 ReviewPage + 一覧 SessionListPage、提案ボタン、バリデーションツールチップ）を含む。property-based テストと vitest-axe を伴う。作業ディレクトリは git リポジトリではないため git 操作は一切行わない。",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

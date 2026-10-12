@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "インフラ: CDK ルート追加（infra/lib/stacks/api-stack.ts）。FEAT-001/002 の 2 handler に対する Lambda 定義とルート、Bedrock invoke 権限、CDK テスト更新。FEAT-001/002 のハンドラファイルが存在してからでないと synth のアセットバンドルが整合しないため、両者の後に実施する。",
+  "status": "completed",
+  "steps": [
+    "infra/lib/stacks/api-stack.ts の patchSessionStatusFn 定義付近に PatchSessionName Lambda を追加する: const patchSessionNameFn = this.createLambda('PatchSessionName', { entry: handlersDir, description: 'PATCH /sessions/{sessionId}/name - Rename session', environment: commonEnv }); this.grantCommonPermissions(patchSessionNameFn, props);",
+    "getSuggestionsFn 定義付近（bedrockModelId / bedrockComprehend がスコープ内の場所）に GetSessionNameSuggestion Lambda を追加する: const getSessionNameSuggestionFn = this.createLambda('GetSessionNameSuggestion', { entry: handlersDir, description: 'GET /sessions/{sessionId}/name-suggestion - Suggest session name', environment: { ...commonEnv, BEDROCK_MODEL_ID: bedrockModelId }, timeoutSeconds: 60 }); this.grantCommonPermissions(getSessionNameSuggestionFn, props); bedrockComprehend.grantInvoke(getSessionNameSuggestionFn.role);",
+    "ルート登録部（1165 行付近、session ルート群、greedy '/sessions/{sessionId}' より後）に追加する: this.addRoute('PATCH', '/sessions/{sessionId}/name', patchSessionNameFn, jwtAuthorizer); this.addRoute('GET', '/sessions/{sessionId}/name-suggestion', getSessionNameSuggestionFn, jwtAuthorizer); 既存の静的セグメント順序の慣習（status/assignment の並び）に合わせる。",
+    "infra/test/api-stack.test.ts の 'New API Routes' describe（または新規 describe）に RouteKey 'PATCH /sessions/{sessionId}/name' と 'GET /sessions/{sessionId}/name-suggestion' の hasResourceProperties('AWS::ApiGatewayV2::Route', { RouteKey: ... }) assertion を追加し、name-suggestion Lambda に BEDROCK_MODEL_ID が渡ることを Description 'name-suggestion' の Lambda で検証する。",
+    "新規 Lambda/ルート追加でスナップショットに差分が出るため、cd infra && npx vitest --run -u でスナップショットを更新してから、通常の npx vitest --run で再実行し通過を確認する。"
+  ],
+  "acceptance_criteria": [
+    "api-stack.ts に PatchSessionName と GetSessionNameSuggestion の Lambda が getSuggestionsFn/patchSessionStatusFn と同一パターンで定義される。",
+    "GetSessionNameSuggestion に grantCommonPermissions と bedrockComprehend.grantInvoke、timeout 60s、BEDROCK_MODEL_ID が付与される。",
+    "PATCH /sessions/{sessionId}/name と GET /sessions/{sessionId}/name-suggestion のルートが登録される。",
+    "api-stack.test.ts に両ルートの assertion が追加され、スナップショットが更新される。",
+    "CDK テスト（または synth）が通過する。"
+  ],
+  "verification": [
+    "cd /Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/infra && npm install && npx vitest --run -u && npx vitest --run",
+    "上記が失敗する場合は cd /Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/infra && npx cdk synth、それも失敗する場合は npx tsc --noEmit を実行し結果を findings に報告する"
+  ],
+  "blocked_reason": null,
+  "findings": "Confirmed FEAT-001/002 handlers exist (backend/src/handlers/patch-session-name.ts, get-session-name-suggestion.ts). Added patchSessionNameFn (createLambda 'PatchSessionName', commonEnv, grantCommonPermissions) near patchSessionStatusFn, and getSessionNameSuggestionFn (createLambda 'GetSessionNameSuggestion', commonEnv + BEDROCK_MODEL_ID, timeoutSeconds 60, grantCommonPermissions + bedrockComprehend.grantInvoke) near getSuggestionsFn — matching getSuggestionsFn/patchSessionStatusFn exactly. Registered routes PATCH /sessions/{sessionId}/name (after status, before assignment) and GET /sessions/{sessionId}/name-suggestion (in Suggestions block). Added a 'Session Name Routes' describe to infra/test/api-stack.test.ts with RouteKey assertions for both routes plus a BEDROCK_MODEL_ID assertion on the name-suggestion Lambda (value matches the test's bedrockModelId context 'anthropic.claude-3-sonnet-20240229-v1:0'). Verification path used: cd infra && npm install && npx vitest --run -u (3 snapshots updated) && npx vitest --run — all 139 tests pass (api-stack.test.ts 62 tests). No git operations performed."
+}

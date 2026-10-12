@@ -1,0 +1,248 @@
+{
+  "pbtResults": {
+    "1. バグ条件の探索テストを作成する（修正前に実行）": {
+      "status": "passed",
+      "failingExample": "All 5 bug-condition exploration tests FAILED on unfixed code (expected = bug confirmed):\n1. assignSession → AdminApi.assignSession call count = 0 (counterexample [\" \",\" \"], shrunk 4x) — empty `// TODO` stub.\n2. unassignSession → AdminApi.unassignSession (DELETE) call count = 0 (counterexample [\" \",\" \"]) — empty stub.\n3. initial load → result.current.sessions.length = 0 (\"expected 0 to be greater than 0\") — sessions hard-wired to useState([]), no candidate fetch.\n4. initial load → AdminApi.getTeamAssignments call count = 0 and teamAssignments empty — missing fetch + missing createdBy→assignedBy mapping.\n5. consensus-api → dynamic import resolves to null (\"expected null not to be null\") — frontend/src/services/consensus-api.ts absent; no /consensus/:sessionId route.",
+      "lastRunTimestamp": 1791720471549
+    },
+    "3.9 バグ条件探索テストが PASS することを検証する": {
+      "status": "passed",
+      "lastRunTimestamp": 1791723585954
+    }
+  },
+  "executionHistory": {
+    "1. バグ条件の探索テストを作成する（修正前に実行）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720210951
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720222105
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720496390
+      }
+    ],
+    "2. 保全プロパティテストを作成する（修正前に実行）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211024
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720507192
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720998415
+      }
+    ],
+    "3.1 Consensus フロント型とサービス層を新規追加する（バグ1）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211054
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721009681
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721212983
+      }
+    ],
+    "3.2 Consensus 画面とコンポーネントを新規追加する（バグ1）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211084
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721217975
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721369973
+      }
+    ],
+    "3.3 App.tsx に Consensus ルートと ReviewPage 導線を配線する（バグ1）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211174
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721375255
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721587475
+      }
+    ],
+    "3.4 admin-api.ts に assignments メソッドを追加する（バグ2）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211204
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721592873
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721880635
+      }
+    ],
+    "3.5 useAdmin.ts の配線を実装する（バグ2・4点限定）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211234
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791721885625
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791722233389
+      }
+    ],
+    "3.6 api-stack.ts に GET assignments ルートを追加する（バグ2・判断1）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211266
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791722239266
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791722489491
+      }
+    ],
+    "3.7 ユニットテストを作成する（各 service / hook / component）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211338
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791722502843
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791722949995
+      }
+    ],
+    "3.8 プロパティベーステストを作成する（fast-check, numRuns: 100）": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211370
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791722955626
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791723530106
+      }
+    ],
+    "3.9 バグ条件探索テストが PASS することを検証する": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211401
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791723540221
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791723613367
+      }
+    ],
+    "3.10 保全テストが引き続き PASS することを検証する": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211435
+      },
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791723623903
+      },
+      {
+        "executionId": "d7329d57-c73f-41ee-90d1-584e3466c6a8",
+        "chatSessionId": "sess_0d4fe59a-c311-4f90-a859-b0e6268bd513",
+        "timestamp": 1791724003593
+      },
+      {
+        "executionId": "d7329d57-c73f-41ee-90d1-584e3466c6a8",
+        "chatSessionId": "sess_0d4fe59a-c311-4f90-a859-b0e6268bd513",
+        "timestamp": 1791724209919
+      }
+    ],
+    "4. チェックポイント - 全テストが PASS することを確認する": [
+      {
+        "executionId": "b562677a-24b0-4f37-875f-9ec0a03e4c89",
+        "chatSessionId": "sess_c37284f4-9f6a-4fa4-b7b0-755ef10bc965",
+        "timestamp": 1791720211472
+      },
+      {
+        "executionId": "1ec0ad5a-7bc5-4584-ab47-6a37b987caff",
+        "chatSessionId": "sess_075f2b68-365c-4b04-a143-602f44db69d0",
+        "timestamp": 1791724232277
+      },
+      {
+        "executionId": "1ec0ad5a-7bc5-4584-ab47-6a37b987caff",
+        "chatSessionId": "sess_075f2b68-365c-4b04-a143-602f44db69d0",
+        "timestamp": 1791724516981
+      }
+    ],
+    "3. バグ修正の実装（Consensus フロント欠落 + チーム割り当て API 連携）": [
+      {
+        "executionId": "d7329d57-c73f-41ee-90d1-584e3466c6a8",
+        "chatSessionId": "sess_0d4fe59a-c311-4f90-a859-b0e6268bd513",
+        "timestamp": 1791724209963
+      }
+    ]
+  }
+}

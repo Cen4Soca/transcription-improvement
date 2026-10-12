@@ -1,0 +1,39 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "id": "OBS1",
+      "severity": "informational",
+      "blocking": false,
+      "title": "git diff 不在",
+      "detail": "対象パス infra/scripts/destroy.sh は git 管理下になく diff/base branch 比較は不能。現行ファイルを findings.md / plan.md の仕様として読み合わせて評価した。判定には影響しない。"
+    },
+    {
+      "id": "OBS2",
+      "severity": "low",
+      "blocking": false,
+      "confidence": "possible",
+      "title": "prod Cognito 削除順序",
+      "detail": "cleanup_retained_prod_resources() の delete-user-pool はホストUIドメイン付きプールでは先にドメイン削除を要するが、CDK 作成経路ではドメイン/クライアントが FoundationStack 内リソースとして cdk destroy で先に消えるため、後始末時点で成功する見込み。失敗しても log_warn で継続し teardown は中断しない。ブロッキングではない。"
+    }
+  ],
+  "verification": {
+    "bash_n": "PASS (SYNTAX_OK, exit 0; レビュー時に1回スポットチェック再実行)",
+    "shellcheck": "SKIPPED (環境未導入、verification.md に理由明記)",
+    "aws_api_calls": "none (破壊的操作・実 AWS 呼び出しは未実施)"
+  },
+  "checklist": {
+    "C1_cloudfrontwafstack_added_and_ordered": true,
+    "H1_prod_retain_cleanup": true,
+    "H1_30day_text_fixed_to_7day": true,
+    "H2_ssm_fallback_both_regions": true,
+    "M1_loggroups_solution_scoped": true,
+    "M2_transcribe_language_models": true,
+    "verification_both_regions": true,
+    "no_cdk_bootstrap_deletion": true,
+    "no_genu_deletion": true,
+    "naming_limited_to_solution": true,
+    "existing_style_followed": true
+  },
+  "reviewDoc": "/Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/.agents/tasks/destroy-sh-audit/review.md"
+}
