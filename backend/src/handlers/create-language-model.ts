@@ -14,9 +14,9 @@ import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
  *
  * Creates a custom language model using confirmed segments from specified sessions.
  * - Validates JWT and extracts user (Admin/TeamLeader only)
- * - Parses request body (modelName, baseModelName, sessionIds)
+ * - Parses request body (modelName, baseModelName, displayName, teamId, sessionIds)
  * - Fetches confirmed segments from specified sessions
- * - Calls LanguageModelService.createModel()
+ * - Calls LanguageModelService.createModel() (team isolation + metadata)
  * - Records AuditLog on success
  * - Returns the created model record
  *
@@ -41,10 +41,11 @@ export async function handler(
     const modelRecord = await createModel({
       modelName: body.modelName,
       baseModelName: body.baseModelName,
+      displayName: body.displayName,
+      teamId: body.teamId,
       segments,
       sessionIds: body.sessionIds,
-      userId: user.userId,
-      userRole: user.role,
+      user,
     });
 
     return successResponse(modelRecord);
@@ -56,6 +57,8 @@ export async function handler(
 interface CreateLanguageModelRequestBody {
   modelName: string;
   baseModelName: 'NarrowBand' | 'WideBand';
+  displayName: string;
+  teamId: string;
   sessionIds: string[];
 }
 
@@ -87,6 +90,14 @@ function parseRequestBody(rawBody: string | undefined): CreateLanguageModelReque
     );
   }
 
+  if (!body.displayName || typeof body.displayName !== 'string') {
+    throw validationError('displayName は必須です。');
+  }
+
+  if (!body.teamId || typeof body.teamId !== 'string') {
+    throw validationError('teamId は必須です。');
+  }
+
   if (!body.sessionIds || !Array.isArray(body.sessionIds) || body.sessionIds.length === 0) {
     throw validationError('sessionIds は1つ以上のセッションIDを含む配列で指定してください。');
   }
@@ -100,6 +111,8 @@ function parseRequestBody(rawBody: string | undefined): CreateLanguageModelReque
   return {
     modelName: body.modelName,
     baseModelName: body.baseModelName as 'NarrowBand' | 'WideBand',
+    displayName: body.displayName,
+    teamId: body.teamId,
     sessionIds: body.sessionIds as string[],
   };
 }

@@ -1246,6 +1246,190 @@ exports.handler = async (event, context) => {
       },
       "Type": "AWS::IAM::Policy",
     },
+    "DeleteLanguageModelLambdaFunctionC589B668": {
+      "DependsOn": [
+        "DeleteLanguageModelLambdaRoleDefaultPolicyBF75A87E",
+        "DeleteLanguageModelLambdaRole55A82264",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({statusCode:200})",
+        },
+        "Description": "DELETE /language-models/{modelName} - Delete custom language model",
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefUserPool6BA7E5F296FD7236",
+            },
+            "DATA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefDataBucketE3889A50250F5285",
+            },
+            "DYNAMODB_TABLE_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefTranscriptionReviewApp385243817DCB972D",
+            },
+            "EVENT_BUS_NAME": {
+              "Ref": "AppEventBusAEEA9E1B",
+            },
+            "MEDIA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefMediaBucketBCBB02BA270A7AEB",
+            },
+            "TRANSCRIBE_DATA_ACCESS_ROLE_ARN": {
+              "Fn::GetAtt": [
+                "TranscribeDataAccessRole8B7E7D86",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "FunctionName": "transcription-review-delete-language-model",
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "DeleteLanguageModelLambdaRole55A82264",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "DeleteLanguageModelLambdaLogGroupCAE617FF": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/transcription-review-delete-language-model",
+        "RetentionInDays": 30,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "DeleteLanguageModelLambdaRole55A82264": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for transcription-review-delete-language-model",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "RoleName": "transcription-review-delete-language-model-role",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "DeleteLanguageModelLambdaRoleDefaultPolicyBF75A87E": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttAppKey51DFC408Arn13873993",
+              },
+            },
+            {
+              "Action": "s3:DeleteObject",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttDataBucketE3889A50Arn98F8399F",
+                    },
+                    "/training-data/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "transcribe:DeleteLanguageModel",
+                "transcribe:DescribeLanguageModel",
+                "transcribe:ListTranscriptionJobs",
+                "transcribe:GetTranscriptionJob",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "DeleteLanguageModelLambdaRoleDefaultPolicyBF75A87E",
+        "Roles": [
+          {
+            "Ref": "DeleteLanguageModelLambdaRole55A82264",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
     "DeleteMediaLambdaFunctionB61BEA1C": {
       "DependsOn": [
         "DeleteMediaLambdaRoleDefaultPolicy2F5D7690",
@@ -4279,6 +4463,155 @@ exports.handler = async (event, context) => {
       },
       "Type": "AWS::IAM::Policy",
     },
+    "GetMyTeamsLambdaFunction8DB78AB3": {
+      "DependsOn": [
+        "GetMyTeamsLambdaRoleDefaultPolicy7FD1C202",
+        "GetMyTeamsLambdaRole662F0D9A",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({statusCode:200})",
+        },
+        "Description": "GET /me/teams - Teams available to the caller (ADMIN all / others own)",
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefUserPool6BA7E5F296FD7236",
+            },
+            "DATA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefDataBucketE3889A50250F5285",
+            },
+            "DYNAMODB_TABLE_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefTranscriptionReviewApp385243817DCB972D",
+            },
+            "EVENT_BUS_NAME": {
+              "Ref": "AppEventBusAEEA9E1B",
+            },
+            "MEDIA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefMediaBucketBCBB02BA270A7AEB",
+            },
+          },
+        },
+        "FunctionName": "transcription-review-get-my-teams",
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "GetMyTeamsLambdaRole662F0D9A",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "GetMyTeamsLambdaLogGroup2F9C26D1": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/transcription-review-get-my-teams",
+        "RetentionInDays": 30,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "GetMyTeamsLambdaRole662F0D9A": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for transcription-review-get-my-teams",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "RoleName": "transcription-review-get-my-teams-role",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GetMyTeamsLambdaRoleDefaultPolicy7FD1C202": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:BatchGetItem",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttAppKey51DFC408Arn13873993",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "GetMyTeamsLambdaRoleDefaultPolicy7FD1C202",
+        "Roles": [
+          {
+            "Ref": "GetMyTeamsLambdaRole662F0D9A",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
     "GetRankingLambdaFunction772E0662": {
       "DependsOn": [
         "GetRankingLambdaRoleDefaultPolicyF8A967B8",
@@ -6074,6 +6407,75 @@ exports.handler = async (event, context) => {
       },
       "Type": "AWS::Lambda::Permission",
     },
+    "HttpApiDELETElanguagemodelsmodelName4537F151": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "HttpApiCognitoAuthorizer935FA0F6",
+        },
+        "RouteKey": "DELETE /language-models/{modelName}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "HttpApiDELETElanguagemodelsmodelNameDELETElanguagemodelsmodelNameIntegration3BE2A72A",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "HttpApiDELETElanguagemodelsmodelNameDELETElanguagemodelsmodelNameIntegration3BE2A72A": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "DeleteLanguageModelLambdaFunctionC589B668",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "HttpApiDELETElanguagemodelsmodelNameDELETElanguagemodelsmodelNameIntegrationPermission64C83CB0": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "DeleteLanguageModelLambdaFunctionC589B668",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:ap-northeast-1:123456789012:",
+              {
+                "Ref": "HttpApiF5A9A8A7",
+              },
+              "/*/*/language-models/{modelName}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
     "HttpApiDELETEmediafilesmediaFileId7FD05088": {
       "Properties": {
         "ApiId": {
@@ -7138,6 +7540,75 @@ exports.handler = async (event, context) => {
                 "Ref": "HttpApiF5A9A8A7",
               },
               "/*/*/media-files",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "HttpApiGETmeteamsD69ED6B4": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "HttpApiCognitoAuthorizer935FA0F6",
+        },
+        "RouteKey": "GET /me/teams",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "HttpApiGETmeteamsGETmeteamsIntegration6B1EF86B",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "HttpApiGETmeteamsGETmeteamsIntegration6B1EF86B": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "GetMyTeamsLambdaFunction8DB78AB3",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "HttpApiGETmeteamsGETmeteamsIntegrationPermissionF21FD338": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GetMyTeamsLambdaFunction8DB78AB3",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:ap-northeast-1:123456789012:",
+              {
+                "Ref": "HttpApiF5A9A8A7",
+              },
+              "/*/*/me/teams",
             ],
           ],
         },
@@ -8242,6 +8713,144 @@ exports.handler = async (event, context) => {
                 "Ref": "HttpApiF5A9A8A7",
               },
               "/*/*/admin/users/{userId}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "HttpApiPATCHlanguagemodelsmodelNamename29680454": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "HttpApiCognitoAuthorizer935FA0F6",
+        },
+        "RouteKey": "PATCH /language-models/{modelName}/name",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "HttpApiPATCHlanguagemodelsmodelNamenamePATCHlanguagemodelsmodelNamenameIntegration8B1E6095",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "HttpApiPATCHlanguagemodelsmodelNamenamePATCHlanguagemodelsmodelNamenameIntegration8B1E6095": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "PatchLanguageModelNameLambdaFunctionA2223720",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "HttpApiPATCHlanguagemodelsmodelNamenamePATCHlanguagemodelsmodelNamenameIntegrationPermission50A50FD7": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "PatchLanguageModelNameLambdaFunctionA2223720",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:ap-northeast-1:123456789012:",
+              {
+                "Ref": "HttpApiF5A9A8A7",
+              },
+              "/*/*/language-models/{modelName}/name",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "HttpApiPATCHlanguagemodelsmodelNameteam92DBD91B": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "HttpApiCognitoAuthorizer935FA0F6",
+        },
+        "RouteKey": "PATCH /language-models/{modelName}/team",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "HttpApiPATCHlanguagemodelsmodelNameteamPATCHlanguagemodelsmodelNameteamIntegration7267B10C",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "HttpApiPATCHlanguagemodelsmodelNameteamPATCHlanguagemodelsmodelNameteamIntegration7267B10C": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "PatchLanguageModelTeamLambdaFunctionEB67A94B",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "HttpApiPATCHlanguagemodelsmodelNameteamPATCHlanguagemodelsmodelNameteamIntegrationPermission9D1E5DC3": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "PatchLanguageModelTeamLambdaFunctionEB67A94B",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:ap-northeast-1:123456789012:",
+              {
+                "Ref": "HttpApiF5A9A8A7",
+              },
+              "/*/*/language-models/{modelName}/team",
             ],
           ],
         },
@@ -10453,6 +11062,312 @@ exports.handler = async (event, context) => {
         "RoleName": "transcription-review-patch-consensus-settings-role",
       },
       "Type": "AWS::IAM::Role",
+    },
+    "PatchLanguageModelNameLambdaFunctionA2223720": {
+      "DependsOn": [
+        "PatchLanguageModelNameLambdaRoleDefaultPolicy19339D8A",
+        "PatchLanguageModelNameLambdaRole5CFB1C5C",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({statusCode:200})",
+        },
+        "Description": "PATCH /language-models/{modelName}/name - Rename model display name",
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefUserPool6BA7E5F296FD7236",
+            },
+            "DATA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefDataBucketE3889A50250F5285",
+            },
+            "DYNAMODB_TABLE_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefTranscriptionReviewApp385243817DCB972D",
+            },
+            "EVENT_BUS_NAME": {
+              "Ref": "AppEventBusAEEA9E1B",
+            },
+            "MEDIA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefMediaBucketBCBB02BA270A7AEB",
+            },
+          },
+        },
+        "FunctionName": "transcription-review-patch-language-model-name",
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "PatchLanguageModelNameLambdaRole5CFB1C5C",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "PatchLanguageModelNameLambdaLogGroupCEAB41D3": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/transcription-review-patch-language-model-name",
+        "RetentionInDays": 30,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "PatchLanguageModelNameLambdaRole5CFB1C5C": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for transcription-review-patch-language-model-name",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "RoleName": "transcription-review-patch-language-model-name-role",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "PatchLanguageModelNameLambdaRoleDefaultPolicy19339D8A": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttAppKey51DFC408Arn13873993",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "PatchLanguageModelNameLambdaRoleDefaultPolicy19339D8A",
+        "Roles": [
+          {
+            "Ref": "PatchLanguageModelNameLambdaRole5CFB1C5C",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "PatchLanguageModelTeamLambdaFunctionEB67A94B": {
+      "DependsOn": [
+        "PatchLanguageModelTeamLambdaRoleDefaultPolicy459520BE",
+        "PatchLanguageModelTeamLambdaRole617B6CED",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({statusCode:200})",
+        },
+        "Description": "PATCH /language-models/{modelName}/team - Change model team",
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefUserPool6BA7E5F296FD7236",
+            },
+            "DATA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefDataBucketE3889A50250F5285",
+            },
+            "DYNAMODB_TABLE_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefTranscriptionReviewApp385243817DCB972D",
+            },
+            "EVENT_BUS_NAME": {
+              "Ref": "AppEventBusAEEA9E1B",
+            },
+            "MEDIA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefMediaBucketBCBB02BA270A7AEB",
+            },
+          },
+        },
+        "FunctionName": "transcription-review-patch-language-model-team",
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "PatchLanguageModelTeamLambdaRole617B6CED",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "PatchLanguageModelTeamLambdaLogGroup56472800": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/transcription-review-patch-language-model-team",
+        "RetentionInDays": 30,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "PatchLanguageModelTeamLambdaRole617B6CED": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for transcription-review-patch-language-model-team",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "RoleName": "transcription-review-patch-language-model-team-role",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "PatchLanguageModelTeamLambdaRoleDefaultPolicy459520BE": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttAppKey51DFC408Arn13873993",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "PatchLanguageModelTeamLambdaRoleDefaultPolicy459520BE",
+        "Roles": [
+          {
+            "Ref": "PatchLanguageModelTeamLambdaRole617B6CED",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
     "PatchMeLambdaFunctionB852E1DA": {
       "DependsOn": [

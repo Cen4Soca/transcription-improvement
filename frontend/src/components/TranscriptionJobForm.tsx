@@ -277,7 +277,7 @@ export function TranscriptionJobForm({
             <option value="">モデルを使用しない</option>
             {models.map((model) => (
               <option key={model.modelName} value={model.modelName}>
-                {model.modelName}
+                {model.displayName ?? model.modelName}
               </option>
             ))}
           </select>

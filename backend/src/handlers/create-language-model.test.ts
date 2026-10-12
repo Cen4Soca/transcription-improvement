@@ -38,6 +38,8 @@ function createEvent(
     : JSON.stringify({
         modelName: 'my-custom-model',
         baseModelName: 'WideBand',
+        displayName: '会議モデル',
+        teamId: 'team-001',
         sessionIds: ['session-001', 'session-002'],
       });
 
@@ -96,6 +98,8 @@ describe('POST /language-models handler', () => {
     mockedCreateModel.mockResolvedValue({
       modelName: 'my-custom-model',
       baseModelName: 'WideBand',
+      displayName: '会議モデル',
+      teamId: 'team-001',
       status: 'IN_PROGRESS',
       trainingDataS3Uri: 's3://test-data-bucket/training-data/my-custom-model/training.txt',
       createdBy: 'user-001',
@@ -114,15 +118,52 @@ describe('POST /language-models handler', () => {
     expect(body.baseModelName).toBe('WideBand');
   });
 
-  it('passes sessionIds to createModel', async () => {
+  it('passes sessionIds, teamId, displayName and user to createModel', async () => {
     const event = createEvent();
     await handler(event);
 
     expect(mockedCreateModel).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionIds: ['session-001', 'session-002'],
+        teamId: 'team-001',
+        displayName: '会議モデル',
+        user: expect.objectContaining({ userId: 'user-001', role: 'ADMIN' }),
       })
     );
+  });
+
+  it('returns 400 when displayName is missing', async () => {
+    const event = createEvent({
+      body: JSON.stringify({
+        modelName: 'test',
+        baseModelName: 'WideBand',
+        teamId: 'team-001',
+        sessionIds: ['s1'],
+      }),
+    });
+    const result = await handler(event);
+
+    expect(result.statusCode).toBe(400);
+    const body = JSON.parse(result.body as string);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toBe('displayName は必須です。');
+  });
+
+  it('returns 400 when teamId is missing', async () => {
+    const event = createEvent({
+      body: JSON.stringify({
+        modelName: 'test',
+        baseModelName: 'WideBand',
+        displayName: '会議モデル',
+        sessionIds: ['s1'],
+      }),
+    });
+    const result = await handler(event);
+
+    expect(result.statusCode).toBe(400);
+    const body = JSON.parse(result.body as string);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toBe('teamId は必須です。');
   });
 
   it('returns 403 when user role is REVIEWER', async () => {

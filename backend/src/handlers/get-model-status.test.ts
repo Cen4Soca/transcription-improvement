@@ -10,9 +10,29 @@ vi.mock('../services/language-model-service.js', async (importOriginal) => {
   };
 });
 
+vi.mock('../services/access-control-service.js', () => ({
+  checkLanguageModelAccess: vi.fn(),
+}));
+
 import { getModelStatus } from '../services/language-model-service.js';
+import { checkLanguageModelAccess } from '../services/access-control-service.js';
+import type { LanguageModelMetadata } from '../types/index.js';
 
 const mockedGetModelStatus = vi.mocked(getModelStatus);
+const mockedCheckLanguageModelAccess = vi.mocked(checkLanguageModelAccess);
+
+const sampleModel: LanguageModelMetadata = {
+  modelName: 'my-model',
+  teamId: 'team-001',
+  displayName: 'My Model',
+  displayNameLower: 'my model',
+  baseModelName: 'WideBand',
+  createdBy: 'leader-001',
+  createdAt: '2024-01-01T00:00:00.000Z',
+  sessionIds: [],
+  s3Key: 'training-data/my-model/training.txt',
+  deletionStatus: 'ACTIVE',
+};
 
 function createEvent(
   overrides: Partial<{
@@ -70,6 +90,7 @@ function createEvent(
 describe('GET /language-models/{modelName} handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedCheckLanguageModelAccess.mockResolvedValue(sampleModel);
     mockedGetModelStatus.mockResolvedValue({
       modelName: 'my-model',
       modelStatus: 'COMPLETED',
@@ -143,11 +164,56 @@ describe('GET /language-models/{modelName} handler', () => {
     expect(body.error.code).toBe('FORBIDDEN');
   });
 
-  it('allows TEAM_LEADER role to access', async () => {
+  it('allows ADMIN to read any team model status', async () => {
+    const event = createEvent({ role: 'ADMIN' });
+    const result = await handler(event);
+
+    expect(result.statusCode).toBe(200);
+    expect(mockedCheckLanguageModelAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'ADMIN' }),
+      'my-model'
+    );
+  });
+
+  it('allows a TEAM_LEADER of the owning team to read the model status', async () => {
     const event = createEvent({ role: 'TEAM_LEADER' });
     const result = await handler(event);
 
     expect(result.statusCode).toBe(200);
+    expect(mockedCheckLanguageModelAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'TEAM_LEADER' }),
+      'my-model'
+    );
+  });
+
+  it('returns 404 when a TEAM_LEADER requests another team model (access denied)', async () => {
+    const { AppError } = await import('../utils/error-handler.js');
+    mockedCheckLanguageModelAccess.mockRejectedValue(
+      new AppError({
+        code: 'NOT_FOUND',
+        message: 'リソースが見つかりません。',
+        statusCode: 404,
+      })
+    );
+
+    const event = createEvent({ role: 'TEAM_LEADER', modelName: 'other-team-model' });
+    const result = await handler(event);
+
+    expect(result.statusCode).toBe(404);
+    const body = JSON.parse(result.body as string);
+    expect(body.error.code).toBe('NOT_FOUND');
+    // getModelStatus must not run once access is denied
+    expect(mockedGetModelStatus).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 for REVIEWER before performing the access check', async () => {
+    const event = createEvent({ role: 'REVIEWER' });
+    const result = await handler(event);
+
+    expect(result.statusCode).toBe(403);
+    const body = JSON.parse(result.body as string);
+    expect(body.error.code).toBe('FORBIDDEN');
+    expect(mockedCheckLanguageModelAccess).not.toHaveBeenCalled();
   });
 
   it('returns 500 for unexpected errors', async () => {

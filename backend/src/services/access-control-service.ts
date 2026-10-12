@@ -6,6 +6,8 @@ import {
   denyResourceAccess,
   requireRole,
 } from '../utils/auth-middleware.js';
+import { getModel } from '../repositories/language-model-repository.js';
+import type { LanguageModelMetadata } from '../types/index.js';
 
 /**
  * AccessControlService handles team-based resource access control.
@@ -318,4 +320,40 @@ export async function getAccessibleSessionIds(
   }
 
   return Array.from(sessionIds);
+}
+
+/**
+ * Check whether a user can access a custom language model, and return its
+ * metadata when access is granted.
+ *
+ * Access rules (team isolation for language models):
+ * - The model metadata must exist and not be soft-deleted (deletionStatus
+ *   'PENDING' is treated as nonexistent).
+ * - ADMIN can access any model.
+ * - Others can access the model only when its teamId is one of the caller's
+ *   teams.
+ *
+ * On any violation (missing, PENDING, or other-team) a 404 is returned via
+ * denyResourceAccess() to hide the existence of the resource.
+ */
+export async function checkLanguageModelAccess(
+  user: AuthUser,
+  modelName: string
+): Promise<LanguageModelMetadata> {
+  const model = await getModel(modelName);
+
+  if (!model || model.deletionStatus === 'PENDING') {
+    denyResourceAccess();
+  }
+
+  if (isAdmin(user)) {
+    return model;
+  }
+
+  const teamIds = await getUserTeamIds(user.userId);
+  if (teamIds.includes(model.teamId)) {
+    return model;
+  }
+
+  denyResourceAccess();
 }

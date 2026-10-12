@@ -31,7 +31,7 @@ export async function handler(
       maxSpeakerLabels: body.maxSpeakerLabels,
       languageCode: body.languageCode,
       languageModelName: body.languageModelName,
-      userId: user.userId,
+      user,
     });
 
     return successResponse(job);

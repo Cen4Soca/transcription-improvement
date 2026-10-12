@@ -49,3 +49,12 @@ export function internalError(message: string, details?: string): AppError {
     details,
   });
 }
+
+export function quotaExceededError(message: string, details?: string): AppError {
+  return new AppError({
+    code: 'QUOTA_EXCEEDED',
+    message,
+    statusCode: 429,
+    details,
+  });
+}

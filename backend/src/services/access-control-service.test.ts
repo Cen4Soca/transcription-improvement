@@ -10,7 +10,14 @@ vi.mock('../utils/dynamodb-client.js', () => ({
   TABLE_NAME: 'TestTable',
 }));
 
+// Mock the language model repository (used by checkLanguageModelAccess)
+vi.mock('../repositories/language-model-repository.js', () => ({
+  getModel: vi.fn(),
+}));
+
 import { docClient } from '../utils/dynamodb-client.js';
+import { getModel } from '../repositories/language-model-repository.js';
+import type { LanguageModelMetadata } from '../types/index.js';
 import {
   checkSessionAccess,
   isTeamMember,
@@ -22,9 +29,29 @@ import {
   getAccessibleSessionIds,
   canAccessMediaFile,
   usersShareTeam,
+  checkLanguageModelAccess,
 } from './access-control-service.js';
 
 const mockSend = vi.mocked(docClient.send);
+const mockedGetModel = vi.mocked(getModel);
+
+function buildModelMetadata(
+  overrides: Partial<LanguageModelMetadata> = {}
+): LanguageModelMetadata {
+  return {
+    modelName: 'model-1',
+    teamId: 'team-A',
+    displayName: 'Model 1',
+    displayNameLower: 'model 1',
+    baseModelName: 'WideBand',
+    createdBy: 'leader-1',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    sessionIds: [],
+    s3Key: 'training-data/model-1/training.txt',
+    deletionStatus: 'ACTIVE',
+    ...overrides,
+  };
+}
 
 function createUser(overrides: Partial<AuthUser> = {}): AuthUser {
   return {
@@ -391,6 +418,63 @@ describe('access-control-service', () => {
 
       const result = await usersShareTeam('user-a', 'user-b');
       expect(result).toBe(false);
+    });
+  });
+
+  describe('checkLanguageModelAccess', () => {
+    it('allows ADMIN to access any model without a team lookup', async () => {
+      const admin = createUser({ role: 'ADMIN' });
+      mockedGetModel.mockResolvedValue(buildModelMetadata({ teamId: 'team-A' }));
+
+      const result = await checkLanguageModelAccess(admin, 'model-1');
+      expect(result.modelName).toBe('model-1');
+      // No GSI query (getUserTeamIds) should be needed for ADMIN.
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('allows a non-ADMIN member of the owning team', async () => {
+      const reviewer = createUser({ role: 'REVIEWER' });
+      mockedGetModel.mockResolvedValue(buildModelMetadata({ teamId: 'team-A' }));
+      // getUserTeamIds -> ['team-A']
+      mockSend.mockResolvedValueOnce({
+        Items: [{ GSI1SK: 'TEAM#team-A' }],
+      } as any);
+
+      const result = await checkLanguageModelAccess(reviewer, 'model-1');
+      expect(result.teamId).toBe('team-A');
+    });
+
+    it('throws 404 for a non-ADMIN when the model belongs to another team', async () => {
+      const reviewer = createUser({ role: 'REVIEWER' });
+      mockedGetModel.mockResolvedValue(buildModelMetadata({ teamId: 'team-A' }));
+      // getUserTeamIds -> ['team-B']
+      mockSend.mockResolvedValueOnce({
+        Items: [{ GSI1SK: 'TEAM#team-B' }],
+      } as any);
+
+      await expect(
+        checkLanguageModelAccess(reviewer, 'model-1')
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it('throws 404 when the model metadata does not exist', async () => {
+      const admin = createUser({ role: 'ADMIN' });
+      mockedGetModel.mockResolvedValue(null);
+
+      await expect(
+        checkLanguageModelAccess(admin, 'missing-model')
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it('throws 404 when the model is soft-deleted (PENDING)', async () => {
+      const admin = createUser({ role: 'ADMIN' });
+      mockedGetModel.mockResolvedValue(
+        buildModelMetadata({ deletionStatus: 'PENDING' })
+      );
+
+      await expect(
+        checkLanguageModelAccess(admin, 'model-1')
+      ).rejects.toMatchObject({ statusCode: 404 });
     });
   });
 });

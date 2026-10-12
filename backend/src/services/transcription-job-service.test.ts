@@ -31,12 +31,62 @@ vi.mock('./session-service.js', () => ({
   }),
 }));
 
+vi.mock('./access-control-service.js', () => ({
+  checkLanguageModelAccess: vi.fn(),
+  getUserTeamIds: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('./audit-service.js', () => ({
+  recordAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('uuid', () => ({
   v4: vi.fn(() => 'test-uuid-1234'),
 }));
 
 import * as transcriptionJobRepository from '../repositories/transcription-job-repository.js';
 import * as mediaFileRepository from '../repositories/media-file-repository.js';
+import { checkLanguageModelAccess, getUserTeamIds } from './access-control-service.js';
+import { recordAuditLog } from './audit-service.js';
+import type { AuthUser } from '../utils/auth-middleware.js';
+import type { LanguageModelMetadata } from '../types/index.js';
+import { AppError } from '../utils/error-handler.js';
+
+const mockedCheckLanguageModelAccess = vi.mocked(checkLanguageModelAccess);
+const mockedGetUserTeamIds = vi.mocked(getUserTeamIds);
+const mockedRecordAuditLog = vi.mocked(recordAuditLog);
+
+const reviewerUser: AuthUser = {
+  userId: 'user-1',
+  email: 'reviewer@example.com',
+  displayName: 'Reviewer',
+  role: 'REVIEWER',
+};
+
+const adminUser: AuthUser = {
+  userId: 'admin-1',
+  email: 'admin@example.com',
+  displayName: 'Admin',
+  role: 'ADMIN',
+};
+
+function buildModelMetadata(
+  overrides: Partial<LanguageModelMetadata> = {}
+): LanguageModelMetadata {
+  return {
+    modelName: 'my-custom-model',
+    teamId: 'team-A',
+    displayName: 'My Model',
+    displayNameLower: 'my model',
+    baseModelName: 'WideBand',
+    createdBy: 'leader-1',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    sessionIds: [],
+    s3Key: 'training-data/my-custom-model/training.txt',
+    deletionStatus: 'ACTIVE',
+    ...overrides,
+  };
+}
 
 // --- validateMaxSpeakers tests ---
 
@@ -96,6 +146,11 @@ describe('startJob', () => {
     // Set mock Transcribe client
     setTranscribeClient({ send: mockSend } as any);
 
+    // Default access-control / audit behavior
+    mockedCheckLanguageModelAccess.mockResolvedValue(buildModelMetadata());
+    mockedGetUserTeamIds.mockResolvedValue([]);
+    mockedRecordAuditLog.mockResolvedValue(undefined);
+
     // Default mock for mediaFileRepository.getById
     vi.mocked(mediaFileRepository.getById).mockResolvedValue({
       mediaFileId: 'media-123',
@@ -113,7 +168,7 @@ describe('startJob', () => {
   test('starts a job with default parameters', async () => {
     const result = await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     expect(result.jobId).toBe('test-uuid-1234');
@@ -131,7 +186,7 @@ describe('startJob', () => {
       mediaFileId: 'media-123',
       maxSpeakerLabels: 5,
       languageCode: 'en-US',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     expect(mockSend).toHaveBeenCalledTimes(1);
@@ -155,7 +210,7 @@ describe('startJob', () => {
     await startJob({
       mediaFileId: 'media-123',
       languageModelName: 'my-custom-model',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     const command = mockSend.mock.calls[0][0];
@@ -169,7 +224,7 @@ describe('startJob', () => {
   test('does not include ModelSettings when languageModelName is not provided', async () => {
     await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     const command = mockSend.mock.calls[0][0];
@@ -179,7 +234,7 @@ describe('startJob', () => {
   test('saves job record to repository', async () => {
     await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     expect(transcriptionJobRepository.save).toHaveBeenCalledTimes(1);
@@ -191,7 +246,7 @@ describe('startJob', () => {
   test('re-links the media file to the newly created session', async () => {
     const result = await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     // The media file must be re-linked to the created session so that
@@ -207,7 +262,7 @@ describe('startJob', () => {
   test('advances the media file status to PROCESSING when the job starts', async () => {
     await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     // The media list should reflect that transcription is in progress instead
@@ -225,7 +280,7 @@ describe('startJob', () => {
 
     const result = await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     expect(result.jobId).toBe('test-uuid-1234');
@@ -235,7 +290,7 @@ describe('startJob', () => {
   test('persists the job record with the linked sessionId', async () => {
     await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     const savedRecord = vi.mocked(transcriptionJobRepository.save).mock.calls[0][0];
@@ -249,7 +304,7 @@ describe('startJob', () => {
 
     const result = await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     // Job creation must not be blocked by a re-link failure.
@@ -263,7 +318,7 @@ describe('startJob', () => {
       startJob({
         mediaFileId: 'media-123',
         maxSpeakerLabels: 15,
-        userId: 'user-1',
+        user: reviewerUser,
       })
     ).rejects.toThrow('MaxSpeakerLabels は 2〜10 の範囲で指定してください。');
   });
@@ -274,7 +329,7 @@ describe('startJob', () => {
     await expect(
       startJob({
         mediaFileId: 'nonexistent',
-        userId: 'user-1',
+        user: reviewerUser,
       })
     ).rejects.toThrow('指定されたメディアファイルが見つかりません。');
   });
@@ -285,7 +340,7 @@ describe('startJob', () => {
     await expect(
       startJob({
         mediaFileId: 'media-123',
-        userId: 'user-1',
+        user: reviewerUser,
       })
     ).rejects.toThrow('バケットの設定が不足しています。');
   });
@@ -296,7 +351,7 @@ describe('startJob', () => {
     await expect(
       startJob({
         mediaFileId: 'media-123',
-        userId: 'user-1',
+        user: reviewerUser,
       })
     ).rejects.toThrow('バケットの設定が不足しています。');
   });
@@ -305,7 +360,7 @@ describe('startJob', () => {
     const result = await startJob({
       mediaFileId: 'media-123',
       maxSpeakerLabels: 2,
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     expect(result.maxSpeakerLabels).toBe(2);
@@ -317,7 +372,7 @@ describe('startJob', () => {
     const result = await startJob({
       mediaFileId: 'media-123',
       maxSpeakerLabels: 10,
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     expect(result.maxSpeakerLabels).toBe(10);
@@ -331,7 +386,7 @@ describe('startJob', () => {
 
     const result = await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     // Job should still be created successfully
@@ -342,7 +397,7 @@ describe('startJob', () => {
   test('sets ShowSpeakerLabels to true in Transcribe settings (Req 17.2)', async () => {
     await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     const command = mockSend.mock.calls[0][0];
@@ -354,7 +409,7 @@ describe('startJob', () => {
 
     await startJob({
       mediaFileId: 'media-123',
-      userId: 'user-1',
+      user: reviewerUser,
     });
 
     // 4th argument is the assigned userId, taken from mediaFile.uploadedBy
@@ -364,6 +419,135 @@ describe('startJob', () => {
       undefined,
       'user-1'
     );
+  });
+
+  // --- Language model team isolation on job start ---
+
+  test('enforces language model access when languageModelName is provided', async () => {
+    await startJob({
+      mediaFileId: 'media-123',
+      languageModelName: 'my-custom-model',
+      user: reviewerUser,
+    });
+
+    expect(mockedCheckLanguageModelAccess).toHaveBeenCalledWith(
+      reviewerUser,
+      'my-custom-model'
+    );
+  });
+
+  test('does not check language model access when no model is provided', async () => {
+    await startJob({
+      mediaFileId: 'media-123',
+      user: reviewerUser,
+    });
+
+    expect(mockedCheckLanguageModelAccess).not.toHaveBeenCalled();
+  });
+
+  test('rejects with 404 when the language model is not accessible to the caller', async () => {
+    mockedCheckLanguageModelAccess.mockRejectedValueOnce(
+      new AppError({
+        code: 'NOT_FOUND',
+        message: 'リソースが見つかりません。',
+        statusCode: 404,
+      })
+    );
+
+    await expect(
+      startJob({
+        mediaFileId: 'media-123',
+        languageModelName: 'other-team-model',
+        user: reviewerUser,
+      })
+    ).rejects.toMatchObject({ code: 'NOT_FOUND', statusCode: 404 });
+
+    // The job must not be started or persisted when access is denied.
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(transcriptionJobRepository.save).not.toHaveBeenCalled();
+  });
+
+  test('records a job-start audit log with languageModelName', async () => {
+    await startJob({
+      mediaFileId: 'media-123',
+      languageModelName: 'my-custom-model',
+      user: reviewerUser,
+    });
+
+    expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user-1',
+        actorRole: 'REVIEWER',
+        operationType: 'TRANSCRIPTION_JOB_STARTED',
+        resourceId: 'test-uuid-1234',
+        resourceType: 'TranscriptionJob',
+        metadata: expect.objectContaining({
+          languageModelName: 'my-custom-model',
+        }),
+      })
+    );
+    // A same-team caller is not flagged as cross-team.
+    const metadata = mockedRecordAuditLog.mock.calls[0][0].metadata as Record<string, unknown>;
+    expect(metadata['crossTeamModelUsage']).toBeUndefined();
+  });
+
+  test('records a job-start audit log without languageModelName when no model is used', async () => {
+    await startJob({
+      mediaFileId: 'media-123',
+      user: reviewerUser,
+    });
+
+    expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operationType: 'TRANSCRIPTION_JOB_STARTED',
+        resourceId: 'test-uuid-1234',
+      })
+    );
+    const metadata = mockedRecordAuditLog.mock.calls[0][0].metadata as Record<string, unknown>;
+    expect(metadata['languageModelName']).toBeUndefined();
+    expect(metadata['crossTeamModelUsage']).toBeUndefined();
+  });
+
+  test('flags crossTeamModelUsage when ADMIN uses a model from a team they do not belong to', async () => {
+    // Model belongs to team-A; admin belongs to no team (or other teams).
+    mockedCheckLanguageModelAccess.mockResolvedValue(
+      buildModelMetadata({ teamId: 'team-A' })
+    );
+    mockedGetUserTeamIds.mockResolvedValue(['team-Z']);
+
+    await startJob({
+      mediaFileId: 'media-123',
+      languageModelName: 'my-custom-model',
+      user: adminUser,
+    });
+
+    expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'admin-1',
+        actorRole: 'ADMIN',
+        operationType: 'TRANSCRIPTION_JOB_STARTED',
+        metadata: expect.objectContaining({
+          languageModelName: 'my-custom-model',
+          crossTeamModelUsage: true,
+        }),
+      })
+    );
+  });
+
+  test('does not flag crossTeamModelUsage when ADMIN uses a model from their own team', async () => {
+    mockedCheckLanguageModelAccess.mockResolvedValue(
+      buildModelMetadata({ teamId: 'team-A' })
+    );
+    mockedGetUserTeamIds.mockResolvedValue(['team-A']);
+
+    await startJob({
+      mediaFileId: 'media-123',
+      languageModelName: 'my-custom-model',
+      user: adminUser,
+    });
+
+    const metadata = mockedRecordAuditLog.mock.calls[0][0].metadata as Record<string, unknown>;
+    expect(metadata['crossTeamModelUsage']).toBeUndefined();
   });
 });
 

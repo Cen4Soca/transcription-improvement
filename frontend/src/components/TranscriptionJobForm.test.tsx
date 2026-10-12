@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { axe } from 'vitest-axe';
 import { TranscriptionJobForm } from './TranscriptionJobForm';
 import type { TranscriptionApi } from '../services/transcription-api';
 import type { LanguageModelApi, LanguageModelListResponse } from '../services/language-model-api';
@@ -39,8 +40,8 @@ function createMockLanguageModelApi(
         ok: true,
         value: {
           models: [
-            { modelName: 'custom-model-v1', modelStatus: 'COMPLETED', baseModelName: 'NarrowBand' },
-            { modelName: 'custom-model-v2', modelStatus: 'COMPLETED', baseModelName: 'WideBand' },
+            { modelName: 'custom-model-v1', modelStatus: 'COMPLETED', baseModelName: 'NarrowBand', displayName: '営業ドメイン v1', teamId: 'team-1' },
+            { modelName: 'custom-model-v2', modelStatus: 'COMPLETED', baseModelName: 'WideBand', displayName: '医療ドメイン v2', teamId: 'team-1' },
           ],
         },
       },
@@ -177,8 +178,38 @@ describe('TranscriptionJobForm', () => {
       const modelSelect = screen.getByLabelText(/カスタム言語モデル/) as HTMLSelectElement;
       const options = Array.from(modelSelect.options);
       expect(options[0].textContent).toBe('モデルを使用しない');
-      expect(options[1].textContent).toBe('custom-model-v1');
-      expect(options[2].textContent).toBe('custom-model-v2');
+      // Option label is the human-readable displayName...
+      expect(options[1].textContent).toBe('営業ドメイン v1');
+      expect(options[2].textContent).toBe('医療ドメイン v2');
+      // ...while the submitted value stays the Transcribe modelName.
+      expect(options[1].value).toBe('custom-model-v1');
+      expect(options[2].value).toBe('custom-model-v2');
+    });
+
+    it('falls back to modelName as the label when displayName is absent', async () => {
+      const noDisplayNameApi = createMockLanguageModelApi({
+        ok: true,
+        value: {
+          models: [{ modelName: 'legacy-model', modelStatus: 'COMPLETED' }],
+        },
+      });
+
+      render(
+        <TranscriptionJobForm
+          transcriptionApi={mockTranscriptionApi}
+          languageModelApi={noDisplayNameApi}
+          mediaFiles={mockMediaFiles}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/カスタム言語モデル/)).toBeInTheDocument();
+      });
+
+      const modelSelect = screen.getByLabelText(/カスタム言語モデル/) as HTMLSelectElement;
+      const options = Array.from(modelSelect.options);
+      expect(options[1].textContent).toBe('legacy-model');
+      expect(options[1].value).toBe('legacy-model');
     });
 
     it('shows "利用可能なモデルなし" when no models are available', async () => {
@@ -406,6 +437,25 @@ describe('TranscriptionJobForm', () => {
       await waitFor(() => {
         expect(screen.getByText('作成中...')).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('accessibility', () => {
+    it('has no axe violations once models are loaded', async () => {
+      const { container } = render(
+        <TranscriptionJobForm
+          transcriptionApi={mockTranscriptionApi}
+          languageModelApi={mockLanguageModelApi}
+          mediaFiles={mockMediaFiles}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/カスタム言語モデル/)).toBeInTheDocument();
+      });
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
     });
   });
 });

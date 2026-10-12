@@ -16,6 +16,13 @@ export interface UseLanguageModelsReturn {
   createModel: (params: CreateLanguageModelRequest) => Promise<LanguageModelRecord | null>;
   isCreating: boolean;
   createError: AppError | null;
+  deleteModel: (modelName: string) => Promise<boolean>;
+  renameModel: (modelName: string, name: string) => Promise<AppError | null>;
+  changeModelTeam: (modelName: string, teamId: string) => Promise<AppError | null>;
+  /** Re-invoke delete on a PENDING model (recovery of a partially-torn-down model). */
+  reDelete: (modelName: string) => Promise<boolean>;
+  isMutating: boolean;
+  mutationError: AppError | null;
   modelStatus: LanguageModelStatus | null;
   isPollingStatus: boolean;
   statusError: AppError | null;
@@ -42,6 +49,9 @@ export function useLanguageModels(languageModelApi: LanguageModelApi): UseLangua
 
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<AppError | null>(null);
+
+  const [isMutating, setIsMutating] = useState(false);
+  const [mutationError, setMutationError] = useState<AppError | null>(null);
 
   const [modelStatus, setModelStatus] = useState<LanguageModelStatus | null>(null);
   const [isPollingStatus, setIsPollingStatus] = useState(false);
@@ -97,6 +107,63 @@ export function useLanguageModels(languageModelApi: LanguageModelApi): UseLangua
     }
   }, []);
 
+  const deleteModel = useCallback(async (modelName: string): Promise<boolean> => {
+    setIsMutating(true);
+    setMutationError(null);
+    try {
+      const result = await apiRef.current.deleteModel(modelName);
+      if (result.ok) {
+        await loadModels();
+        return true;
+      }
+      setMutationError(result.error);
+      return false;
+    } finally {
+      setIsMutating(false);
+    }
+  }, [loadModels]);
+
+  // Re-invoking delete on a PENDING model resumes its teardown; identical call.
+  const reDelete = deleteModel;
+
+  const renameModel = useCallback(async (
+    modelName: string,
+    name: string
+  ): Promise<AppError | null> => {
+    setIsMutating(true);
+    setMutationError(null);
+    try {
+      const result = await apiRef.current.updateModelName(modelName, name);
+      if (result.ok) {
+        await loadModels();
+        return null;
+      }
+      setMutationError(result.error);
+      return result.error;
+    } finally {
+      setIsMutating(false);
+    }
+  }, [loadModels]);
+
+  const changeModelTeam = useCallback(async (
+    modelName: string,
+    teamId: string
+  ): Promise<AppError | null> => {
+    setIsMutating(true);
+    setMutationError(null);
+    try {
+      const result = await apiRef.current.updateModelTeam(modelName, teamId);
+      if (result.ok) {
+        await loadModels();
+        return null;
+      }
+      setMutationError(result.error);
+      return result.error;
+    } finally {
+      setIsMutating(false);
+    }
+  }, [loadModels]);
+
   const fetchModelStatus = useCallback(async (modelName: string) => {
     const result = await apiRef.current.getModelStatus(modelName);
     if (result.ok) {
@@ -151,6 +218,12 @@ export function useLanguageModels(languageModelApi: LanguageModelApi): UseLangua
     createModel,
     isCreating,
     createError,
+    deleteModel,
+    renameModel,
+    changeModelTeam,
+    reDelete,
+    isMutating,
+    mutationError,
     modelStatus,
     isPollingStatus,
     statusError,

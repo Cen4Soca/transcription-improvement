@@ -789,6 +789,14 @@ exports[`FoundationStack - Snapshot > matches the snapshot for import mode 1`] =
             "AttributeName": "GSI2SK",
             "AttributeType": "S",
           },
+          {
+            "AttributeName": "GSI3PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI3SK",
+            "AttributeType": "S",
+          },
         ],
         "BillingMode": "PAY_PER_REQUEST",
         "GlobalSecondaryIndexes": [
@@ -817,6 +825,22 @@ exports[`FoundationStack - Snapshot > matches the snapshot for import mode 1`] =
               },
               {
                 "AttributeName": "GSI2SK",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "GSI3",
+            "KeySchema": [
+              {
+                "AttributeName": "GSI3PK",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "GSI3SK",
                 "KeyType": "RANGE",
               },
             ],
@@ -1681,6 +1705,14 @@ exports[`FoundationStack - Snapshot > matches the snapshot for new creation mode
             "AttributeName": "GSI2SK",
             "AttributeType": "S",
           },
+          {
+            "AttributeName": "GSI3PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI3SK",
+            "AttributeType": "S",
+          },
         ],
         "BillingMode": "PAY_PER_REQUEST",
         "GlobalSecondaryIndexes": [
@@ -1709,6 +1741,22 @@ exports[`FoundationStack - Snapshot > matches the snapshot for new creation mode
               },
               {
                 "AttributeName": "GSI2SK",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "GSI3",
+            "KeySchema": [
+              {
+                "AttributeName": "GSI3PK",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "GSI3SK",
                 "KeyType": "RANGE",
               },
             ],

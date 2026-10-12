@@ -278,6 +278,9 @@ describe('GET /admin/audit-logs - listAuditLogsHandler', () => {
       'REVIEW_ASSIGNMENT_CHANGE',
       'TEAM_ASSIGNMENT_CHANGE',
       'SESSION_COMPLETED',
+      'SESSION_NAME_CHANGED',
+      'SESSION_MANUAL_AGGREGATED',
+      'SESSION_REOPENED',
       'CONSENSUS_MANUAL_CONFIRM',
       'CORRECTION_CONFIRMED',
       'SPEAKER_LABEL_CHANGED',
@@ -286,6 +289,10 @@ describe('GET /admin/audit-logs - listAuditLogsHandler', () => {
       'TRANSCRIPTION_DELETED',
       'PARTIAL_DELETION_FAILURE',
       'LANGUAGE_MODEL_CREATED',
+      'LANGUAGE_MODEL_DELETED',
+      'LANGUAGE_MODEL_TEAM_CHANGED',
+      'LANGUAGE_MODEL_NAME_CHANGED',
+      'TRANSCRIPTION_JOB_STARTED',
       'AUDIT_LOG_DELETED',
     ];
 
@@ -304,6 +311,36 @@ describe('GET /admin/audit-logs - listAuditLogsHandler', () => {
       const result = await listAuditLogsHandler(event);
 
       expect(result.statusCode).toBe(200);
+      expect(mockedSearchAuditLogs).toHaveBeenCalledWith(
+        expect.objectContaining({ operationType: opType })
+      );
+    }
+  });
+
+  it('accepts the new language-model operation types as query param', async () => {
+    const newTypes = [
+      'LANGUAGE_MODEL_DELETED',
+      'LANGUAGE_MODEL_TEAM_CHANGED',
+      'LANGUAGE_MODEL_NAME_CHANGED',
+    ];
+
+    for (const opType of newTypes) {
+      mockedSearchAuditLogs.mockResolvedValue({
+        items: [],
+        totalCount: 0,
+        page: 1,
+        pageSize: 100,
+        totalPages: 1,
+      });
+
+      const event = createEvent({
+        queryStringParameters: { operationType: opType },
+      });
+      const result = await listAuditLogsHandler(event);
+
+      expect(result.statusCode).toBe(200);
+      const body = JSON.parse(result.body as string);
+      expect(body.error).toBeUndefined();
       expect(mockedSearchAuditLogs).toHaveBeenCalledWith(
         expect.objectContaining({ operationType: opType })
       );
@@ -426,6 +463,32 @@ describe('DELETE /admin/audit-logs - deleteAuditLogsHandler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.message).toContain('無効な操作種別');
+  });
+
+  it('accepts the new language-model operation types in the body', async () => {
+    const newTypes = [
+      'LANGUAGE_MODEL_DELETED',
+      'LANGUAGE_MODEL_TEAM_CHANGED',
+      'LANGUAGE_MODEL_NAME_CHANGED',
+    ];
+
+    for (const opType of newTypes) {
+      mockedRemoveAuditLogs.mockResolvedValue(1);
+
+      const event = createEvent({
+        method: 'DELETE',
+        body: JSON.stringify({ operationType: opType }),
+      });
+      const result = await deleteAuditLogsHandler(event);
+
+      expect(result.statusCode).toBe(200);
+      const body = JSON.parse(result.body as string);
+      expect(body.error).toBeUndefined();
+      expect(mockedRemoveAuditLogs).toHaveBeenCalledWith(
+        expect.objectContaining({ operationType: opType }),
+        expect.anything()
+      );
+    }
   });
 
   it('returns 400 for invalid JSON body', async () => {

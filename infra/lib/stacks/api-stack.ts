@@ -556,6 +556,15 @@ exports.handler = async (event, context) => {
     getMeFn.grantDynamoDbRead(props.table.tableArn);
     getMeFn.grantKmsAccess(props.kmsKey.keyArn);
 
+    // Me teams (teams available to the caller for the language-model create form)
+    const getMyTeamsFn = this.createLambda('GetMyTeams', {
+      entry: handlersDir,
+      description: 'GET /me/teams - Teams available to the caller (ADMIN all / others own)',
+      environment: commonEnv,
+    });
+    getMyTeamsFn.grantDynamoDbRead(props.table.tableArn);
+    getMyTeamsFn.grantKmsAccess(props.kmsKey.keyArn);
+
     // Me (update own profile: displayName/email)
     const patchMeFn = this.createLambda('PatchMe', {
       entry: handlersDir,
@@ -907,6 +916,53 @@ exports.handler = async (event, context) => {
       new cdk.aws_iam.PolicyStatement({
         effect: cdk.aws_iam.Effect.ALLOW,
         actions: ['transcribe:DescribeLanguageModel'],
+        resources: ['*'],
+      })
+    );
+
+    // Rename Language Model display name (DynamoDB + KMS only; no Transcribe)
+    const patchLanguageModelNameFn = this.createLambda('PatchLanguageModelName', {
+      entry: handlersDir,
+      description: 'PATCH /language-models/{modelName}/name - Rename model display name',
+      environment: commonEnv,
+    });
+    patchLanguageModelNameFn.grantDynamoDbReadWrite(props.table.tableArn);
+    patchLanguageModelNameFn.grantKmsAccess(props.kmsKey.keyArn);
+
+    // Change Language Model team (DynamoDB + KMS only; no Transcribe)
+    const patchLanguageModelTeamFn = this.createLambda('PatchLanguageModelTeam', {
+      entry: handlersDir,
+      description: 'PATCH /language-models/{modelName}/team - Change model team',
+      environment: commonEnv,
+    });
+    patchLanguageModelTeamFn.grantDynamoDbReadWrite(props.table.tableArn);
+    patchLanguageModelTeamFn.grantKmsAccess(props.kmsKey.keyArn);
+
+    // Delete Language Model (two-layer teardown: Transcribe + S3 training data + DynamoDB metadata)
+    const deleteLanguageModelFn = this.createLambda('DeleteLanguageModel', {
+      entry: handlersDir,
+      description: 'DELETE /language-models/{modelName} - Delete custom language model',
+      environment: { ...commonEnv, ...transcribeEnv },
+    });
+    deleteLanguageModelFn.grantDynamoDbReadWrite(props.table.tableArn);
+    deleteLanguageModelFn.grantKmsAccess(props.kmsKey.keyArn);
+    // Least-privilege S3: delete only training-data objects.
+    deleteLanguageModelFn.role.addToPolicy(
+      new cdk.aws_iam.PolicyStatement({
+        effect: cdk.aws_iam.Effect.ALLOW,
+        actions: ['s3:DeleteObject'],
+        resources: [`${props.dataBucket.bucketArn}/training-data/*`],
+      })
+    );
+    deleteLanguageModelFn.role.addToPolicy(
+      new cdk.aws_iam.PolicyStatement({
+        effect: cdk.aws_iam.Effect.ALLOW,
+        actions: [
+          'transcribe:DeleteLanguageModel',
+          'transcribe:DescribeLanguageModel',
+          'transcribe:ListTranscriptionJobs',
+          'transcribe:GetTranscriptionJob',
+        ],
         resources: ['*'],
       })
     );
@@ -1291,6 +1347,7 @@ exports.handler = async (event, context) => {
 
     // Me (current user profile)
     this.addRoute('GET', '/me', getMeFn, jwtAuthorizer);
+    this.addRoute('GET', '/me/teams', getMyTeamsFn, jwtAuthorizer);
     this.addRoute('PATCH', '/me', patchMeFn, jwtAuthorizer);
 
     // Admin - Users
@@ -1344,6 +1401,9 @@ exports.handler = async (event, context) => {
     this.addRoute('GET', '/language-models', listLanguageModelsFn, jwtAuthorizer);
     this.addRoute('POST', '/language-models', createLanguageModelFn, jwtAuthorizer);
     this.addRoute('GET', '/language-models/{modelName}', getModelStatusFn, jwtAuthorizer);
+    this.addRoute('PATCH', '/language-models/{modelName}/name', patchLanguageModelNameFn, jwtAuthorizer);
+    this.addRoute('PATCH', '/language-models/{modelName}/team', patchLanguageModelTeamFn, jwtAuthorizer);
+    this.addRoute('DELETE', '/language-models/{modelName}', deleteLanguageModelFn, jwtAuthorizer);
 
     // --- CloudFormation Outputs ---
     new cdk.CfnOutput(this, 'HttpApiUrl', {

@@ -49,6 +49,10 @@ describe('Feature: audit-log-management, Property 45: AuditLog 削除の自己�
     'TRANSCRIPTION_DELETED' as const,
     'PARTIAL_DELETION_FAILURE' as const,
     'LANGUAGE_MODEL_CREATED' as const,
+    'LANGUAGE_MODEL_DELETED' as const,
+    'LANGUAGE_MODEL_TEAM_CHANGED' as const,
+    'LANGUAGE_MODEL_NAME_CHANGED' as const,
+    'TRANSCRIPTION_JOB_STARTED' as const,
     'AUDIT_LOG_DELETED' as const,
   );
 

@@ -120,7 +120,12 @@ describe('POST /transcription-jobs handler', () => {
       maxSpeakerLabels: 3,
       languageCode: 'ja-JP',
       languageModelName: 'my-custom-model',
-      userId: 'user-001',
+      user: {
+        userId: 'user-001',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        role: 'REVIEWER',
+      },
     });
   });
 
@@ -135,7 +140,12 @@ describe('POST /transcription-jobs handler', () => {
       maxSpeakerLabels: undefined,
       languageCode: undefined,
       languageModelName: undefined,
-      userId: 'user-001',
+      user: {
+        userId: 'user-001',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        role: 'REVIEWER',
+      },
     });
   });
 

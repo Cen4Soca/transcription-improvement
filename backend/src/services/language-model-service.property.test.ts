@@ -1,491 +1,883 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fc from 'fast-check';
+import type { AuthUser } from '../utils/auth-middleware.js';
+
+vi.mock('./audit-service.js', () => ({
+  recordAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../repositories/team-repository.js', () => ({
+  getTeamById: vi.fn(),
+}));
+
+vi.mock('./access-control-service.js', () => ({
+  checkSessionAccess: vi.fn(),
+  checkLanguageModelAccess: vi.fn(),
+  isTeamMember: vi.fn(),
+  getUserTeamIds: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('../repositories/language-model-repository.js', () => ({
+  putModel: vi.fn().mockResolvedValue(undefined),
+  getModel: vi.fn().mockResolvedValue(null),
+  findByDisplayName: vi.fn().mockResolvedValue(null),
+  updateDisplayName: vi.fn().mockResolvedValue(undefined),
+  setDeletionStatus: vi.fn().mockResolvedValue(undefined),
+  hardDelete: vi.fn().mockResolvedValue(undefined),
+  queryByTeam: vi.fn().mockResolvedValue([]),
+  queryAll: vi.fn().mockResolvedValue([]),
+}));
+
 import {
-  checkRoleAccess,
-  filterCompletedModels,
-  generateTrainingData,
-  checkModelNameDuplicate,
+  createModel,
+  listModels,
+  renameModelDisplayName,
+  deleteModel,
   setTranscribeClient,
-  ConfirmedSegment,
-  LanguageModelSummary,
+  setS3Client,
+  setDeleteBackoffBaseMs,
+  type CreateModelParams,
 } from './language-model-service.js';
+import { notFoundError } from '../utils/error-handler.js';
+import { recordAuditLog } from './audit-service.js';
+import { getTeamById } from '../repositories/team-repository.js';
+import {
+  checkSessionAccess,
+  checkLanguageModelAccess,
+  isTeamMember,
+  getUserTeamIds,
+} from './access-control-service.js';
+import {
+  putModel,
+  getModel,
+  findByDisplayName,
+  updateDisplayName,
+  setDeletionStatus,
+  hardDelete,
+  queryByTeam,
+  queryAll,
+} from '../repositories/language-model-repository.js';
+import type { LanguageModelMetadata } from '../types/index.js';
 
-// --- Property 6 ---
+const mockedGetTeamById = vi.mocked(getTeamById);
+const mockedCheckSessionAccess = vi.mocked(checkSessionAccess);
+const mockedCheckLanguageModelAccess = vi.mocked(checkLanguageModelAccess);
+const mockedIsTeamMember = vi.mocked(isTeamMember);
+const mockedGetUserTeamIds = vi.mocked(getUserTeamIds);
+const mockedPutModel = vi.mocked(putModel);
+const mockedFindByDisplayName = vi.mocked(findByDisplayName);
+const mockedUpdateDisplayName = vi.mocked(updateDisplayName);
+const mockedQueryByTeam = vi.mocked(queryByTeam);
+const mockedQueryAll = vi.mocked(queryAll);
+const mockedGetModel = vi.mocked(getModel);
+const mockedSetDeletionStatus = vi.mocked(setDeletionStatus);
+const mockedHardDelete = vi.mocked(hardDelete);
+const mockedRecordAuditLog = vi.mocked(recordAuditLog);
 
-const MODEL_STATUSES = ['IN_PROGRESS', 'COMPLETED', 'FAILED'] as const;
+const adminUser: AuthUser = {
+  userId: 'admin-001',
+  email: 'admin@example.com',
+  displayName: 'Admin',
+  role: 'ADMIN',
+};
 
-const languageModelSummaryArb: fc.Arbitrary<LanguageModelSummary> = fc.record({
-  modelName: fc.string({ minLength: 1, maxLength: 50 }),
-  modelStatus: fc.constantFrom(...MODEL_STATUSES),
-  baseModelName: fc.option(fc.constantFrom('NarrowBand', 'WideBand'), { nil: undefined }),
-  createTime: fc.option(
-    fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }).map((d) => d.toISOString()),
-    { nil: undefined }
-  ),
-});
+const mockTranscribeSend = vi.fn();
+const mockS3Send = vi.fn();
 
-describe('Feature: transcription-workflow-enhancements, Property 6: カスタム言語モデルのステータスフィルタリング', () => {
+/**
+ * Reset mocks + clients to a baseline "happy path": team exists, caller is a
+ * member, every session is accessible, no displayName collision, Transcribe
+ * calls succeed.
+ */
+function resetHappyPath(): void {
+  vi.clearAllMocks();
+  vi.stubEnv('DATA_BUCKET_NAME', 'test-data-bucket');
+  vi.stubEnv(
+    'TRANSCRIBE_DATA_ACCESS_ROLE_ARN',
+    'arn:aws:iam::123456789012:role/TranscribeDataAccess'
+  );
+  setTranscribeClient({ send: mockTranscribeSend } as any);
+  setS3Client({ send: mockS3Send } as any);
+  mockTranscribeSend.mockResolvedValue({ Models: [] });
+  mockS3Send.mockResolvedValue({});
+  mockedGetTeamById.mockResolvedValue({
+    teamId: 'team-001',
+    name: 'Team 1',
+    createdBy: 'admin-001',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  });
+  mockedCheckSessionAccess.mockResolvedValue(undefined);
+  mockedIsTeamMember.mockResolvedValue(true);
+  mockedFindByDisplayName.mockResolvedValue(null);
+  mockedPutModel.mockResolvedValue(undefined);
+}
+
+function buildParams(overrides: Partial<CreateModelParams> = {}): CreateModelParams {
+  return {
+    modelName: 'model-001',
+    baseModelName: 'WideBand',
+    displayName: '会議モデル',
+    teamId: 'team-001',
+    segments: [{ text: 'テスト文章', confirmed: true }],
+    sessionIds: ['session-001'],
+    user: adminUser,
+    ...overrides,
+  };
+}
+
+const sessionIdArb = fc.stringMatching(/^session-[a-z0-9]{1,8}$/);
+const sessionIdsArb = fc.uniqueArray(sessionIdArb, { minLength: 1, maxLength: 6 });
+
+describe('Feature: language-model-team-isolation, Property 1: session ownership on create', () => {
   /**
-   * **Validates: Requirements 4.4**
-   *
-   * For any list of language models (each with status IN_PROGRESS, COMPLETED, or FAILED),
-   * filterCompletedModels returns only models with status COMPLETED.
-   * No models with non-COMPLETED status are included, and no COMPLETED models are lost.
+   * **Validates: Requirements 20 (作成時のセッション所有チェック)**
+   * createModel must verify the caller can access every source session. If any
+   * provided sessionId is inaccessible (checkSessionAccess throws 404), creation
+   * is rejected and no Transcribe model / metadata is written. Only when every
+   * session is accessible does creation proceed.
    */
-
-  it('all returned models have status COMPLETED', () => {
-    fc.assert(
-      fc.property(
-        fc.array(languageModelSummaryArb, { minLength: 0, maxLength: 30 }),
-        (models) => {
-          const result = filterCompletedModels(models);
-          for (const model of result) {
-            expect(model.modelStatus).toBe('COMPLETED');
-          }
-        }
-      ),
-      { numRuns: 100 }
-    );
+  beforeEach(() => {
+    resetHappyPath();
   });
 
-  it('no models with non-COMPLETED status are in the result', () => {
-    fc.assert(
-      fc.property(
-        fc.array(languageModelSummaryArb, { minLength: 0, maxLength: 30 }),
-        (models) => {
-          const result = filterCompletedModels(models);
-          const nonCompleted = result.filter((m) => m.modelStatus !== 'COMPLETED');
-          expect(nonCompleted).toHaveLength(0);
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
+  it('rejects when any sessionId is not accessible to the caller', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        sessionIdsArb,
+        fc.nat(),
+        async (sessionIds, pickSeed) => {
+          resetHappyPath();
+          const inaccessibleIndex = pickSeed % sessionIds.length;
+          const inaccessibleId = sessionIds[inaccessibleIndex];
 
-  it('all COMPLETED models from the input are present in the output (no loss)', () => {
-    fc.assert(
-      fc.property(
-        fc.array(languageModelSummaryArb, { minLength: 0, maxLength: 30 }),
-        (models) => {
-          const result = filterCompletedModels(models);
-          const completedInInput = models.filter((m) => m.modelStatus === 'COMPLETED');
-          expect(result).toEqual(completedInInput);
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-
-  it('the count of returned models equals the count of COMPLETED models in the input', () => {
-    fc.assert(
-      fc.property(
-        fc.array(languageModelSummaryArb, { minLength: 0, maxLength: 30 }),
-        (models) => {
-          const result = filterCompletedModels(models);
-          const completedCount = models.filter((m) => m.modelStatus === 'COMPLETED').length;
-          expect(result).toHaveLength(completedCount);
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-});
-
-// --- Property 25 ---
-
-describe('Feature: transcription-review-app, Property 25: カスタム言語モデルのステータスフィルタリング', () => {
-  /**
-   * **Validates: Requirements 18.4**
-   *
-   * When filtering language models for display:
-   * 1. Only models with status 'COMPLETED' are included in the result
-   * 2. Models with status 'IN_PROGRESS' or 'FAILED' are excluded
-   * 3. The filter preserves all COMPLETED models (no false negatives)
-   */
-
-  it('only models with status COMPLETED are included in the result', () => {
-    fc.assert(
-      fc.property(
-        fc.array(languageModelSummaryArb, { minLength: 0, maxLength: 30 }),
-        (models) => {
-          const result = filterCompletedModels(models);
-          for (const model of result) {
-            expect(model.modelStatus).toBe('COMPLETED');
-          }
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-
-  it('models with status IN_PROGRESS or FAILED are excluded', () => {
-    fc.assert(
-      fc.property(
-        fc.array(languageModelSummaryArb, { minLength: 0, maxLength: 30 }),
-        (models) => {
-          const result = filterCompletedModels(models);
-          const excluded = result.filter(
-            (m) => m.modelStatus === 'IN_PROGRESS' || m.modelStatus === 'FAILED'
-          );
-          expect(excluded).toHaveLength(0);
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-
-  it('the filter preserves all COMPLETED models (no false negatives)', () => {
-    fc.assert(
-      fc.property(
-        fc.array(languageModelSummaryArb, { minLength: 0, maxLength: 30 }),
-        (models) => {
-          const result = filterCompletedModels(models);
-          const completedInInput = models.filter((m) => m.modelStatus === 'COMPLETED');
-          expect(result).toHaveLength(completedInInput.length);
-          expect(result).toEqual(completedInInput);
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-});
-
-// --- Property 12 ---
-
-describe('Feature: transcription-workflow-enhancements, Property 12: トレーニングデータ生成の完全性', () => {
-  /**
-   * **Validates: Requirements 6.3**
-   *
-   * For any set of confirmed segment texts, the generated training data file must contain
-   * all confirmed segment texts and must not contain any unconfirmed segment texts.
-   */
-
-  const segmentArb: fc.Arbitrary<ConfirmedSegment> = fc.record({
-    text: fc.string({ minLength: 1, maxLength: 200 }).filter((s) => !s.includes('\n')),
-    confirmed: fc.boolean(),
-  });
-
-  it('all confirmed segment texts appear in the training data', () => {
-    fc.assert(
-      fc.property(
-        fc.array(segmentArb, { minLength: 1, maxLength: 50 }),
-        (segments) => {
-          const result = generateTrainingData(segments);
-          const confirmedSegments = segments.filter((s) => s.confirmed);
-
-          for (const segment of confirmedSegments) {
-            expect(result).toContain(segment.text);
-          }
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
-
-  it('no unconfirmed segment texts appear in the training data', () => {
-    fc.assert(
-      fc.property(
-        fc.array(segmentArb, { minLength: 1, maxLength: 50 }).filter(
-          (segments) =>
-            segments.some((s) => !s.confirmed) && segments.some((s) => s.confirmed),
-        ),
-        (segments) => {
-          const result = generateTrainingData(segments);
-          const resultLines = result.split('\n');
-          const unconfirmedSegments = segments.filter((s) => !s.confirmed);
-          const confirmedTexts = segments.filter((s) => s.confirmed).map((s) => s.text);
-
-          for (const segment of unconfirmedSegments) {
-            // Only check if the unconfirmed text is not also present as a confirmed text
-            // (since the same text could appear in both confirmed and unconfirmed segments)
-            if (!confirmedTexts.includes(segment.text)) {
-              // Check that the unconfirmed text does not appear as its own line
-              // (not substring check, since confirmed texts may contain unconfirmed text as substring)
-              expect(resultLines).not.toContain(segment.text);
+          mockedCheckSessionAccess.mockImplementation(async (_user, sessionId) => {
+            if (sessionId === inaccessibleId) {
+              // denyResourceAccess() returns a 404 AppError; throw it to deny access
+              throw notFoundError('リソースが見つかりません。');
             }
-          }
-        },
+            return undefined;
+          });
+
+          await expect(
+            createModel(buildParams({ sessionIds }))
+          ).rejects.toMatchObject({ code: 'NOT_FOUND', statusCode: 404 });
+
+          // No model should have been created or persisted
+          expect(mockedPutModel).not.toHaveBeenCalled();
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     );
   });
 
-  it('the number of lines in the output equals the number of confirmed segments', () => {
-    fc.assert(
-      fc.property(
-        fc.array(segmentArb, { minLength: 1, maxLength: 50 }).filter(
-          (segments) => segments.some((s) => s.confirmed),
-        ),
-        (segments) => {
-          const result = generateTrainingData(segments);
-          const confirmedCount = segments.filter((s) => s.confirmed).length;
-          const lineCount = result.split('\n').length;
+  it('proceeds only when every sessionId is accessible', async () => {
+    await fc.assert(
+      fc.asyncProperty(sessionIdsArb, async (sessionIds) => {
+        resetHappyPath();
+        mockedCheckSessionAccess.mockResolvedValue(undefined);
 
-          expect(lineCount).toBe(confirmedCount);
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
+        const result = await createModel(buildParams({ sessionIds }));
 
-  it('empty confirmed segments list produces empty string', () => {
-    fc.assert(
-      fc.property(
-        fc.array(
-          fc.record({
-            text: fc.string({ minLength: 1, maxLength: 200 }).filter((s) => !s.includes('\n')),
-            confirmed: fc.constant(false),
-          }),
-          { minLength: 0, maxLength: 50 },
-        ),
-        (segments) => {
-          const result = generateTrainingData(segments);
-          expect(result).toBe('');
-        },
-      ),
-      { numRuns: 100 },
+        expect(result.status).toBe('IN_PROGRESS');
+        expect(mockedCheckSessionAccess).toHaveBeenCalledTimes(sessionIds.length);
+        expect(mockedPutModel).toHaveBeenCalledTimes(1);
+      }),
+      { numRuns: 100 }
     );
   });
 });
 
-// --- Property 31 ---
-
-describe('Feature: transcription-review-app, Property 31: トレーニングデータ生成の完全性', () => {
+describe('Feature: language-model-team-isolation, Property 2: within-team displayName uniqueness on create', () => {
   /**
-   * **Validates: Requirements 20.3**
-   *
-   * When generating training data from segments:
-   * 1. Only includes text from segments where confirmed === true
-   * 2. Excludes text from segments where confirmed === false
-   * 3. Joins confirmed texts with newline characters
-   * 4. Returns empty string when no confirmed segments exist
+   * **Validates: Requirements 20 (displayName チーム内一意)**
+   * If another model in the same team already uses the given displayName
+   * (case-insensitive), creation is rejected with VALIDATION_ERROR. When no
+   * collision exists, creation proceeds and persists metadata.
    */
+  const displayNameArb = fc.string({ minLength: 1, maxLength: 100 }).map((s) => s.trim())
+    .filter((s) => s.length >= 1 && s.length <= 100);
 
-  const confirmedSegmentArb: fc.Arbitrary<ConfirmedSegment> = fc.record({
-    text: fc.string({ minLength: 1, maxLength: 200 }).filter((s) => !s.includes('\n')),
-    confirmed: fc.boolean(),
+  beforeEach(() => {
+    resetHappyPath();
   });
 
-  it('only includes text from segments where confirmed === true', () => {
-    fc.assert(
-      fc.property(
-        fc.array(confirmedSegmentArb, { minLength: 1, maxLength: 50 }).filter(
-          (segments) => segments.some((s) => s.confirmed),
-        ),
-        (segments) => {
-          const result = generateTrainingData(segments);
-          const resultLines = result.split('\n');
-          const confirmedTexts = segments.filter((s) => s.confirmed).map((s) => s.text);
+  it('rejects when a model with the same displayName exists in the team', async () => {
+    await fc.assert(
+      fc.asyncProperty(displayNameArb, async (displayName) => {
+        resetHappyPath();
+        mockedFindByDisplayName.mockResolvedValue({
+          modelName: 'existing',
+          teamId: 'team-001',
+          displayName,
+          displayNameLower: displayName.toLowerCase(),
+          baseModelName: 'WideBand',
+          createdBy: 'user-002',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          sessionIds: [],
+          s3Key: 'training-data/existing/training.txt',
+          deletionStatus: 'ACTIVE',
+        });
 
-          expect(resultLines).toEqual(confirmedTexts);
-        },
-      ),
-      { numRuns: 100 },
+        await expect(
+          createModel(buildParams({ displayName }))
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', statusCode: 400 });
+
+        expect(mockedPutModel).not.toHaveBeenCalled();
+      }),
+      { numRuns: 100 }
     );
   });
 
-  it('excludes text from segments where confirmed === false', () => {
-    fc.assert(
-      fc.property(
-        fc.array(confirmedSegmentArb, { minLength: 1, maxLength: 50 }).filter(
-          (segments) =>
-            segments.some((s) => !s.confirmed) && segments.some((s) => s.confirmed),
-        ),
-        (segments) => {
-          const result = generateTrainingData(segments);
-          const resultLines = result.split('\n');
-          const unconfirmedTexts = segments.filter((s) => !s.confirmed).map((s) => s.text);
-          const confirmedTexts = new Set(segments.filter((s) => s.confirmed).map((s) => s.text));
+  it('proceeds and persists metadata when displayName is unique in the team', async () => {
+    await fc.assert(
+      fc.asyncProperty(displayNameArb, async (displayName) => {
+        resetHappyPath();
+        mockedFindByDisplayName.mockResolvedValue(null);
 
-          for (const text of unconfirmedTexts) {
-            // Only assert exclusion if the text is not also present in a confirmed segment
-            if (!confirmedTexts.has(text)) {
-              expect(resultLines).not.toContain(text);
-            }
-          }
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
+        const result = await createModel(buildParams({ displayName }));
 
-  it('joins confirmed texts with newline characters', () => {
-    fc.assert(
-      fc.property(
-        fc.array(confirmedSegmentArb, { minLength: 1, maxLength: 50 }).filter(
-          (segments) => segments.filter((s) => s.confirmed).length >= 2,
-        ),
-        (segments) => {
-          const result = generateTrainingData(segments);
-          const confirmedTexts = segments.filter((s) => s.confirmed).map((s) => s.text);
-          const expected = confirmedTexts.join('\n');
-
-          expect(result).toBe(expected);
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
-
-  it('returns empty string when no confirmed segments exist', () => {
-    fc.assert(
-      fc.property(
-        fc.array(
-          fc.record({
-            text: fc.string({ minLength: 1, maxLength: 200 }).filter((s) => !s.includes('\n')),
-            confirmed: fc.constant(false),
-          }),
-          { minLength: 0, maxLength: 50 },
-        ),
-        (segments) => {
-          const result = generateTrainingData(segments);
-          expect(result).toBe('');
-        },
-      ),
-      { numRuns: 100 },
+        expect(result.displayName).toBe(displayName);
+        expect(mockedFindByDisplayName).toHaveBeenCalledWith(
+          'team-001',
+          displayName.toLowerCase()
+        );
+        expect(mockedPutModel).toHaveBeenCalledTimes(1);
+      }),
+      { numRuns: 100 }
     );
   });
 });
 
-// --- Property 32 ---
-
-describe('Feature: transcription-review-app, Property 32: カスタム言語モデル名の重複チェック', () => {
+describe('Feature: language-model-team-isolation, Property 3: quota-exceeded handling on create', () => {
   /**
-   * **Validates: Requirements 20.11**
-   *
-   * For any model name and list of existing model names, the duplicate check must:
-   * 1. Return true (reject creation) when the model name exactly matches an existing model (case-sensitive)
-   * 2. Return false (allow creation) when the model name does NOT match any existing model
-   * 3. Case-sensitive: 'MyModel' and 'mymodel' are different names
+   * **Validates: Requirements 20 (モデル数上限クォータ超過エラー)**
+   * When Transcribe CreateLanguageModel fails with a quota / LimitExceeded
+   * condition (SDK LimitExceededException or HTTP 429), createModel surfaces it
+   * as an AppError with code QUOTA_EXCEEDED and statusCode 429.
    */
-
-  // Generator for valid model names (alphanumeric + hyphens + underscores)
-  const modelNameArb = fc.string({ minLength: 1, maxLength: 50 }).filter(
-    (s) => /^[a-zA-Z0-9_-]+$/.test(s),
+  const quotaErrorArb = fc.oneof(
+    fc.constant(Object.assign(new Error('limit exceeded'), { name: 'LimitExceededException' })),
+    fc.constant(Object.assign(new Error('throttled'), { name: 'ThrottlingException' })),
+    fc.constant(Object.assign(new Error('too many'), { name: 'TooManyRequestsException' })),
+    fc.constant(Object.assign(new Error('http 429'), { $metadata: { httpStatusCode: 429 } })),
+    fc.constant(Object.assign(new Error('status 429'), { statusCode: 429 }))
   );
 
-  // Helper to create a mock Transcribe client that returns a given list of model names
-  function createMockTranscribeClient(existingModelNames: string[]) {
-    return {
-      send: async () => ({
-        Models: existingModelNames.map((name) => ({ ModelName: name })),
+  beforeEach(() => {
+    resetHappyPath();
+  });
+
+  it('maps Transcribe quota/LimitExceeded errors to QUOTA_EXCEEDED 429', async () => {
+    await fc.assert(
+      fc.asyncProperty(quotaErrorArb, async (quotaError) => {
+        resetHappyPath();
+        // 1st send: ListLanguageModels (duplicate check) -> ok
+        // 2nd send: CreateLanguageModel -> quota error
+        mockTranscribeSend
+          .mockResolvedValueOnce({ Models: [] })
+          .mockRejectedValueOnce(quotaError);
+
+        await expect(
+          createModel(buildParams())
+        ).rejects.toMatchObject({ code: 'QUOTA_EXCEEDED', statusCode: 429 });
+
+        // Quota failure happens before metadata persistence
+        expect(mockedPutModel).not.toHaveBeenCalled();
       }),
-    } as any;
-  }
-
-  afterEach(() => {
-    // Reset the client after each test
-    setTranscribeClient(undefined as any);
-  });
-
-  it('returns true when modelName exists in the existing models list', () => {
-    return fc.assert(
-      fc.asyncProperty(
-        modelNameArb,
-        fc.array(modelNameArb, { minLength: 0, maxLength: 20 }),
-        async (targetName, otherNames) => {
-          // Ensure the target name is in the list
-          const existingNames = [...otherNames, targetName];
-          setTranscribeClient(createMockTranscribeClient(existingNames));
-
-          const result = await checkModelNameDuplicate(targetName);
-          expect(result).toBe(true);
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
-
-  it('returns false when modelName does NOT exist in the existing models list', () => {
-    return fc.assert(
-      fc.asyncProperty(
-        modelNameArb,
-        fc.array(modelNameArb, { minLength: 0, maxLength: 20 }),
-        async (targetName, existingNames) => {
-          // Filter out the target name from the existing list to ensure it's not present
-          const filteredNames = existingNames.filter((name) => name !== targetName);
-          setTranscribeClient(createMockTranscribeClient(filteredNames));
-
-          const result = await checkModelNameDuplicate(targetName);
-          expect(result).toBe(false);
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
-
-  it('uses case-sensitive comparison (exact match only)', () => {
-    return fc.assert(
-      fc.asyncProperty(
-        modelNameArb.filter((s) => s.toLowerCase() !== s.toUpperCase()),
-        async (targetName) => {
-          // Create a list with the name in different case variations
-          const variations = [
-            targetName.toLowerCase(),
-            targetName.toUpperCase(),
-            targetName.charAt(0).toUpperCase() + targetName.slice(1).toLowerCase(),
-          ].filter((v) => v !== targetName);
-
-          // Only test if we actually have case variations different from the target
-          if (variations.length === 0) return;
-
-          setTranscribeClient(createMockTranscribeClient(variations));
-
-          const result = await checkModelNameDuplicate(targetName);
-          // Since none of the variations are an exact match, result should be false
-          expect(result).toBe(false);
-        },
-      ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     );
   });
 });
 
-
-// --- Property 30 ---
-
-describe('Feature: transcription-review-app, Property 30: ロールベースアクセス制御（Admin/TeamLeader 限定機能）', () => {
+describe('Feature: language-model-team-isolation, Property 4: team-scoped list filtering', () => {
   /**
-   * **Validates: Requirements 20.1, 20.2, 21.1, 21.2**
-   *
-   * checkRoleAccess() must:
-   * 1. Return true for 'ADMIN' and 'TEAM_LEADER' roles
-   * 2. Return false for 'REVIEWER' role
-   * 3. Return false for any other arbitrary string
+   * **Validates: Requirements 18.4**
+   * listModels returns exactly the intersection of the caller-visible metadata
+   * set and the Transcribe COMPLETED set:
+   * - A non-ADMIN sees only models whose teamId is one of the caller's teams
+   *   AND which are COMPLETED in Transcribe, and never a PENDING (soft-deleted)
+   *   model.
+   * - An ADMIN sees every COMPLETED model that has metadata, regardless of team.
    */
 
-  it('returns true for ADMIN and TEAM_LEADER roles', () => {
-    fc.assert(
-      fc.property(
-        fc.constantFrom('ADMIN', 'TEAM_LEADER'),
-        (role) => {
-          expect(checkRoleAccess(role)).toBe(true);
+  const mockTranscribeSendLocal = vi.fn();
+
+  type ModelFixture = {
+    modelName: string;
+    teamId: string;
+    deletionStatus: 'ACTIVE' | 'PENDING';
+    transcribeStatus: 'COMPLETED' | 'IN_PROGRESS' | 'FAILED';
+  };
+
+  const modelFixtureArb = fc.record({
+    modelName: fc.stringMatching(/^model-[a-z0-9]{1,8}$/),
+    teamId: fc.constantFrom('team-A', 'team-B', 'team-C'),
+    deletionStatus: fc.constantFrom('ACTIVE' as const, 'PENDING' as const),
+    transcribeStatus: fc.constantFrom(
+      'COMPLETED' as const,
+      'IN_PROGRESS' as const,
+      'FAILED' as const
+    ),
+  });
+
+  const modelsArb = fc.uniqueArray(modelFixtureArb, {
+    minLength: 0,
+    maxLength: 12,
+    selector: (m) => m.modelName,
+  });
+
+  const callerTeamsArb = fc.subarray(['team-A', 'team-B', 'team-C'], {
+    minLength: 0,
+    maxLength: 3,
+  });
+
+  function metadataFor(models: ModelFixture[]): LanguageModelMetadata[] {
+    return models.map((m) => ({
+      modelName: m.modelName,
+      teamId: m.teamId,
+      displayName: m.modelName,
+      displayNameLower: m.modelName.toLowerCase(),
+      baseModelName: 'WideBand',
+      createdBy: 'user-001',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      sessionIds: [],
+      s3Key: `training-data/${m.modelName}/training.txt`,
+      deletionStatus: m.deletionStatus,
+    }));
+  }
+
+  function transcribeResponseFor(models: ModelFixture[]): {
+    Models: { ModelName: string; ModelStatus: string; BaseModelName: string }[];
+  } {
+    return {
+      Models: models.map((m) => ({
+        ModelName: m.modelName,
+        ModelStatus: m.transcribeStatus,
+        BaseModelName: 'WideBand',
+      })),
+    };
+  }
+
+  function setup(): void {
+    vi.clearAllMocks();
+    setTranscribeClient({ send: mockTranscribeSendLocal } as any);
+    mockedGetUserTeamIds.mockResolvedValue([]);
+    mockedQueryAll.mockResolvedValue([]);
+    mockedQueryByTeam.mockResolvedValue([]);
+  }
+
+  beforeEach(() => {
+    setup();
+  });
+
+  const reviewer: AuthUser = {
+    userId: 'reviewer-001',
+    email: 'reviewer@example.com',
+    displayName: 'Reviewer',
+    role: 'REVIEWER',
+  };
+
+  it('non-ADMIN sees exactly (teamId in caller teams) ∩ COMPLETED and never a PENDING model', async () => {
+    await fc.assert(
+      fc.asyncProperty(modelsArb, callerTeamsArb, async (models, callerTeams) => {
+        setup();
+
+        const metadata = metadataFor(models);
+        const callerTeamSet = new Set(callerTeams);
+
+        // Non-ADMIN: queryByTeam returns the metadata for each caller team.
+        mockedGetUserTeamIds.mockResolvedValue(callerTeams);
+        mockedQueryByTeam.mockImplementation(async (teamId: string) =>
+          metadata.filter((m) => m.teamId === teamId)
+        );
+        mockTranscribeSendLocal.mockResolvedValue(transcribeResponseFor(models));
+
+        const result = await listModels(reviewer);
+        const resultNames = new Set(result.map((r) => r.modelName));
+
+        const expected = models.filter(
+          (m) =>
+            callerTeamSet.has(m.teamId) &&
+            m.deletionStatus === 'ACTIVE' &&
+            m.transcribeStatus === 'COMPLETED'
+        );
+        const expectedNames = new Set(expected.map((m) => m.modelName));
+
+        expect(resultNames).toEqual(expectedNames);
+        // Never a PENDING model.
+        for (const r of result) {
+          const fixture = models.find((m) => m.modelName === r.modelName)!;
+          expect(fixture.deletionStatus).toBe('ACTIVE');
+          expect(fixture.transcribeStatus).toBe('COMPLETED');
+          expect(callerTeamSet.has(fixture.teamId)).toBe(true);
         }
-      ),
+      }),
       { numRuns: 100 }
     );
   });
 
-  it('returns false for REVIEWER role', () => {
-    fc.assert(
-      fc.property(
-        fc.constant('REVIEWER'),
-        (role) => {
-          expect(checkRoleAccess(role)).toBe(false);
-        }
-      ),
+  it('ADMIN sees exactly the ACTIVE metadata models that are COMPLETED in Transcribe', async () => {
+    await fc.assert(
+      fc.asyncProperty(modelsArb, async (models) => {
+        setup();
+
+        mockedQueryAll.mockResolvedValue(metadataFor(models));
+        mockTranscribeSendLocal.mockResolvedValue(transcribeResponseFor(models));
+
+        const result = await listModels(adminUser);
+        const resultNames = new Set(result.map((r) => r.modelName));
+
+        const expectedNames = new Set(
+          models
+            .filter(
+              (m) =>
+                m.deletionStatus === 'ACTIVE' &&
+                m.transcribeStatus === 'COMPLETED'
+            )
+            .map((m) => m.modelName)
+        );
+
+        expect(resultNames).toEqual(expectedNames);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+describe('Feature: language-model-team-isolation, Property 5: within-team displayName uniqueness on rename', () => {
+  /**
+   * **Validates: 新規要件 — カスタム言語モデルの表示名編集**
+   * (design.md「表示名編集: ADMIN / 自チーム TEAM_LEADER。trim 後 1〜100 文字。
+   *  displayName 一意性: チーム内一意」)
+   *
+   * renameModelDisplayName must preserve within-team displayName uniqueness:
+   * - Reject (VALIDATION_ERROR 400) when a DIFFERENT model in the same team
+   *   already uses the requested name (case-insensitive), and never persist.
+   * - Allow renaming to the model's OWN current name (self is excluded from the
+   *   uniqueness check) and persist via updateDisplayName.
+   * - Allow a name that is used only in OTHER teams: the uniqueness lookup is
+   *   scoped to the model's own team (findByDisplayName(model.teamId, ...)), so a
+   *   collision in a different team never blocks the rename.
+   */
+
+  const adminActor: AuthUser = {
+    userId: 'admin-002',
+    email: 'admin2@example.com',
+    displayName: 'Admin 2',
+    role: 'ADMIN',
+  };
+
+  function baseModel(
+    overrides: Partial<LanguageModelMetadata> = {}
+  ): LanguageModelMetadata {
+    return {
+      modelName: 'model-self',
+      teamId: 'team-001',
+      displayName: '現在の名前',
+      displayNameLower: '現在の名前',
+      baseModelName: 'WideBand',
+      createdBy: 'user-001',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      sessionIds: [],
+      s3Key: 'training-data/model-self/training.txt',
+      deletionStatus: 'ACTIVE',
+      ...overrides,
+    };
+  }
+
+  // Trimmed, in-range display names.
+  const displayNameArb = fc
+    .string({ minLength: 1, maxLength: 100 })
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 1 && s.length <= 100);
+
+  function setup(): void {
+    vi.clearAllMocks();
+    mockedUpdateDisplayName.mockResolvedValue(undefined);
+  }
+
+  beforeEach(() => {
+    setup();
+  });
+
+  it('rejects a rename to a name used by ANOTHER model in the same team', async () => {
+    await fc.assert(
+      fc.asyncProperty(displayNameArb, async (newName) => {
+        setup();
+        const model = baseModel();
+        mockedCheckLanguageModelAccess.mockResolvedValue(model);
+        // A DIFFERENT model in the same team already holds the requested name.
+        mockedFindByDisplayName.mockResolvedValue(
+          baseModel({
+            modelName: 'other-model',
+            displayName: newName,
+            displayNameLower: newName.toLowerCase(),
+          })
+        );
+
+        await expect(
+          renameModelDisplayName(adminActor, model.modelName, newName)
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', statusCode: 400 });
+
+        // The uniqueness lookup is scoped to the model's own team.
+        expect(mockedFindByDisplayName).toHaveBeenCalledWith(
+          model.teamId,
+          newName.toLowerCase()
+        );
+        expect(mockedUpdateDisplayName).not.toHaveBeenCalled();
+      }),
       { numRuns: 100 }
     );
   });
 
-  it('returns false for any other arbitrary string', () => {
-    fc.assert(
-      fc.property(
-        fc.string({ minLength: 0, maxLength: 100 }).filter(
-          (s) => s !== 'ADMIN' && s !== 'TEAM_LEADER'
-        ),
-        (role) => {
-          expect(checkRoleAccess(role)).toBe(false);
+  it('allows renaming to the model OWN current name (self excluded)', async () => {
+    await fc.assert(
+      fc.asyncProperty(displayNameArb, async (name) => {
+        setup();
+        const model = baseModel({
+          displayName: name,
+          displayNameLower: name.toLowerCase(),
+        });
+        mockedCheckLanguageModelAccess.mockResolvedValue(model);
+        // The only match for the name is the model itself.
+        mockedFindByDisplayName.mockResolvedValue(model);
+
+        const result = await renameModelDisplayName(
+          adminActor,
+          model.modelName,
+          name
+        );
+
+        expect(result.displayName).toBe(name);
+        expect(mockedUpdateDisplayName).toHaveBeenCalledWith(
+          model.modelName,
+          name,
+          name.toLowerCase()
+        );
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('allows a name that is used only in OTHER teams (no collision in own team)', async () => {
+    await fc.assert(
+      fc.asyncProperty(displayNameArb, async (newName) => {
+        setup();
+        const model = baseModel({ teamId: 'team-001' });
+        mockedCheckLanguageModelAccess.mockResolvedValue(model);
+        // Scoped lookup for the model's own team finds nothing, even though the
+        // name may be in use within some other team.
+        mockedFindByDisplayName.mockResolvedValue(null);
+
+        const result = await renameModelDisplayName(
+          adminActor,
+          model.modelName,
+          newName
+        );
+
+        expect(result.displayName).toBe(newName);
+        expect(mockedFindByDisplayName).toHaveBeenCalledWith(
+          'team-001',
+          newName.toLowerCase()
+        );
+        expect(mockedUpdateDisplayName).toHaveBeenCalledTimes(1);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+describe('Feature: language-model-team-isolation, Property 6: delete order and idempotency', () => {
+  /**
+   * **Validates: 新規要件 — カスタム言語モデルの削除**
+   * (design.md「削除順序: ソフト削除(PENDING) → Transcribe → S3 → メタデータ物理削除。
+   *  各ステップ冪等・失敗時リトライ・再実行で復旧」)
+   *
+   * deleteModel must enforce a strict teardown order and be idempotent/re-runnable:
+   * - On a single successful run the steps always occur in the order
+   *   soft-delete (PENDING) -> Transcribe DeleteLanguageModel -> S3 DeleteObject
+   *   -> hard-delete, with the soft-delete FIRST.
+   * - When a later step fails partway, the record is left PENDING (never
+   *   hard-deleted, no audit) and the error is rethrown; re-invoking the same
+   *   DELETE never performs the Transcribe/S3/hard-delete steps before the
+   *   soft-delete, and (once the previously-failing steps succeed or report the
+   *   resource already-absent) converges to a hard-deleted model without error.
+   */
+
+  const adminActor: AuthUser = {
+    userId: 'admin-del',
+    email: 'admin-del@example.com',
+    displayName: 'Admin Del',
+    role: 'ADMIN',
+  };
+
+  function baseModel(
+    overrides: Partial<LanguageModelMetadata> = {}
+  ): LanguageModelMetadata {
+    return {
+      modelName: 'model-del',
+      teamId: 'team-001',
+      displayName: 'Del Model',
+      displayNameLower: 'del model',
+      baseModelName: 'WideBand',
+      createdBy: 'user-001',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      sessionIds: [],
+      s3Key: 'training-data/model-del/training.txt',
+      deletionStatus: 'ACTIVE',
+      ...overrides,
+    };
+  }
+
+  const mockTranscribeSendLocal = vi.fn();
+  const mockS3SendLocal = vi.fn();
+
+  // Fail-point generator: 0 = never fail (clean run), 1..3 = fail the Transcribe
+  // delete / S3 delete / hard-delete on the FIRST attempt only, then succeed.
+  const failPointArb = fc.integer({ min: 0, max: 3 });
+  // Whether a given teardown step encounters an already-absent resource.
+  const absenceArb = fc.record({
+    transcribeAbsent: fc.boolean(),
+    s3Absent: fc.boolean(),
+  });
+
+  function setup(): void {
+    vi.clearAllMocks();
+    setDeleteBackoffBaseMs(0);
+    vi.stubEnv('DATA_BUCKET_NAME', 'test-data-bucket');
+    setTranscribeClient({ send: mockTranscribeSendLocal } as any);
+    setS3Client({ send: mockS3SendLocal } as any);
+    mockedGetUserTeamIds.mockResolvedValue(['team-001']);
+    mockedSetDeletionStatus.mockResolvedValue(undefined);
+    mockedHardDelete.mockResolvedValue(undefined);
+  }
+
+  beforeEach(() => {
+    setup();
+  });
+
+  it('always soft-deletes first, keeps the ordered teardown, and converges idempotently on re-run', async () => {
+    await fc.assert(
+      fc.asyncProperty(failPointArb, absenceArb, async (failPoint, absence) => {
+        setup();
+
+        const order: string[] = [];
+        mockedSetDeletionStatus.mockImplementation(async () => {
+          order.push('soft-delete');
+        });
+        mockedHardDelete.mockImplementation(async () => {
+          order.push('hard-delete');
+        });
+
+        // First invocation starts from an ACTIVE record.
+        mockedGetModel.mockResolvedValue(baseModel({ deletionStatus: 'ACTIVE' }));
+
+        const notFound = (): never => {
+          throw Object.assign(new Error('absent'), { name: 'BadRequestException' });
+        };
+        const s3NotFound = (): never => {
+          throw Object.assign(new Error('no such key'), { name: 'NoSuchKey' });
+        };
+
+        // Transcribe dispatcher: eligibility is COMPLETED + no in-progress jobs.
+        // DeleteLanguageModel fails once if failPoint===1, else absent/ok.
+        let transcribeDeleteFailed = false;
+        mockTranscribeSendLocal.mockImplementation(async (command: any) => {
+          const name = command?.constructor?.name as string;
+          if (name === 'DescribeLanguageModelCommand') {
+            return { LanguageModel: { ModelStatus: 'COMPLETED' } };
+          }
+          if (name === 'ListTranscriptionJobsCommand') {
+            return { TranscriptionJobSummaries: [] };
+          }
+          if (name === 'DeleteLanguageModelCommand') {
+            order.push('transcribe-delete');
+            if (failPoint === 1 && !transcribeDeleteFailed) {
+              transcribeDeleteFailed = true;
+              throw new Error('transient transcribe failure');
+            }
+            if (absence.transcribeAbsent) {
+              return notFound();
+            }
+            return {};
+          }
+          return {};
+        });
+
+        let s3DeleteFailed = false;
+        mockS3SendLocal.mockImplementation(async () => {
+          order.push('s3-delete');
+          if (failPoint === 2 && !s3DeleteFailed) {
+            s3DeleteFailed = true;
+            throw new Error('transient s3 failure');
+          }
+          if (absence.s3Absent) {
+            return s3NotFound();
+          }
+          return {};
+        });
+
+        let hardDeleteFailed = false;
+        mockedHardDelete.mockImplementation(async () => {
+          order.push('hard-delete');
+          if (failPoint === 3 && !hardDeleteFailed) {
+            hardDeleteFailed = true;
+            throw new Error('transient hard-delete failure');
+          }
+        });
+
+        // withRetry retries each step up to 3 times, so a single transient
+        // failure (failPoint 1/2/3) is absorbed within one invocation. When
+        // failPoint===0 there is no failure at all. Either way the invocation
+        // succeeds; failPoint drives the retry path.
+        await deleteModel(adminActor, 'model-del');
+
+        // Soft-delete is always the FIRST teardown action.
+        expect(order[0]).toBe('soft-delete');
+
+        // The ordered milestones (deduped) must respect the sequence.
+        const milestones = order.filter(
+          (step, idx) => order.indexOf(step) === idx
+        );
+        expect(milestones).toEqual([
+          'soft-delete',
+          'transcribe-delete',
+          's3-delete',
+          'hard-delete',
+        ]);
+
+        // No teardown action ever precedes the soft-delete.
+        const firstSoft = order.indexOf('soft-delete');
+        const firstTranscribe = order.indexOf('transcribe-delete');
+        const firstS3 = order.indexOf('s3-delete');
+        const firstHard = order.indexOf('hard-delete');
+        expect(firstSoft).toBeLessThan(firstTranscribe);
+        expect(firstTranscribe).toBeLessThan(firstS3);
+        expect(firstS3).toBeLessThan(firstHard);
+
+        // Converged: hard-delete executed and the success audit was recorded.
+        expect(mockedHardDelete).toHaveBeenCalledWith('model-del');
+        expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+          expect.objectContaining({ operationType: 'LANGUAGE_MODEL_DELETED' })
+        );
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('re-invocation after a mid-sequence failure resumes from a PENDING record and converges without re-running before soft-delete', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.constantFrom('transcribe' as const, 's3' as const, 'hard' as const),
+        async (failStep) => {
+          setup();
+
+          // --- Invocation 1: starts ACTIVE, fails hard (exhausts retries). ---
+          mockedGetModel.mockResolvedValue(baseModel({ deletionStatus: 'ACTIVE' }));
+
+          const order1: string[] = [];
+          mockedSetDeletionStatus.mockImplementation(async () => {
+            order1.push('soft-delete');
+          });
+          mockedHardDelete.mockImplementation(async () => {
+            order1.push('hard-delete');
+            if (failStep === 'hard') {
+              throw new Error('persistent hard-delete failure');
+            }
+          });
+          mockTranscribeSendLocal.mockImplementation(async (command: any) => {
+            const name = command?.constructor?.name as string;
+            if (name === 'DescribeLanguageModelCommand') {
+              return { LanguageModel: { ModelStatus: 'COMPLETED' } };
+            }
+            if (name === 'ListTranscriptionJobsCommand') {
+              return { TranscriptionJobSummaries: [] };
+            }
+            if (name === 'DeleteLanguageModelCommand') {
+              order1.push('transcribe-delete');
+              if (failStep === 'transcribe') {
+                throw new Error('persistent transcribe failure');
+              }
+              return {};
+            }
+            return {};
+          });
+          mockS3SendLocal.mockImplementation(async () => {
+            order1.push('s3-delete');
+            if (failStep === 's3') {
+              throw new Error('persistent s3 failure');
+            }
+            return {};
+          });
+
+          await expect(deleteModel(adminActor, 'model-del')).rejects.toThrow();
+
+          // Soft-delete happened first; the run never hard-deleted / audited
+          // (unless the failing step itself is hard-delete, in which case
+          // hard-delete was attempted but the metadata record remains).
+          expect(order1[0]).toBe('soft-delete');
+          expect(mockedRecordAuditLog).not.toHaveBeenCalled();
+
+          // --- Invocation 2: record is now PENDING; steps succeed. ---
+          mockedGetModel.mockResolvedValue(
+            baseModel({ deletionStatus: 'PENDING' })
+          );
+
+          const order2: string[] = [];
+          let describeCalled = false;
+          let listCalled = false;
+          mockedSetDeletionStatus.mockImplementation(async () => {
+            order2.push('soft-delete');
+          });
+          mockedHardDelete.mockImplementation(async () => {
+            order2.push('hard-delete');
+          });
+          mockTranscribeSendLocal.mockImplementation(async (command: any) => {
+            const name = command?.constructor?.name as string;
+            if (name === 'DescribeLanguageModelCommand') {
+              describeCalled = true;
+              return { LanguageModel: { ModelStatus: 'COMPLETED' } };
+            }
+            if (name === 'ListTranscriptionJobsCommand') {
+              listCalled = true;
+              return { TranscriptionJobSummaries: [] };
+            }
+            if (name === 'DeleteLanguageModelCommand') {
+              order2.push('transcribe-delete');
+              return {};
+            }
+            return {};
+          });
+          mockS3SendLocal.mockImplementation(async () => {
+            order2.push('s3-delete');
+            return {};
+          });
+          mockedRecordAuditLog.mockClear();
+
+          await deleteModel(adminActor, 'model-del');
+
+          // A PENDING resume skips the eligibility gates entirely.
+          expect(describeCalled).toBe(false);
+          expect(listCalled).toBe(false);
+
+          // Nothing ran before the (idempotent) soft-delete on resume.
+          expect(order2[0]).toBe('soft-delete');
+          const milestones2 = order2.filter(
+            (step, idx) => order2.indexOf(step) === idx
+          );
+          expect(milestones2).toEqual([
+            'soft-delete',
+            'transcribe-delete',
+            's3-delete',
+            'hard-delete',
+          ]);
+
+          // Converged to hard-deleted with a success audit.
+          expect(mockedHardDelete).toHaveBeenCalledWith('model-del');
+          expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+            expect.objectContaining({ operationType: 'LANGUAGE_MODEL_DELETED' })
+          );
         }
       ),
       { numRuns: 100 }

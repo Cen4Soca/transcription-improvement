@@ -1,0 +1,7 @@
+{
+  "task_id": "task-language-model-team-isolation",
+  "task_description": "Introduce team isolation and lifecycle management for Amazon Transcribe custom language models in the transcription-review monorepo: a DynamoDB metadata layer (teamId/displayName/deletionStatus) with GSI3 added and GSI1/GSI2 ride-on, required-teamId/required-displayName create flow with session-ownership and within-team uniqueness checks and quota-exceeded (429) handling, team-scoped list filtering, job-usage team check with ADMIN cross-team audit, display-name edit (TEAM_LEADER/ADMIN), teamId edit (ADMIN), soft-then-hard idempotent re-runnable delete, and the frontend + requirements.md updates. All work in the git worktree; CDK diff/synth only (no deploy), no push, no PR.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005", "FEAT-006"],
+  "blocked_reason": null
+}

@@ -93,6 +93,14 @@ export class FoundationStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    // GSI3 — ADMIN 全件一覧用（固定パーティション 'LANGUAGEMODEL'）
+    this.table.addGlobalSecondaryIndex({
+      indexName: 'GSI3',
+      partitionKey: { name: 'GSI3PK', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'GSI3SK', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // S3 バケット（メディア用）- KMS 暗号化 + BlockPublicAccess 全項目有効
     // autoDeleteObjects: true for dev/staging enables cdk destroy without manual bucket emptying
     this.mediaBucket = new s3.Bucket(this, 'MediaBucket', {

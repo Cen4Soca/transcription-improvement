@@ -9,6 +9,12 @@ import * as transcriptionJobRepository from '../repositories/transcription-job-r
 import * as mediaFileRepository from '../repositories/media-file-repository.js';
 import { AppError, notFoundError, validationError } from '../utils/error-handler.js';
 import { createSessionForJob } from './session-service.js';
+import { isAdmin, type AuthUser } from '../utils/auth-middleware.js';
+import {
+  checkLanguageModelAccess,
+  getUserTeamIds,
+} from './access-control-service.js';
+import { recordAuditLog } from './audit-service.js';
 
 // --- Environment helpers ---
 
@@ -30,7 +36,7 @@ export interface StartJobParams {
   maxSpeakerLabels?: number;  // default: 2, range: 2-10
   languageCode?: string;       // default: 'ja-JP'
   languageModelName?: string;  // optional custom language model
-  userId: string;
+  user: AuthUser;
 }
 
 // --- Transcribe Client (lazy singleton) ---
@@ -86,13 +92,30 @@ export async function startJob(params: StartJobParams): Promise<TranscriptionJob
     maxSpeakerLabels = DEFAULT_MAX_SPEAKER_LABELS,
     languageCode = DEFAULT_LANGUAGE_CODE,
     languageModelName,
-    userId,
+    user,
   } = params;
+  const userId = user.userId;
 
   // Validate maxSpeakerLabels
   const validation = validateMaxSpeakers(maxSpeakerLabels);
   if (!validation.valid) {
     throw validationError(validation.error!);
+  }
+
+  // When a custom language model is requested, enforce team isolation.
+  // A model the caller cannot access yields a 404 (hides existence).
+  let crossTeamModelUsage = false;
+  if (languageModelName) {
+    const model = await checkLanguageModelAccess(user, languageModelName);
+
+    // Flag ADMIN usage of a model owned by a team the admin does not belong to,
+    // so the job-start audit log reflects the cross-team access.
+    if (isAdmin(user)) {
+      const teamIds = await getUserTeamIds(user.userId);
+      if (!teamIds.includes(model.teamId)) {
+        crossTeamModelUsage = true;
+      }
+    }
   }
 
   // Validate bucket configuration
@@ -197,6 +220,28 @@ export async function startJob(params: StartJobParams): Promise<TranscriptionJob
   } catch {
     // Non-fatal: the completion handler will still advance the status later.
   }
+
+  // Record a job-start audit log. When a custom language model is used, the
+  // model name is captured; an ADMIN using a model owned by a team they do not
+  // belong to is flagged via crossTeamModelUsage so the usage is auditable.
+  const auditMetadata: Record<string, unknown> = {
+    mediaFileId,
+    transcribeJobName,
+  };
+  if (languageModelName) {
+    auditMetadata['languageModelName'] = languageModelName;
+    if (crossTeamModelUsage) {
+      auditMetadata['crossTeamModelUsage'] = true;
+    }
+  }
+  await recordAuditLog({
+    actorUserId: user.userId,
+    actorRole: user.role,
+    operationType: 'TRANSCRIPTION_JOB_STARTED',
+    resourceId: jobId,
+    resourceType: 'TranscriptionJob',
+    metadata: auditMetadata,
+  });
 
   return jobRecord;
 }

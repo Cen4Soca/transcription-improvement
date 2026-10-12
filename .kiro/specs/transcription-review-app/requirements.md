@@ -298,7 +298,7 @@
 8. THE App SHALL 以下の操作をAuditLogとして記録する：IPAllowlistの変更（Admin）・User管理操作（Admin）・Team管理操作（Admin・TeamLeader）・ReviewAssignmentおよびTeamAssignmentの作成・削除（Admin・TeamLeader）・ReviewSessionの完了マーク（TeamLeader・Reviewer）・ConsensusResultの手動確定（Admin）・Correctionの確定（Reviewer）・話者ラベルの変更（Reviewer）・ログイン失敗（認証エラー）・AuditLogの削除操作自体（Admin）。
 9. THE App SHALL AuditLogの各エントリに操作日時（ISO 8601 UTC）・実行者のユーザーID・実行者の権限ロール・基準8の列挙値を一意に識別できる操作種別・対象リソースのIDを記録する。
 10. THE App SHALL AuditLogをAdminによる明示的な削除操作を除き無期限に保管する。
-11. IF UserがAdmin権限を持つとき、THEN THE App SHALL AuditLogを閲覧・検索（期間・実行者・操作種別でフィルタリング）できる画面を提供し、検索結果を1ページ最大100件のページネーション形式で表示する。
+11. IF UserがAdmin権限を持つとき、THEN THE App SHALL AuditLogを閲覧・検索（期間・実行者・操作種別でフィルタリング）できる画面を提供し、検索結果を1ページ最大100件のページネーション形式で表示する。操作種別フィルタの選択肢には、カスタム言語モデルの監査操作種別（LANGUAGE_MODEL_DELETED・LANGUAGE_MODEL_TEAM_CHANGED・LANGUAGE_MODEL_NAME_CHANGED）を含み、これらで GET/DELETE いずれの検索も実行できる。
 12. WHEN AdminがAuditLogの削除を実行したとき、THE App SHALL 基準11の検索フィルタ（期間・実行者・操作種別）で指定した条件に一致するAuditLogエントリを削除し、削除操作自体をAuditLogに記録する（削除者・削除対象件数・削除条件を含む）。
 13. WHEN AdminがAuditLogの削除を実行しようとしたとき、THE App SHALL 削除対象の件数と操作が不可逆であることを確認ダイアログで表示し、Adminが確定を選択した場合のみ削除を実行する。
 14. IF AuditLogの削除処理が失敗したとき、THEN THE App SHALL エラーメッセージをAdminに表示し、削除対象のAuditLogエントリを保持する。
@@ -397,9 +397,12 @@
 
 1. WHERE User が Transcription 作成時にカスタム言語モデルを選択した場合、THE App SHALL TranscriptionJob の設定で LanguageModelName パラメータに選択されたモデル名を指定する。
 2. WHERE User が Transcription 作成時にカスタム言語モデルを選択しなかった場合、THE App SHALL LanguageModelName パラメータを指定せずに TranscriptionJob を開始する。
-3. WHEN User が Transcription 作成画面を開いたとき、THE App SHALL 利用可能なカスタム言語モデルの一覧を Amazon Transcribe の ListLanguageModels API から取得して表示する。
-4. THE App SHALL カスタム言語モデルの一覧にステータスが COMPLETED のモデルをすべて表示する。
+3. WHEN User が Transcription 作成画面を開いたとき、THE App SHALL 利用可能なカスタム言語モデルの一覧を取得して表示する。一覧はログイン中 User の所属チームに紐づくモデルのみを対象とし、Amazon Transcribe の ListLanguageModels API で取得した実モデルと突き合わせて COMPLETED のものに限定する。
+4. THE App SHALL カスタム言語モデルの一覧に、ログイン中 User の所属チームの COMPLETED のモデルのみを表示する。ただし Admin の場合は全チームの COMPLETED のモデルを表示する。削除保留（PENDING）のモデルは一覧に含めない。
 5. IF 利用可能なカスタム言語モデルが 0 件のとき、THEN THE App SHALL カスタム言語モデル選択欄を「利用可能なモデルなし」と表示し、モデルなしで Transcription を作成できるようにする。
+6. THE App SHALL モデル選択欄の表示ラベルに人間が判別しやすい表示名（displayName）を使用し、ジョブ開始時には Amazon Transcribe の実モデル名（modelName）を送信する。
+7. WHEN User が TranscriptionJob の開始時にカスタム言語モデルを指定したとき、THE App SHALL 指定されたモデルがログイン中 User の所属チームに属することを検証し、属さない場合はジョブの開始を拒否して 404（リソースが見つかりません）を返す。ただし Admin は任意のチームのモデルを利用できる。
+8. WHEN User がカスタム言語モデルを指定して TranscriptionJob を開始したとき、THE App SHALL AuditLog にジョブ開始操作を記録し、使用した languageModelName を metadata に含める。IF Admin が自身の所属チーム以外のモデルを使用したとき、THEN THE App SHALL その AuditLog の metadata に crossTeamModelUsage フラグを付与する。
 
 ---
 
@@ -438,7 +441,60 @@
 9. IF カスタム言語モデル作成ワークフロー中に API エラーまたはバリデーションエラーが発生したとき、THEN THE App SHALL エラーの内容を含むエラーメッセージを User に表示する。
 10. THE App SHALL カスタム言語モデル作成時に User がモデル名を指定できるようにする。
 11. IF 指定されたモデル名がリクエスト時点で取得した既存モデル名一覧と大文字・小文字を区別した完全一致で重複するとき、THEN THE App SHALL モデル作成を拒否し、モデル名が重複していることを示すエラーメッセージを User に表示する。
-12. WHEN カスタム言語モデルの作成が完了したとき、THE App SHALL AuditLog にモデル作成操作（実行者・モデル名・使用した ReviewSession の一覧）を記録する。
+12. WHEN カスタム言語モデルの作成が完了したとき、THE App SHALL AuditLog にモデル作成操作（実行者・モデル名・teamId・displayName・使用した ReviewSession の一覧）を記録する。
+13. THE App SHALL カスタム言語モデル作成時に、紐づけるチーム（teamId）の選択を必須とする。作成フォームのチーム選択肢は、TeamLeader には自身の所属チームのみ、Admin には全チームを提示する。
+14. IF 指定された teamId が実在するチームでないとき、THEN THE App SHALL モデル作成を拒否し、400（バリデーションエラー）を返す。IF TeamLeader が自身の所属しないチームを指定したとき、THEN THE App SHALL モデル作成を拒否し、403 エラーを返す（Admin は任意チーム可）。
+15. THE App SHALL カスタム言語モデル作成時に、人間が判別しやすい表示名（displayName）の入力を必須とする。displayName は前後の空白を除去したうえで 1〜100 文字で指定する。
+16. IF 指定された displayName が同一チーム内の既存モデルと大文字・小文字を区別せずに重複するとき、THEN THE App SHALL モデル作成を拒否し、別の表示名を指定するよう促すエラーメッセージを User に表示する（displayName の一意性はチーム内でのみ検証し、他チームの displayName は隠蔽する）。
+17. WHEN Admin または TeamLeader がモデル作成をリクエストしたとき、THE App SHALL トレーニングデータの生成元として指定された各 ReviewSession について、ログイン中 User がアクセス可能であることを検証する。IF いずれかの ReviewSession にアクセスできないとき、THEN THE App SHALL モデル作成を拒否し、404（リソースが見つかりません）を返す。
+18. IF Amazon Transcribe のカスタム言語モデル数の上限（クォータ）に達しているためにモデル作成が拒否されたとき、THEN THE App SHALL HTTP 429（QUOTA_EXCEEDED）を返し、作成上限に達している旨と、既存モデルの削除または上限緩和の申請を促すメッセージを User に表示する。
+19. WHEN User がカスタム言語モデルのステータス取得（モデル状態の参照）をリクエストしたとき、THE App SHALL 他のカスタム言語モデル操作と同様にチームスコープで制御する。Admin は全チームのモデルのステータスを参照でき、それ以外は自チームのモデルのみ参照できる。他チーム・存在しない・削除保留（PENDING）のモデルは 404 で存在を隠蔽し、権限不足（Reviewer）は 403 を返す。
+
+---
+
+### Requirement 20A: カスタム言語モデルの表示名編集
+
+**User Story:** Admin または自チームの TeamLeader として、作成済みのカスタム言語モデルに人間が判別しやすい表示名を設定・変更したい。そうすることで、一覧でモデルを識別しやすくできる。
+
+#### Acceptance Criteria
+
+1. IF User が Admin または対象モデルの所属チームの TeamLeader であるとき、THEN THE App SHALL 表示名（displayName）の編集を許可する。IF それ以外（Reviewer、または他チームの TeamLeader）のとき、THEN THE App SHALL これを拒否する（権限不足は 403、他チーム・存在しない・削除保留のモデルは 404 で存在を隠蔽）。
+2. WHEN User が表示名を更新したとき、THE App SHALL 新しい表示名の前後の空白を除去し、1〜100 文字であることを検証する。範囲外のときは 400（バリデーションエラー）を返す。
+3. IF 新しい表示名が同一チーム内の他のモデルと大文字・小文字を区別せずに重複するとき、THEN THE App SHALL 更新を拒否し、別の表示名を指定するよう促す（自分自身の現在の表示名への変更は許可する。重複検証はチーム内に限定する）。
+4. WHEN 表示名の更新が完了したとき、THE App SHALL AuditLog に LANGUAGE_MODEL_NAME_CHANGED 操作を記録する。
+5. THE App SHALL モデル一覧の表示名をインライン編集できる UI を提供する（校閲セッション名の編集 UI を踏襲する）。
+
+---
+
+### Requirement 20B: カスタム言語モデルの所属チーム変更（teamId 付け替え）
+
+**User Story:** Admin として、チームの再編成に対応するためにカスタム言語モデルの所属チーム（teamId）を変更したい。そうすることで、モデルを別チームに引き継げる。
+
+#### Acceptance Criteria
+
+1. IF User が Admin であるとき、THEN THE App SHALL モデルの teamId 変更を許可する。IF それ以外のとき、THEN THE App SHALL これを拒否し、403 エラーを返す。
+2. IF 変更先として指定された teamId が実在するチームでないとき、THEN THE App SHALL 付け替えを拒否し、400（バリデーションエラー）を返す（存在しないチームへの付け替えを許さない）。
+3. IF 変更先チームに同じ表示名（displayName）のモデルが既に存在するとき、THEN THE App SHALL 付け替えを拒否し、先に表示名を変更するよう促すエラーメッセージを User に表示する。
+4. WHEN teamId の変更が完了したとき、THE App SHALL モデルのチーム別インデックス（GSI1）とチーム内表示名一意インデックス（GSI2）のキーを再構成し、AuditLog に LANGUAGE_MODEL_TEAM_CHANGED 操作（変更前後の teamId を含む）を記録する。
+5. THE App SHALL 1モデル=1チームの制約を維持する。したがって teamId を変更すると、そのモデルは元のチームからは参照できなくなる。
+6. THE App SHALL 1 回の操作で 1 モデルの teamId を変更する（モデル単位の PATCH）。
+
+---
+
+### Requirement 20C: カスタム言語モデルの削除
+
+**User Story:** Admin または自チームのモデルを持つ TeamLeader として、不要になったカスタム言語モデルを削除したい。そうすることで、ストレージとモデル数クォータを整理できる。
+
+#### Acceptance Criteria
+
+1. IF User が Admin、または対象モデルの所属チームの TeamLeader であるとき、THEN THE App SHALL モデルの削除を許可する。IF それ以外のとき、THEN THE App SHALL これを拒否する（権限不足は 403、他チーム・存在しないモデルは 404 で存在を隠蔽）。
+2. WHEN User がモデル削除をリクエストしたとき、THE App SHALL 削除対象として Amazon Transcribe のカスタム言語モデル（DeleteLanguageModel）、DynamoDB のメタデータレコード、S3 の学習データ（`training-data/{modelName}/training.txt`）を対象とする。
+3. IF 対象モデルが学習中（DescribeLanguageModel の ModelStatus が IN_PROGRESS）であるとき、THEN THE App SHALL 削除を拒否し、学習完了後に再試行するよう促す。
+4. IF 実行中（Status=IN_PROGRESS）の TranscriptionJob が対象モデルを参照しているとき、THEN THE App SHALL 削除を拒否する。使用中判定は Amazon Transcribe の ListTranscriptionJobs（必要に応じて GetTranscriptionJob で補完）を正とし、DynamoDB は参照しない。完了済みの TranscriptionJob が参照しているモデルは削除できる。
+5. THE App SHALL 削除を次の順序で実行する: (1) メタデータを削除保留（PENDING）にするソフト削除、(2) Amazon Transcribe の DeleteLanguageModel、(3) S3 の学習データ削除、(4) メタデータレコードの物理削除。各ステップは冪等とし、失敗時は限定的にリトライする。
+6. IF ソフト削除後の後続ステップ（Transcribe・S3・物理削除）が最終的に失敗したとき、THEN THE App SHALL メタデータを PENDING のまま残し、同じ削除を再実行することで残りのステップから復旧できるようにする。削除保留（PENDING）のモデルは一覧・ジョブ利用から除外する。
+7. WHEN 削除が完了したとき、THE App SHALL AuditLog に LANGUAGE_MODEL_DELETED 操作を記録する。
+8. THE App SHALL 削除時に確認ダイアログを表示し、Admin には削除保留（PENDING）モデルの再削除導線を提供する。
 
 ---
 

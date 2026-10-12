@@ -21,10 +21,10 @@ export async function handler(
 ): Promise<APIGatewayProxyResultV2> {
   try {
     // Validate user authentication
-    await extractUser(event);
+    const user = await extractUser(event);
 
-    // Get list of completed language models
-    const models = await listModels();
+    // Get list of completed language models visible to the caller
+    const models = await listModels(user);
 
     return successResponse({ models });
   } catch (error: unknown) {

@@ -5,6 +5,7 @@ import {
   validationError,
   forbiddenError,
   internalError,
+  quotaExceededError,
 } from './error-handler.js';
 
 describe('AppError', () => {
@@ -59,5 +60,12 @@ describe('error factory functions', () => {
     const error = internalError('内部エラー');
     expect(error.statusCode).toBe(500);
     expect(error.code).toBe('INTERNAL_ERROR');
+  });
+
+  it('quotaExceededError returns 429', () => {
+    const error = quotaExceededError('クォータを超過しました', 'quota limit reached');
+    expect(error.statusCode).toBe(429);
+    expect(error.code).toBe('QUOTA_EXCEEDED');
+    expect(error.details).toBe('quota limit reached');
   });
 });

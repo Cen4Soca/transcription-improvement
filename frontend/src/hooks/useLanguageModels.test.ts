@@ -8,6 +8,10 @@ function createMockLanguageModelApi(): LanguageModelApi {
     listModels: vi.fn(),
     createModel: vi.fn(),
     getModelStatus: vi.fn(),
+    deleteModel: vi.fn(),
+    updateModelName: vi.fn(),
+    updateModelTeam: vi.fn(),
+    getMyTeams: vi.fn(),
   } as unknown as LanguageModelApi;
 }
 
@@ -93,6 +97,8 @@ describe('useLanguageModels', () => {
       record = await result.current.createModel({
         modelName: 'new-model',
         baseModelName: 'NarrowBand',
+        teamId: 'team-1',
+        displayName: '新モデル',
         sessionIds: ['session-1'],
       });
     });
@@ -115,12 +121,154 @@ describe('useLanguageModels', () => {
       record = await result.current.createModel({
         modelName: 'existing-model',
         baseModelName: 'WideBand',
+        teamId: 'team-1',
+        displayName: '既存モデル',
         sessionIds: ['session-1'],
       });
     });
 
     expect(record).toBeNull();
     expect(result.current.createError?.code).toBe('DUPLICATE_MODEL_NAME');
+  });
+
+  test('deleteModel reloads the list on success', async () => {
+    (mockApi.deleteModel as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      value: { data: { deleted: true } },
+    });
+    (mockApi.listModels as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      value: { models: [] },
+    });
+
+    const { result } = renderHook(() => useLanguageModels(mockApi));
+
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.deleteModel('model-1');
+    });
+
+    expect(ok).toBe(true);
+    expect(mockApi.deleteModel).toHaveBeenCalledWith('model-1');
+    expect(mockApi.listModels).toHaveBeenCalled();
+    expect(result.current.mutationError).toBeNull();
+  });
+
+  test('deleteModel sets mutationError and returns false on failure', async () => {
+    (mockApi.deleteModel as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: 'in use' },
+    });
+
+    const { result } = renderHook(() => useLanguageModels(mockApi));
+
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.deleteModel('model-1');
+    });
+
+    expect(ok).toBe(false);
+    expect(result.current.mutationError?.code).toBe('VALIDATION_ERROR');
+    expect(mockApi.listModels).not.toHaveBeenCalled();
+  });
+
+  test('reDelete re-invokes delete on a PENDING model', async () => {
+    (mockApi.deleteModel as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      value: { data: { deleted: true } },
+    });
+    (mockApi.listModels as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      value: { models: [] },
+    });
+
+    const { result } = renderHook(() => useLanguageModels(mockApi));
+
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.reDelete('pending-model');
+    });
+
+    expect(ok).toBe(true);
+    expect(mockApi.deleteModel).toHaveBeenCalledWith('pending-model');
+  });
+
+  test('renameModel reloads on success and returns null', async () => {
+    (mockApi.updateModelName as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      value: { data: { modelName: 'model-1', teamId: 'team-1', displayName: 'New' } },
+    });
+    (mockApi.listModels as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      value: { models: [] },
+    });
+
+    const { result } = renderHook(() => useLanguageModels(mockApi));
+
+    let err: unknown;
+    await act(async () => {
+      err = await result.current.renameModel('model-1', 'New');
+    });
+
+    expect(err).toBeNull();
+    expect(mockApi.updateModelName).toHaveBeenCalledWith('model-1', 'New');
+    expect(mockApi.listModels).toHaveBeenCalled();
+  });
+
+  test('renameModel returns the error on failure', async () => {
+    (mockApi.updateModelName as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: 'duplicate' },
+    });
+
+    const { result } = renderHook(() => useLanguageModels(mockApi));
+
+    let err: { code: string } | null = null;
+    await act(async () => {
+      err = (await result.current.renameModel('model-1', 'dup')) as { code: string } | null;
+    });
+
+    expect(err?.code).toBe('VALIDATION_ERROR');
+    expect(result.current.mutationError?.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('changeModelTeam reloads on success and returns null', async () => {
+    (mockApi.updateModelTeam as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      value: { data: { modelName: 'model-1', teamId: 'team-2', displayName: 'X' } },
+    });
+    (mockApi.listModels as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      value: { models: [] },
+    });
+
+    const { result } = renderHook(() => useLanguageModels(mockApi));
+
+    let err: unknown;
+    await act(async () => {
+      err = await result.current.changeModelTeam('model-1', 'team-2');
+    });
+
+    expect(err).toBeNull();
+    expect(mockApi.updateModelTeam).toHaveBeenCalledWith('model-1', 'team-2');
+    expect(mockApi.listModels).toHaveBeenCalled();
+  });
+
+  test('changeModelTeam returns the error on collision', async () => {
+    (mockApi.updateModelTeam as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: 'collision' },
+    });
+
+    const { result } = renderHook(() => useLanguageModels(mockApi));
+
+    let err: { code: string } | null = null;
+    await act(async () => {
+      err = (await result.current.changeModelTeam('model-1', 'team-2')) as { code: string } | null;
+    });
+
+    expect(err?.code).toBe('VALIDATION_ERROR');
+    expect(result.current.mutationError?.code).toBe('VALIDATION_ERROR');
   });
 
   test('startStatusPolling fetches status immediately', async () => {

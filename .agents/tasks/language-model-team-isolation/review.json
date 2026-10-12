@@ -1,0 +1,16 @@
+{
+  "verdict": "APPROVED",
+  "summary": "Custom language model team isolation is correctly and completely implemented against the design. GSI3 is added with safe GSI1/GSI2 ride-on (distinct key spaces, asserted in repo tests); the create flow enforces required teamId/displayName, session-ownership (404), within-team displayName uniqueness, and maps Transcribe LimitExceeded/429 to QUOTA_EXCEEDED (429). The two runtime leak paths are closed via checkLanguageModelAccess: team-scoped list (ADMIN=GSI3, others=GSI1 union, intersected with Transcribe COMPLETED, PENDING excluded) and job-usage check with ADMIN crossTeamModelUsage audit. Display-name edit, ADMIN teamId edit (destination-exists + collision guards), and the soft(PENDING)->Transcribe->S3->hard idempotent re-runnable delete all follow conventions and layering. All five required property tests exist and are meaningful (session-ownership, within-team uniqueness, team-scoped list, delete order+idempotency, quota-exceeded), plus a rename-path uniqueness property. Frontend adds required team/displayName, delete/rename/team-change/PENDING-recovery, QUOTA_EXCEEDED->Japanese, and retains vitest-axe. requirements.md Req 18/20 revised and 20A/20B/20C added in Japanese. Verified green: backend 1252 passed, frontend 1154 passed, infra 156 passed, cdk synth clean with GSI3 in the template. One minor non-blocking finding: the three new LANGUAGE_MODEL_* audit operation types are written but not added to the GET /admin/audit-logs operationType filter allowlist. The single-model status endpoint lacks a team check but is unchanged by this PR (pre-existing, out of scope).",
+  "findings": [
+    {
+      "severity": "minor",
+      "file": "/Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/.worktrees/language-model-team-isolation/backend/src/handlers/audit-logs.ts",
+      "detail": "VALID_OPERATION_TYPES adds TRANSCRIPTION_JOB_STARTED but omits the three new LANGUAGE_MODEL_DELETED / LANGUAGE_MODEL_TEAM_CHANGED / LANGUAGE_MODEL_NAME_CHANGED types, so filtering GET /admin/audit-logs?operationType=LANGUAGE_MODEL_DELETED (etc.) returns 400. Records are still written and visible unfiltered, so this is a non-blocking filter-completeness gap; add the three types to the allowlist."
+    },
+    {
+      "severity": "minor",
+      "file": "/Users/toshiyahirasawa/Documents/gitProjects/transcription-improvement/.worktrees/language-model-team-isolation/backend/src/handlers/get-model-status.ts",
+      "detail": "GET /language-models/{modelName} (getModelStatus) returns Transcribe status/baseModel/failureReason for any model name to any TEAM_LEADER+ without checkLanguageModelAccess, so a leader could read another team's model status. This handler and the service function are UNCHANGED by this PR (pre-existing, out of scope) and are therefore not blocking; recommended as a follow-up so the status endpoint matches the list/job-usage team isolation."
+    }
+  ]
+}

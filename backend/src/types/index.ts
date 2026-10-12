@@ -170,7 +170,9 @@ export type AuditOperationType =
   | 'REVIEW_ASSIGNMENT_CHANGE'
   | 'TEAM_ASSIGNMENT_CHANGE'
   | 'SESSION_COMPLETED'
+  | 'SESSION_NAME_CHANGED'
   | 'SESSION_MANUAL_AGGREGATED'
+  | 'SESSION_REOPENED'
   | 'CONSENSUS_MANUAL_CONFIRM'
   | 'CORRECTION_CONFIRMED'
   | 'SPEAKER_LABEL_CHANGED'
@@ -179,7 +181,29 @@ export type AuditOperationType =
   | 'TRANSCRIPTION_DELETED'
   | 'PARTIAL_DELETION_FAILURE'
   | 'LANGUAGE_MODEL_CREATED'
+  | 'LANGUAGE_MODEL_DELETED'
+  | 'LANGUAGE_MODEL_TEAM_CHANGED'
+  | 'LANGUAGE_MODEL_NAME_CHANGED'
+  | 'TRANSCRIPTION_JOB_STARTED'
   | 'AUDIT_LOG_DELETED';
+
+/**
+ * LanguageModelMetadata - カスタム言語モデルのアプリ側メタデータ
+ * Transcribe のモデル（不変・グローバル）に対し、チーム所有情報・表示名などを
+ * DynamoDB 側で別レコードとして管理する二層構造。
+ */
+export interface LanguageModelMetadata {
+  modelName: string;
+  teamId: string;
+  displayName: string;
+  displayNameLower: string;
+  baseModelName: string;
+  createdBy: string;
+  createdAt: string;
+  sessionIds: string[];
+  s3Key: string;
+  deletionStatus: 'ACTIVE' | 'PENDING';
+}
 
 /**
  * IPAllowlistEntry - IPアドレス許可リストのエントリ

@@ -6,6 +6,7 @@ import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
 import { getModelStatus } from '../services/language-model-service.js';
+import { checkLanguageModelAccess } from '../services/access-control-service.js';
 
 /**
  * GET /language-models/{modelName}
@@ -13,6 +14,8 @@ import { getModelStatus } from '../services/language-model-service.js';
  * Retrieves the status of a specific custom language model.
  * - Validates JWT and extracts user (Admin/TeamLeader only)
  * - Extracts modelName from path parameters
+ * - Enforces team isolation via checkLanguageModelAccess (ADMIN any team;
+ *   others own-team only; 404 hides other-team/missing/PENDING models)
  * - Calls LanguageModelService.getModelStatus()
  * - Returns the model status
  *
@@ -32,6 +35,10 @@ export async function handler(
     if (!modelName) {
       throw validationError('modelName パスパラメータは必須です。');
     }
+
+    // Team isolation: ADMIN any team; others own-team only.
+    // 404s on missing/other-team/PENDING models to hide existence.
+    await checkLanguageModelAccess(user, modelName);
 
     // Get model status
     const status = await getModelStatus(modelName);

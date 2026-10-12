@@ -213,7 +213,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
           "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
         ],
         "SourceObjectKeys": [
-          "ddeb7003a592836a1c9938b00bdaa2c461437297b0033bd2b0bbe055b83b43ab.zip",
+          "b14387c53fb7628f9e45197941ebd0669f5e5c9cd95c18b23297b22c57913eb8.zip",
         ],
         "WaitForDistributionInvalidation": true,
       },
@@ -914,7 +914,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
           "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
         ],
         "SourceObjectKeys": [
-          "ddeb7003a592836a1c9938b00bdaa2c461437297b0033bd2b0bbe055b83b43ab.zip",
+          "b14387c53fb7628f9e45197941ebd0669f5e5c9cd95c18b23297b22c57913eb8.zip",
         ],
         "WaitForDistributionInvalidation": true,
       },
