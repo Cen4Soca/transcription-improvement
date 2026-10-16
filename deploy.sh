@@ -45,8 +45,8 @@ pushd /tmp
 rm -rf transcription-improvement
 
 # Clone transcription-improvement
-# git clone https://github.com/Cen4Soca/transcription-improvement
-cp -r $HOME/Documents/gitProjects/transcription-improvement .
+git clone depth 1 https://github.com/Cen4Soca/transcription-improvement
+# cp -r $HOME/Documents/gitProjects/transcription-improvement .
 pushd transcription-improvement
 
 # If cdk.json is specified, overwrite it
