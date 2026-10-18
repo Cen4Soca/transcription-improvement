@@ -1,0 +1,26 @@
+{
+  "name": "e2e-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "seed": "tsx seed/seed-data.ts",
+    "seed:media": "tsx seed/seed-media-files.ts"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.700.0",
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.1075.0",
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^26.0.1",
+    "dotenv": "^16.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.auth/
+.env
+test-results/
+playwright-report/
+blob-report/
+seed/media-files/

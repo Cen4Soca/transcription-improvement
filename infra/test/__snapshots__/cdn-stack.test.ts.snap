@@ -1,0 +1,1246 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode with basePath 1`] = `
+{
+  "Outputs": {
+    "BasePath": {
+      "Description": "Base path for the SPA within the CloudFront distribution",
+      "Export": {
+        "Name": "TestCdnStack-BasePath",
+      },
+      "Value": "review-app",
+    },
+    "DistributionDomainName": {
+      "Export": {
+        "Name": "TestCdnStack-DistributionDomainName",
+      },
+      "Value": "E1234567890ABC.cloudfront.net",
+    },
+    "DistributionId": {
+      "Export": {
+        "Name": "TestCdnStack-DistributionId",
+      },
+      "Value": "E1234567890ABC",
+    },
+    "RegionalWebAclArn": {
+      "Export": {
+        "Name": "TestCdnStack-RegionalWebAclArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "WafIpAllowlistWebAcl124D166E",
+          "Arn",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536": {
+      "DependsOn": [
+        "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF",
+        "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
+          "S3Key": "3423a042b818e31c1e34a19d6689ab2e5f9b70fcbe9e71df66f241b20a200bd9.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AWS_CA_BUNDLE": "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+          },
+        },
+        "Handler": "index.handler",
+        "Layers": [
+          {
+            "Ref": "DeployFrontendAwsCliLayerD774ED8F",
+          },
+        ],
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.13",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-ap-northeast-1",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-ap-northeast-1/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:s3:::transcription-review-data-123456789012",
+                "arn:aws:s3:::transcription-review-data-123456789012/*",
+              ],
+            },
+            {
+              "Action": [
+                "cloudfront:GetInvalidation",
+                "cloudfront:CreateInvalidation",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF",
+        "Roles": [
+          {
+            "Ref": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "DeployFrontendAwsCliLayerD774ED8F": {
+      "Properties": {
+        "Content": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
+          "S3Key": "e2659170a0721541efa761a8d5d04d5e36cbbf691c4b15a9053002b7c825055d.zip",
+        },
+        "Description": "/opt/awscli/aws",
+      },
+      "Type": "AWS::Lambda::LayerVersion",
+    },
+    "DeployFrontendCustomResource3E02C3B7": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "DestinationBucketKeyPrefix": "review-app",
+        "DestinationBucketName": "transcription-review-data-123456789012",
+        "DistributionId": "E1234567890ABC",
+        "DistributionPaths": [
+          "/review-app/*",
+        ],
+        "OutputObjectKeys": true,
+        "Prune": true,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536",
+            "Arn",
+          ],
+        },
+        "SourceBucketNames": [
+          "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
+        ],
+        "SourceObjectKeys": [
+          "ddeb7003a592836a1c9938b00bdaa2c461437297b0033bd2b0bbe055b83b43ab.zip",
+        ],
+        "WaitForDistributionInvalidation": true,
+      },
+      "Type": "Custom::CDKBucketDeployment",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ImportedMediaBucketPolicy": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "Bucket": "transcription-review-media-123456789012",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:GetObject",
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceArn": "arn:aws:cloudfront::123456789012:distribution/E1234567890ABC",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudfront.amazonaws.com",
+              },
+              "Resource": "arn:aws:s3:::transcription-review-media-123456789012/*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ImportedMediaOAC19AAFE55": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "OriginAccessControlConfig": {
+          "Description": "OAC for existing distribution media files",
+          "Name": "TestCdnStackImportedMediaOAC0B43B8A2",
+          "OriginAccessControlOriginType": "s3",
+          "SigningBehavior": "always",
+          "SigningProtocol": "sigv4",
+        },
+      },
+      "Type": "AWS::CloudFront::OriginAccessControl",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ImportedStaticBucketPolicy": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "Bucket": "transcription-review-data-123456789012",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:GetObject",
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceArn": "arn:aws:cloudfront::123456789012:distribution/E1234567890ABC",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudfront.amazonaws.com",
+              },
+              "Resource": "arn:aws:s3:::transcription-review-data-123456789012/*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ImportedStaticOAC82602696": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "OriginAccessControlConfig": {
+          "Description": "OAC for existing distribution basePath: review-app",
+          "Name": "TestCdnStackImportedStaticOAC15E8226B",
+          "OriginAccessControlOriginType": "s3",
+          "SigningBehavior": "always",
+          "SigningProtocol": "sigv4",
+        },
+      },
+      "Type": "AWS::CloudFront::OriginAccessControl",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "SpaRewriteFunction0C4DA631": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AutoPublish": true,
+        "FunctionCode": "
+function handler(event) {
+  var request = event.request;
+  var uri = request.uri;
+  var basePath = '/review-app';
+
+  // If the URI matches the basePath root, serve index.html
+  if (uri === basePath || uri === basePath + '/') {
+    request.uri = basePath + '/index.html';
+    return request;
+  }
+
+  // If the URI starts with basePath and has no file extension, serve index.html (SPA routing)
+  if (uri.startsWith(basePath + '/')) {
+    var subPath = uri.substring(basePath.length + 1);
+    if (subPath.lastIndexOf('.') === -1 || subPath.lastIndexOf('.') < subPath.lastIndexOf('/')) {
+      request.uri = basePath + '/index.html';
+    }
+  }
+
+  return request;
+}
+",
+        "FunctionConfig": {
+          "Comment": "SPA URL rewrite for /review-app/ path",
+          "Runtime": "cloudfront-js-2.0",
+        },
+        "Name": "TestCdnStack-SpaRewrite",
+      },
+      "Type": "AWS::CloudFront::Function",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "UpdateDistributionHandler898B792B": {
+      "DependsOn": [
+        "UpdateDistributionRoleDefaultPolicy7979AB56",
+        "UpdateDistributionRole99C680C1",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "
+const { CloudFrontClient, GetDistributionConfigCommand, UpdateDistributionCommand } = require('@aws-sdk/client-cloudfront');
+const response = require('cfn-response');
+
+exports.handler = async (event, context) => {
+  const cf = new CloudFrontClient({});
+  const props = event.ResourceProperties;
+  const distributionId = props.DistributionId;
+  const basePath = props.BasePath;
+  const bucketDomainName = props.BucketDomainName;
+  const mediaBucketDomainName = props.MediaBucketDomainName;
+  const oacId = props.OacId;
+  const mediaOacId = props.MediaOacId;
+  const functionArn = props.FunctionArn;
+
+  // Use a stable physical resource ID to prevent unwanted Delete calls on update
+  const physicalResourceId = 'update-distribution-' + distributionId + '-' + basePath;
+
+  // Handle Delete early — skip CloudFront updates on resource replacement
+  if (event.RequestType === 'Delete') {
+    await response.send(event, context, response.SUCCESS, { Message: 'Delete acknowledged' }, physicalResourceId);
+    return;
+  }
+
+  try {
+    // Get current distribution config
+    const getConfigResult = await cf.send(new GetDistributionConfigCommand({ Id: distributionId }));
+    const config = getConfigResult.DistributionConfig;
+    const etag = getConfigResult.ETag;
+
+    // Create or Update
+    const originId = 'S3-' + basePath;
+    const pathPattern = '/' + basePath + '/*';
+    const mediaOriginId = 'S3-media';
+    const mediaPattern = '/media/*';
+
+    // Add S3 origins if not exists
+    if (!config.Origins) {
+      config.Origins = { Quantity: 0, Items: [] };
+    }
+    if (!config.Origins.Items) {
+      config.Origins.Items = [];
+    }
+
+    // Static origin
+    const existingOriginIndex = config.Origins.Items.findIndex(o => o.Id === originId);
+    const originConfig = {
+      Id: originId,
+      DomainName: bucketDomainName,
+      OriginPath: '',
+      S3OriginConfig: { OriginAccessIdentity: '' },
+      OriginAccessControlId: oacId,
+      CustomHeaders: { Quantity: 0, Items: [] },
+      ConnectionAttempts: 3,
+      ConnectionTimeout: 10,
+      OriginShield: { Enabled: false },
+    };    if (existingOriginIndex >= 0) {
+      config.Origins.Items[existingOriginIndex] = originConfig;
+    } else {
+      config.Origins.Items.push(originConfig);
+    }
+
+    // Media origin
+    const existingMediaOriginIndex = config.Origins.Items.findIndex(o => o.Id === mediaOriginId);
+    const mediaOriginConfig = {
+      Id: mediaOriginId,
+      DomainName: mediaBucketDomainName,
+      OriginPath: '',
+      S3OriginConfig: { OriginAccessIdentity: '' },
+      OriginAccessControlId: mediaOacId,
+      CustomHeaders: { Quantity: 0, Items: [] },
+      ConnectionAttempts: 3,
+      ConnectionTimeout: 10,
+      OriginShield: { Enabled: false },
+    };
+    if (existingMediaOriginIndex >= 0) {
+      config.Origins.Items[existingMediaOriginIndex] = mediaOriginConfig;
+    } else {
+      config.Origins.Items.push(mediaOriginConfig);
+    }
+
+    config.Origins.Quantity = config.Origins.Items.length;
+
+    // Add cache behaviors
+    if (!config.CacheBehaviors) {
+      config.CacheBehaviors = { Quantity: 0, Items: [] };
+    }
+    if (!config.CacheBehaviors.Items) {
+      config.CacheBehaviors.Items = [];
+    }
+
+    // Static behavior - derived from DefaultCacheBehavior to include all required fields
+    const existingBehaviorIndex = config.CacheBehaviors.Items.findIndex(
+      b => b.PathPattern === pathPattern
+    );
+    const behaviorConfig = Object.assign({}, config.DefaultCacheBehavior, {
+      PathPattern: pathPattern,
+      TargetOriginId: originId,
+      ViewerProtocolPolicy: 'redirect-to-https',
+      AllowedMethods: {
+        Quantity: 2,
+        Items: ['GET', 'HEAD'],
+        CachedMethods: { Quantity: 2, Items: ['GET', 'HEAD'] },
+      },
+      Compress: true,
+      CachePolicyId: '658327ea-f89d-4fab-a63d-7e88639e58f6',
+      LambdaFunctionAssociations: { Quantity: 0, Items: [] },
+      FunctionAssociations: {
+        Quantity: 1,
+        Items: [{ EventType: 'viewer-request', FunctionARN: functionArn }],
+      },
+      TrustedSigners: { Enabled: false, Quantity: 0 },
+      TrustedKeyGroups: { Enabled: false, Quantity: 0 },
+      SmoothStreaming: false,
+      FieldLevelEncryptionId: '',
+    });
+    if (existingBehaviorIndex >= 0) {
+      config.CacheBehaviors.Items[existingBehaviorIndex] = behaviorConfig;
+    } else {
+      config.CacheBehaviors.Items.push(behaviorConfig);
+    }
+
+    // Media behavior - derived from DefaultCacheBehavior to include all required fields
+    const existingMediaBehaviorIndex = config.CacheBehaviors.Items.findIndex(
+      b => b.PathPattern === mediaPattern
+    );
+    const mediaBehaviorConfig = Object.assign({}, config.DefaultCacheBehavior, {
+      PathPattern: mediaPattern,
+      TargetOriginId: mediaOriginId,
+      ViewerProtocolPolicy: 'redirect-to-https',
+      AllowedMethods: {
+        Quantity: 2,
+        Items: ['GET', 'HEAD'],
+        CachedMethods: { Quantity: 2, Items: ['GET', 'HEAD'] },
+      },
+      Compress: false,
+      CachePolicyId: '658327ea-f89d-4fab-a63d-7e88639e58f6',
+      LambdaFunctionAssociations: { Quantity: 0, Items: [] },
+      FunctionAssociations: { Quantity: 0, Items: [] },
+      TrustedSigners: { Enabled: false, Quantity: 0 },
+      TrustedKeyGroups: { Enabled: false, Quantity: 0 },
+      SmoothStreaming: false,
+      FieldLevelEncryptionId: '',
+    });
+    if (existingMediaBehaviorIndex >= 0) {
+      config.CacheBehaviors.Items[existingMediaBehaviorIndex] = mediaBehaviorConfig;
+    } else {
+      config.CacheBehaviors.Items.push(mediaBehaviorConfig);
+    }
+
+    config.CacheBehaviors.Quantity = config.CacheBehaviors.Items.length;
+
+    // NOTE: CustomErrorResponses are intentionally left untouched.
+    //
+    // CustomErrorResponses are distribution-wide, NOT per-cache-behavior. On a shared
+    // distribution, overwriting them hijacks the co-hosted app's SPA fallback
+    // (e.g. rewriting 403 -> /{basePath}/index.html breaks the root app's deep links).
+    // SPA routing for our basePath is already handled by the viewer-request
+    // CloudFront Function (SpaRewriteFunction), which rewrites extension-less URIs
+    // under /{basePath}/ to /{basePath}/index.html before the origin is hit.
+    // Therefore no error-response mapping is needed on our side.
+
+    await cf.send(new UpdateDistributionCommand({
+      Id: distributionId,
+      DistributionConfig: config,
+      IfMatch: etag,
+    }));
+
+    await response.send(event, context, response.SUCCESS, {
+      Message: 'Behaviors added/updated',
+      PathPattern: pathPattern,
+    }, physicalResourceId);
+  } catch (e) {
+    console.error('Error:', e);
+    await response.send(event, context, response.FAILED, { Error: e.message }, physicalResourceId);
+  }
+};
+",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "UpdateDistributionRole99C680C1",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "UpdateDistributionRole99C680C1": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "UpdateDistributionRoleDefaultPolicy7979AB56": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "cloudfront:GetDistribution",
+                "cloudfront:GetDistributionConfig",
+                "cloudfront:UpdateDistribution",
+              ],
+              "Effect": "Allow",
+              "Resource": "arn:aws:cloudfront::123456789012:distribution/E1234567890ABC",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "UpdateDistributionRoleDefaultPolicy7979AB56",
+        "Roles": [
+          {
+            "Ref": "UpdateDistributionRole99C680C1",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "UpdateExistingDistribution": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BasePath": "review-app",
+        "BucketDomainName": "transcription-review-data-123456789012.s3.ap-northeast-1.amazonaws.com",
+        "DistributionId": "E1234567890ABC",
+        "FunctionArn": {
+          "Fn::GetAtt": [
+            "SpaRewriteFunction0C4DA631",
+            "FunctionARN",
+          ],
+        },
+        "MediaBucketDomainName": "transcription-review-media-123456789012.s3.ap-northeast-1.amazonaws.com",
+        "MediaOacId": {
+          "Fn::GetAtt": [
+            "ImportedMediaOAC19AAFE55",
+            "Id",
+          ],
+        },
+        "OacId": {
+          "Fn::GetAtt": [
+            "ImportedStaticOAC82602696",
+            "Id",
+          ],
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "UpdateDistributionHandler898B792B",
+            "Arn",
+          ],
+        },
+        "Version": "4",
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WafIpAllowlistIpSet3A16F1DE": {
+      "Properties": {
+        "Addresses": [],
+        "Description": "IP Allowlist for Transcription Review App - max 1,000 entries",
+        "IPAddressVersion": "IPV4",
+        "Name": "WafIpAllowlist-IPAllowlist",
+        "Scope": "REGIONAL",
+      },
+      "Type": "AWS::WAFv2::IPSet",
+    },
+    "WafIpAllowlistWebAcl124D166E": {
+      "Properties": {
+        "DefaultAction": {
+          "Allow": {},
+        },
+        "Description": "WAF WebACL for Transcription Review App with IP allowlist and rate limiting",
+        "Name": "WafIpAllowlist-WebACL",
+        "Rules": [
+          {
+            "Action": {
+              "Block": {},
+            },
+            "Name": "RateLimitRule",
+            "Priority": 1,
+            "Statement": {
+              "RateBasedStatement": {
+                "AggregateKeyType": "IP",
+                "Limit": 2000,
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "WafIpAllowlist-RateLimit",
+              "SampledRequestsEnabled": true,
+            },
+          },
+        ],
+        "Scope": "REGIONAL",
+        "VisibilityConfig": {
+          "CloudWatchMetricsEnabled": true,
+          "MetricName": "WafIpAllowlist-WebACL",
+          "SampledRequestsEnabled": true,
+        },
+      },
+      "Type": "AWS::WAFv2::WebACL",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`] = `
+{
+  "Outputs": {
+    "BasePath": {
+      "Description": "Base path for the SPA within the CloudFront distribution",
+      "Export": {
+        "Name": "TestCdnStack-BasePath",
+      },
+      "Value": "/",
+    },
+    "DistributionDomainName": {
+      "Export": {
+        "Name": "TestCdnStack-DistributionDomainName",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "StaticDistribution91AD5C4F",
+          "DomainName",
+        ],
+      },
+    },
+    "DistributionId": {
+      "Export": {
+        "Name": "TestCdnStack-DistributionId",
+      },
+      "Value": {
+        "Ref": "StaticDistribution91AD5C4F",
+      },
+    },
+    "RegionalWebAclArn": {
+      "Export": {
+        "Name": "TestCdnStack-RegionalWebAclArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "WafIpAllowlistWebAcl124D166E",
+          "Arn",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536": {
+      "DependsOn": [
+        "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF",
+        "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
+          "S3Key": "3423a042b818e31c1e34a19d6689ab2e5f9b70fcbe9e71df66f241b20a200bd9.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AWS_CA_BUNDLE": "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+          },
+        },
+        "Handler": "index.handler",
+        "Layers": [
+          {
+            "Ref": "DeployFrontendAwsCliLayerD774ED8F",
+          },
+        ],
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.13",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-ap-northeast-1",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-ap-northeast-1/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:s3:::transcription-review-data-123456789012",
+                "arn:aws:s3:::transcription-review-data-123456789012/*",
+              ],
+            },
+            {
+              "Action": [
+                "cloudfront:GetInvalidation",
+                "cloudfront:CreateInvalidation",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF",
+        "Roles": [
+          {
+            "Ref": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "DeployFrontendAwsCliLayerD774ED8F": {
+      "Properties": {
+        "Content": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
+          "S3Key": "e2659170a0721541efa761a8d5d04d5e36cbbf691c4b15a9053002b7c825055d.zip",
+        },
+        "Description": "/opt/awscli/aws",
+      },
+      "Type": "AWS::Lambda::LayerVersion",
+    },
+    "DeployFrontendCustomResource3E02C3B7": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "DestinationBucketName": "transcription-review-data-123456789012",
+        "DistributionId": {
+          "Ref": "StaticDistribution91AD5C4F",
+        },
+        "DistributionPaths": [
+          "/*",
+        ],
+        "OutputObjectKeys": true,
+        "Prune": true,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536",
+            "Arn",
+          ],
+        },
+        "SourceBucketNames": [
+          "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
+        ],
+        "SourceObjectKeys": [
+          "ddeb7003a592836a1c9938b00bdaa2c461437297b0033bd2b0bbe055b83b43ab.zip",
+        ],
+        "WaitForDistributionInvalidation": true,
+      },
+      "Type": "Custom::CDKBucketDeployment",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MediaBucketPolicy": {
+      "Properties": {
+        "Bucket": "transcription-review-media-123456789012",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:GetObject",
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceArn": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:cloudfront::123456789012:distribution/",
+                        {
+                          "Ref": "StaticDistribution91AD5C4F",
+                        },
+                      ],
+                    ],
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudfront.amazonaws.com",
+              },
+              "Resource": "arn:aws:s3:::transcription-review-media-123456789012/*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "MediaOACC4276BB0": {
+      "Properties": {
+        "OriginAccessControlConfig": {
+          "Description": "OAC for media files",
+          "Name": "TestCdnStackMediaOACE4ED38D6",
+          "OriginAccessControlOriginType": "s3",
+          "SigningBehavior": "always",
+          "SigningProtocol": "sigv4",
+        },
+      },
+      "Type": "AWS::CloudFront::OriginAccessControl",
+    },
+    "SecurityHeadersPolicyE1741D63": {
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Comment": "Security headers including CSP for Transcription Review App",
+          "Name": "TestCdnStack-SecurityHeaders",
+          "SecurityHeadersConfig": {
+            "ContentSecurityPolicy": {
+              "ContentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com; media-src 'self' https://*.cloudfront.net; frame-ancestors 'none'",
+              "Override": true,
+            },
+            "ContentTypeOptions": {
+              "Override": true,
+            },
+            "FrameOptions": {
+              "FrameOption": "DENY",
+              "Override": true,
+            },
+            "ReferrerPolicy": {
+              "Override": true,
+              "ReferrerPolicy": "strict-origin-when-cross-origin",
+            },
+            "StrictTransportSecurity": {
+              "AccessControlMaxAgeSec": 63072000,
+              "IncludeSubdomains": true,
+              "Override": true,
+              "Preload": true,
+            },
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+    },
+    "StaticBucketPolicy": {
+      "Properties": {
+        "Bucket": "transcription-review-data-123456789012",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:GetObject",
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceArn": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:cloudfront::123456789012:distribution/",
+                        {
+                          "Ref": "StaticDistribution91AD5C4F",
+                        },
+                      ],
+                    ],
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudfront.amazonaws.com",
+              },
+              "Resource": "arn:aws:s3:::transcription-review-data-123456789012/*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "StaticDistribution91AD5C4F": {
+      "Properties": {
+        "DistributionConfig": {
+          "CacheBehaviors": [
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+              ],
+              "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+              "Compress": true,
+              "PathPattern": "/media/*",
+              "TargetOriginId": "TestCdnStackStaticDistributionOrigin2850FBBB7",
+              "ViewerProtocolPolicy": "redirect-to-https",
+            },
+          ],
+          "Comment": "Transcription Review App - SPA + Media + API",
+          "CustomErrorResponses": [
+            {
+              "ErrorCachingMinTTL": 0,
+              "ErrorCode": 403,
+              "ResponseCode": 200,
+              "ResponsePagePath": "/index.html",
+            },
+            {
+              "ErrorCachingMinTTL": 0,
+              "ErrorCode": 404,
+              "ResponseCode": 200,
+              "ResponsePagePath": "/index.html",
+            },
+          ],
+          "DefaultCacheBehavior": {
+            "AllowedMethods": [
+              "GET",
+              "HEAD",
+            ],
+            "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+            "Compress": true,
+            "ResponseHeadersPolicyId": {
+              "Ref": "SecurityHeadersPolicyE1741D63",
+            },
+            "TargetOriginId": "TestCdnStackStaticDistributionOrigin1B7A1D06B",
+            "ViewerProtocolPolicy": "redirect-to-https",
+          },
+          "DefaultRootObject": "index.html",
+          "Enabled": true,
+          "HttpVersion": "http2",
+          "IPV6Enabled": true,
+          "Origins": [
+            {
+              "DomainName": "transcription-review-data-123456789012.s3.ap-northeast-1.amazonaws.com",
+              "Id": "TestCdnStackStaticDistributionOrigin1B7A1D06B",
+              "OriginAccessControlId": {
+                "Fn::GetAtt": [
+                  "StaticOACF55BB597",
+                  "Id",
+                ],
+              },
+              "S3OriginConfig": {
+                "OriginAccessIdentity": "",
+              },
+            },
+            {
+              "DomainName": "transcription-review-media-123456789012.s3.ap-northeast-1.amazonaws.com",
+              "Id": "TestCdnStackStaticDistributionOrigin2850FBBB7",
+              "OriginAccessControlId": {
+                "Fn::GetAtt": [
+                  "MediaOACC4276BB0",
+                  "Id",
+                ],
+              },
+              "S3OriginConfig": {
+                "OriginAccessIdentity": "",
+              },
+            },
+          ],
+          "PriceClass": "PriceClass_200",
+          "Restrictions": {
+            "GeoRestriction": {
+              "Locations": [
+                "JP",
+              ],
+              "RestrictionType": "whitelist",
+            },
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::Distribution",
+    },
+    "StaticOACF55BB597": {
+      "Properties": {
+        "OriginAccessControlConfig": {
+          "Description": "OAC for static files",
+          "Name": "TestCdnStackStaticOAC55D5AE8F",
+          "OriginAccessControlOriginType": "s3",
+          "SigningBehavior": "always",
+          "SigningProtocol": "sigv4",
+        },
+      },
+      "Type": "AWS::CloudFront::OriginAccessControl",
+    },
+    "WafIpAllowlistIpSet3A16F1DE": {
+      "Properties": {
+        "Addresses": [
+          "203.0.113.0/24",
+        ],
+        "Description": "IP Allowlist for Transcription Review App - max 1,000 entries",
+        "IPAddressVersion": "IPV4",
+        "Name": "WafIpAllowlist-IPAllowlist",
+        "Scope": "REGIONAL",
+      },
+      "Type": "AWS::WAFv2::IPSet",
+    },
+    "WafIpAllowlistWebAcl124D166E": {
+      "Properties": {
+        "DefaultAction": {
+          "Block": {},
+        },
+        "Description": "WAF WebACL for Transcription Review App with IP allowlist and rate limiting",
+        "Name": "WafIpAllowlist-WebACL",
+        "Rules": [
+          {
+            "Action": {
+              "Block": {},
+            },
+            "Name": "RateLimitRule",
+            "Priority": 1,
+            "Statement": {
+              "RateBasedStatement": {
+                "AggregateKeyType": "IP",
+                "Limit": 2000,
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "WafIpAllowlist-RateLimit",
+              "SampledRequestsEnabled": true,
+            },
+          },
+          {
+            "Action": {
+              "Allow": {},
+            },
+            "Name": "IPAllowlistRule",
+            "Priority": 2,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "WafIpAllowlistIpSet3A16F1DE",
+                    "Arn",
+                  ],
+                },
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "WafIpAllowlist-IPAllowlist",
+              "SampledRequestsEnabled": true,
+            },
+          },
+        ],
+        "Scope": "REGIONAL",
+        "VisibilityConfig": {
+          "CloudWatchMetricsEnabled": true,
+          "MetricName": "WafIpAllowlist-WebACL",
+          "SampledRequestsEnabled": true,
+        },
+      },
+      "Type": "AWS::WAFv2::WebACL",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

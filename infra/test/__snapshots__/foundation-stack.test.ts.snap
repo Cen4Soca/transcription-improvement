@@ -1,0 +1,1450 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FoundationStack - Snapshot > matches the snapshot for import mode 1`] = `
+{
+  "Outputs": {
+    "DataBucketArn": {
+      "Export": {
+        "Name": "TestFoundationStack-DataBucketArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "DataBucketE3889A50",
+          "Arn",
+        ],
+      },
+    },
+    "DataBucketName": {
+      "Export": {
+        "Name": "TestFoundationStack-DataBucketName",
+      },
+      "Value": {
+        "Ref": "DataBucketE3889A50",
+      },
+    },
+    "KmsKeyArn": {
+      "Export": {
+        "Name": "TestFoundationStack-KmsKeyArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AppKey51DFC408",
+          "Arn",
+        ],
+      },
+    },
+    "MediaBucketArn": {
+      "Export": {
+        "Name": "TestFoundationStack-MediaBucketArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MediaBucketBCBB02BA",
+          "Arn",
+        ],
+      },
+    },
+    "MediaBucketName": {
+      "Export": {
+        "Name": "TestFoundationStack-MediaBucketName",
+      },
+      "Value": {
+        "Ref": "MediaBucketBCBB02BA",
+      },
+    },
+    "StaticBucketArn": {
+      "Export": {
+        "Name": "TestFoundationStack-StaticBucketArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "StaticBucket92253581",
+          "Arn",
+        ],
+      },
+    },
+    "StaticBucketName": {
+      "Export": {
+        "Name": "TestFoundationStack-StaticBucketName",
+      },
+      "Value": {
+        "Ref": "StaticBucket92253581",
+      },
+    },
+    "TableArn": {
+      "Export": {
+        "Name": "TestFoundationStack-TableArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "TranscriptionReviewApp38524381",
+          "Arn",
+        ],
+      },
+    },
+    "TableName": {
+      "Export": {
+        "Name": "TestFoundationStack-TableName",
+      },
+      "Value": {
+        "Ref": "TranscriptionReviewApp38524381",
+      },
+    },
+    "UserPoolClientId": {
+      "Export": {
+        "Name": "TestFoundationStack-UserPoolClientId",
+      },
+      "Value": "existing-client-id-12345",
+    },
+    "UserPoolId": {
+      "Export": {
+        "Name": "TestFoundationStack-UserPoolId",
+      },
+      "Value": "ap-northeast-1_ExistingPool",
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AppKey51DFC408": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": "CMK for Transcription Review App (DynamoDB, S3 encryption)",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Statement": [
+            {
+              "Action": "kms:*",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::123456789012:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": "*",
+              "Sid": "AllowRootAccountAccess",
+            },
+            {
+              "Action": [
+                "kms:Create*",
+                "kms:Describe*",
+                "kms:Enable*",
+                "kms:List*",
+                "kms:Put*",
+                "kms:Update*",
+                "kms:Revoke*",
+                "kms:Disable*",
+                "kms:Get*",
+                "kms:Delete*",
+                "kms:TagResource",
+                "kms:UntagResource",
+                "kms:ScheduleKeyDeletion",
+                "kms:CancelKeyDeletion",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::123456789012:root",
+              },
+              "Resource": "*",
+              "Sid": "AllowKeyAdministration",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PendingWindowInDays": 30,
+      },
+      "Type": "AWS::KMS::Key",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AppKeyAliasDEC3B4C2": {
+      "Properties": {
+        "AliasName": "alias/transcription-review-app",
+        "TargetKeyId": {
+          "Fn::GetAtt": [
+            "AppKey51DFC408",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::KMS::Alias",
+    },
+    "DataBucketE3889A50": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {
+                  "Fn::GetAtt": [
+                    "AppKey51DFC408",
+                    "Arn",
+                  ],
+                },
+                "SSEAlgorithm": "aws:kms",
+              },
+            },
+          ],
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "",
+            [
+              "transcription-review-data-",
+              {
+                "Ref": "AWS::AccountId",
+              },
+            ],
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart-upload",
+              "Status": "Enabled",
+            },
+            {
+              "ExpirationInDays": 30,
+              "Id": "transcriptions-expiration",
+              "Prefix": "transcriptions/",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "DataBucketPolicy3231C704": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "DataBucketE3889A50",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "DataBucketE3889A50",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "DataBucketE3889A50",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "MediaBucketBCBB02BA": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {
+                  "Fn::GetAtt": [
+                    "AppKey51DFC408",
+                    "Arn",
+                  ],
+                },
+                "SSEAlgorithm": "aws:kms",
+              },
+            },
+          ],
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "",
+            [
+              "transcription-review-media-",
+              {
+                "Ref": "AWS::AccountId",
+              },
+            ],
+          ],
+        },
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedHeaders": [
+                "*",
+              ],
+              "AllowedMethods": [
+                "PUT",
+              ],
+              "AllowedOrigins": [
+                "*",
+              ],
+              "ExposedHeaders": [
+                "ETag",
+              ],
+              "MaxAge": 3000,
+            },
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "media-glacier-transitions",
+              "Prefix": "media/",
+              "Status": "Enabled",
+              "Transitions": [
+                {
+                  "StorageClass": "GLACIER_IR",
+                  "TransitionInDays": 14,
+                },
+                {
+                  "StorageClass": "DEEP_ARCHIVE",
+                  "TransitionInDays": 104,
+                },
+              ],
+            },
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart-upload",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MediaBucketPolicy68C27F6B": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "MediaBucketBCBB02BA",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "MediaBucketBCBB02BA",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "MediaBucketBCBB02BA",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "StaticBucket92253581": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {
+                  "Fn::GetAtt": [
+                    "AppKey51DFC408",
+                    "Arn",
+                  ],
+                },
+                "SSEAlgorithm": "aws:kms",
+              },
+            },
+          ],
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "",
+            [
+              "transcription-review-static-",
+              {
+                "Ref": "AWS::AccountId",
+              },
+            ],
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart-upload",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "StaticBucketPolicy4D0F6D8E": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "StaticBucket92253581",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "StaticBucket92253581",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "StaticBucket92253581",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "TranscriptionReviewApp38524381": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "SK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI1PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI1SK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI2PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI2SK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI3PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI3SK",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "GSI1",
+            "KeySchema": [
+              {
+                "AttributeName": "GSI1PK",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "GSI1SK",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "GSI2",
+            "KeySchema": [
+              {
+                "AttributeName": "GSI2PK",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "GSI2SK",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "GSI3",
+            "KeySchema": [
+              {
+                "AttributeName": "GSI3PK",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "GSI3SK",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "PK",
+            "KeyType": "HASH",
+          },
+          {
+            "AttributeName": "SK",
+            "KeyType": "RANGE",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::GetAtt": [
+              "AppKey51DFC408",
+              "Arn",
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "TableName": "TranscriptionReviewApp",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`FoundationStack - Snapshot > matches the snapshot for new creation mode 1`] = `
+{
+  "Outputs": {
+    "DataBucketArn": {
+      "Export": {
+        "Name": "TestFoundationStack-DataBucketArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "DataBucketE3889A50",
+          "Arn",
+        ],
+      },
+    },
+    "DataBucketName": {
+      "Export": {
+        "Name": "TestFoundationStack-DataBucketName",
+      },
+      "Value": {
+        "Ref": "DataBucketE3889A50",
+      },
+    },
+    "KmsKeyArn": {
+      "Export": {
+        "Name": "TestFoundationStack-KmsKeyArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AppKey51DFC408",
+          "Arn",
+        ],
+      },
+    },
+    "MediaBucketArn": {
+      "Export": {
+        "Name": "TestFoundationStack-MediaBucketArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MediaBucketBCBB02BA",
+          "Arn",
+        ],
+      },
+    },
+    "MediaBucketName": {
+      "Export": {
+        "Name": "TestFoundationStack-MediaBucketName",
+      },
+      "Value": {
+        "Ref": "MediaBucketBCBB02BA",
+      },
+    },
+    "StaticBucketArn": {
+      "Export": {
+        "Name": "TestFoundationStack-StaticBucketArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "StaticBucket92253581",
+          "Arn",
+        ],
+      },
+    },
+    "StaticBucketName": {
+      "Export": {
+        "Name": "TestFoundationStack-StaticBucketName",
+      },
+      "Value": {
+        "Ref": "StaticBucket92253581",
+      },
+    },
+    "TableArn": {
+      "Export": {
+        "Name": "TestFoundationStack-TableArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "TranscriptionReviewApp38524381",
+          "Arn",
+        ],
+      },
+    },
+    "TableName": {
+      "Export": {
+        "Name": "TestFoundationStack-TableName",
+      },
+      "Value": {
+        "Ref": "TranscriptionReviewApp38524381",
+      },
+    },
+    "UserPoolClientId": {
+      "Export": {
+        "Name": "TestFoundationStack-UserPoolClientId",
+      },
+      "Value": {
+        "Ref": "UserPoolAppClientDD0407EC",
+      },
+    },
+    "UserPoolId": {
+      "Export": {
+        "Name": "TestFoundationStack-UserPoolId",
+      },
+      "Value": {
+        "Ref": "UserPool6BA7E5F2",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AppKey51DFC408": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": "CMK for Transcription Review App (DynamoDB, S3 encryption)",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Statement": [
+            {
+              "Action": "kms:*",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::123456789012:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": "*",
+              "Sid": "AllowRootAccountAccess",
+            },
+            {
+              "Action": [
+                "kms:Create*",
+                "kms:Describe*",
+                "kms:Enable*",
+                "kms:List*",
+                "kms:Put*",
+                "kms:Update*",
+                "kms:Revoke*",
+                "kms:Disable*",
+                "kms:Get*",
+                "kms:Delete*",
+                "kms:TagResource",
+                "kms:UntagResource",
+                "kms:ScheduleKeyDeletion",
+                "kms:CancelKeyDeletion",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::123456789012:root",
+              },
+              "Resource": "*",
+              "Sid": "AllowKeyAdministration",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PendingWindowInDays": 30,
+      },
+      "Type": "AWS::KMS::Key",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AppKeyAliasDEC3B4C2": {
+      "Properties": {
+        "AliasName": "alias/transcription-review-app",
+        "TargetKeyId": {
+          "Fn::GetAtt": [
+            "AppKey51DFC408",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::KMS::Alias",
+    },
+    "DataBucketE3889A50": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {
+                  "Fn::GetAtt": [
+                    "AppKey51DFC408",
+                    "Arn",
+                  ],
+                },
+                "SSEAlgorithm": "aws:kms",
+              },
+            },
+          ],
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "",
+            [
+              "transcription-review-data-",
+              {
+                "Ref": "AWS::AccountId",
+              },
+            ],
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart-upload",
+              "Status": "Enabled",
+            },
+            {
+              "ExpirationInDays": 30,
+              "Id": "transcriptions-expiration",
+              "Prefix": "transcriptions/",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "DataBucketPolicy3231C704": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "DataBucketE3889A50",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "DataBucketE3889A50",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "DataBucketE3889A50",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "MediaBucketBCBB02BA": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {
+                  "Fn::GetAtt": [
+                    "AppKey51DFC408",
+                    "Arn",
+                  ],
+                },
+                "SSEAlgorithm": "aws:kms",
+              },
+            },
+          ],
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "",
+            [
+              "transcription-review-media-",
+              {
+                "Ref": "AWS::AccountId",
+              },
+            ],
+          ],
+        },
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedHeaders": [
+                "*",
+              ],
+              "AllowedMethods": [
+                "PUT",
+              ],
+              "AllowedOrigins": [
+                "*",
+              ],
+              "ExposedHeaders": [
+                "ETag",
+              ],
+              "MaxAge": 3000,
+            },
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "media-glacier-transitions",
+              "Prefix": "media/",
+              "Status": "Enabled",
+              "Transitions": [
+                {
+                  "StorageClass": "GLACIER_IR",
+                  "TransitionInDays": 14,
+                },
+                {
+                  "StorageClass": "DEEP_ARCHIVE",
+                  "TransitionInDays": 104,
+                },
+              ],
+            },
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart-upload",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MediaBucketPolicy68C27F6B": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "MediaBucketBCBB02BA",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "MediaBucketBCBB02BA",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "MediaBucketBCBB02BA",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "StaticBucket92253581": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {
+                  "Fn::GetAtt": [
+                    "AppKey51DFC408",
+                    "Arn",
+                  ],
+                },
+                "SSEAlgorithm": "aws:kms",
+              },
+            },
+          ],
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "",
+            [
+              "transcription-review-static-",
+              {
+                "Ref": "AWS::AccountId",
+              },
+            ],
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart-upload",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "StaticBucketPolicy4D0F6D8E": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "StaticBucket92253581",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "StaticBucket92253581",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "StaticBucket92253581",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "TranscriptionReviewApp38524381": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "SK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI1PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI1SK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI2PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI2SK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI3PK",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "GSI3SK",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "GSI1",
+            "KeySchema": [
+              {
+                "AttributeName": "GSI1PK",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "GSI1SK",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "GSI2",
+            "KeySchema": [
+              {
+                "AttributeName": "GSI2PK",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "GSI2SK",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "GSI3",
+            "KeySchema": [
+              {
+                "AttributeName": "GSI3PK",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "GSI3SK",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "PK",
+            "KeyType": "HASH",
+          },
+          {
+            "AttributeName": "SK",
+            "KeyType": "RANGE",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::GetAtt": [
+              "AppKey51DFC408",
+              "Arn",
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "TableName": "TranscriptionReviewApp",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "UserPool6BA7E5F2": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AccountRecoverySetting": {
+          "RecoveryMechanisms": [
+            {
+              "Name": "verified_email",
+              "Priority": 1,
+            },
+          ],
+        },
+        "AdminCreateUserConfig": {
+          "AllowAdminCreateUserOnly": true,
+        },
+        "AutoVerifiedAttributes": [
+          "email",
+        ],
+        "EmailVerificationMessage": "The verification code to your new account is {####}",
+        "EmailVerificationSubject": "Verify your new account",
+        "EnabledMfas": [
+          "SOFTWARE_TOKEN_MFA",
+        ],
+        "MfaConfiguration": "OPTIONAL",
+        "Policies": {
+          "PasswordPolicy": {
+            "MinimumLength": 8,
+            "RequireLowercase": true,
+            "RequireNumbers": true,
+            "RequireSymbols": true,
+            "RequireUppercase": true,
+          },
+        },
+        "Schema": [
+          {
+            "Mutable": false,
+            "Name": "email",
+            "Required": true,
+          },
+          {
+            "AttributeDataType": "String",
+            "Mutable": false,
+            "Name": "role",
+          },
+          {
+            "AttributeDataType": "String",
+            "Mutable": true,
+            "Name": "displayName",
+          },
+        ],
+        "SmsVerificationMessage": "The verification code to your new account is {####}",
+        "UserPoolAddOns": {
+          "AdvancedSecurityMode": "ENFORCED",
+        },
+        "UserPoolName": "TranscriptionReviewAppUserPool",
+        "UsernameAttributes": [
+          "email",
+        ],
+        "VerificationMessageTemplate": {
+          "DefaultEmailOption": "CONFIRM_WITH_CODE",
+          "EmailMessage": "The verification code to your new account is {####}",
+          "EmailSubject": "Verify your new account",
+          "SmsMessage": "The verification code to your new account is {####}",
+        },
+      },
+      "Type": "AWS::Cognito::UserPool",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "UserPoolAppClientDD0407EC": {
+      "Properties": {
+        "AllowedOAuthFlows": [
+          "code",
+        ],
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthScopes": [
+          "openid",
+          "email",
+          "profile",
+        ],
+        "CallbackURLs": [
+          "https://localhost/",
+        ],
+        "ClientName": "TranscriptionReviewAppClient",
+        "ExplicitAuthFlows": [
+          "ALLOW_USER_SRP_AUTH",
+          "ALLOW_REFRESH_TOKEN_AUTH",
+        ],
+        "GenerateSecret": false,
+        "LogoutURLs": [
+          "https://localhost/",
+        ],
+        "PreventUserExistenceErrors": "ENABLED",
+        "ReadAttributes": [
+          "custom:displayName",
+          "custom:role",
+          "email",
+        ],
+        "SupportedIdentityProviders": [
+          "COGNITO",
+        ],
+        "UserPoolId": {
+          "Ref": "UserPool6BA7E5F2",
+        },
+        "WriteAttributes": [
+          "custom:displayName",
+        ],
+      },
+      "Type": "AWS::Cognito::UserPoolClient",
+    },
+    "UserPoolHostedUIDomain7F20EF9C": {
+      "Properties": {
+        "Domain": "transcription-review-dev",
+        "UserPoolId": {
+          "Ref": "UserPool6BA7E5F2",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolDomain",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

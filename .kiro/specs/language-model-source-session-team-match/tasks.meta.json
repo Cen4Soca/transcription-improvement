@@ -1,0 +1,254 @@
+{
+  "pbtResults": {
+    "6.3 `LanguageModelPage.property.test.ts` に Property 4 を追記": {
+      "status": "passed",
+      "lastRunTimestamp": 1792246911345
+    }
+  },
+  "executionHistory": {
+    "1.1 `hasTeamAssignment` のインポートと検証ループの実装": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750558
+      },
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242763820
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246394629
+      }
+    ],
+    "2.1 `language-model-service.test.ts` にユニットテストを追記": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750587
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246498342
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246787061
+      }
+    ],
+    "2.2 `language-model-service.property.test.ts` に Property 1 を追記": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750625
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246499741
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246788432
+      }
+    ],
+    "2.3 `language-model-service.property.test.ts` に Property 2 を追記": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750665
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246797238
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246969090
+      }
+    ],
+    "3. Checkpoint - バックエンドテストが通ることを確認": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750683
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246978819
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792247246943
+      }
+    ],
+    "4.1 `language-model-api.ts` に `TeamAssignmentRecord` 型と `listTeamAssignments` メソッドを追加": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750703
+      },
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242765354
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246395847
+      }
+    ],
+    "5.1 純粋ヘルパ `filterSessionsByAssignment` / `reconcileSelection` を export": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750723
+      },
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242766246
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246401965
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246489611
+      }
+    ],
+    "5.2 候補絞り込みの state・副作用・描画切り替えを実装": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750741
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246501221
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246785939
+      }
+    ],
+    "6.1 `LanguageModelPage.test.tsx` にコンポーネントテストを追記": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750760
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246979640
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792247245614
+      }
+    ],
+    "6.2 `LanguageModelPage.property.test.ts` に Property 3 を追記": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750778
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246502130
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246789421
+      }
+    ],
+    "6.3 `LanguageModelPage.property.test.ts` に Property 4 を追記": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750796
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246798111
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246970241
+      }
+    ],
+    "7. Final checkpoint - フロント・バックエンド全テストが通ることを確認": [
+      {
+        "executionId": "b2c35f14-fc6c-4d71-8fb7-a49692c6b267",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792242750815
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792247253568
+      },
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792247295112
+      }
+    ],
+    "1. バックエンド: createModel に TeamAssignment 一致検証ループを追加": [
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246394661
+      }
+    ],
+    "4. フロント: TeamAssignment 取得 API の追加": [
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246395875
+      }
+    ],
+    "5. フロント: LanguageModelPage の候補絞り込みロジック": [
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246785972
+      }
+    ],
+    "2. バックエンド: createModel の検証テスト": [
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792246969121
+      }
+    ],
+    "6. フロント: LanguageModelPage のテスト": [
+      {
+        "executionId": "26cebf08-3c95-4eed-b822-5fec04bf3a94",
+        "chatSessionId": "sess_fca947c7-6a9e-4844-9cc2-2471aeed33b4",
+        "timestamp": 1792247245648
+      }
+    ]
+  }
+}
