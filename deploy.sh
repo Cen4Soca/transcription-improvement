@@ -65,13 +65,23 @@ fi
 # `npm install` think it is "up to date" and skip the repair. A single
 # `npm install --legacy-peer-deps` against the kept lockfile resolves cleanly.
 # The eslint packages are lint-only and do not affect `vite build`.
+# Derive the SPA base path from the CDK context (infra/cdk.json). On the shared
+# GenU CloudFront distribution the app is served under /{basePath}/, and the S3
+# origin has NO originPath, so the browser requests /{basePath}/assets/... .
+# The frontend must therefore be built with Vite base=/{basePath}/ (via
+# VITE_BASE_PATH). Without this the HTML references /assets/... (base '/'), those
+# requests miss the /{basePath}/* behavior, fall through to the co-hosted app,
+# and the JS never loads -> blank screen.
+base_path=$(node -e "try{process.stdout.write((require('./infra/cdk.json').context.basePath)||'')}catch(e){}")
+echo "SPA basePath from cdk.json: '${base_path}'"
+
 echo "--------------------------"
 echo "   BUILD FRONTEND (dist)  "
 echo "--------------------------"
 pushd frontend
 rm -rf node_modules
 npm install --legacy-peer-deps
-npm run build
+VITE_BASE_PATH="$base_path" npm run build
 popd
 
 # Install backend dependencies. The CDK NodejsFunction bundles each handler by
