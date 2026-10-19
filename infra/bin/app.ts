@@ -91,6 +91,7 @@ const cdnStack = new CdnStack(app, `${env}-CdnStack`, {
   staticBucketArn: foundationStack.staticBucket.bucketArn,
   mediaBucketName: foundationStack.mediaBucket.bucketName,
   mediaBucketArn: foundationStack.mediaBucket.bucketArn,
+  malwareScanRoleArn: apiStack.malwareScanRoleArn,
   apiGatewayEndpoint: apiStack.httpApi.apiEndpoint,
   allowedIpCidrs,
   cloudFrontDistributionId,

@@ -43,6 +43,8 @@ export interface CdnStackProps extends cdk.StackProps {
   userPoolId?: string;
   /** Cognito User Pool Client ID (for runtime config) */
   userPoolClientId?: string;
+  /** Malware scan Lambda role ARN (for media bucket scanStatus Deny) */
+  malwareScanRoleArn?: string;
 }
 
 export class CdnStack extends cdk.Stack {
@@ -366,43 +368,77 @@ exports.handler = async (event, context) => {
           },
         });
 
-        // Grant CloudFront OAC access to static S3 bucket for the existing distribution
-        const importedStaticBucketPolicy = new s3.CfnBucketPolicy(this, 'ImportedStaticBucketPolicy', {
+        // Grant CloudFront OAC access to static S3 bucket for the existing distribution.
+        // Single owner of ALL statements on the static bucket policy (OAC Allow + SecureTransport Deny).
+        new s3.CfnBucketPolicy(this, 'ImportedStaticBucketPolicy', {
           bucket: props.staticBucketName,
           policyDocument: new iam.PolicyDocument({
-            statements: [new iam.PolicyStatement({
-              effect: iam.Effect.ALLOW,
-              principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
-              actions: ['s3:GetObject'],
-              resources: [`${props.staticBucketArn}/*`],
-              conditions: {
-                StringEquals: {
-                  'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${distributionId}`,
+            statements: [
+              new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
+                actions: ['s3:GetObject'],
+                resources: [`${props.staticBucketArn}/*`],
+                conditions: {
+                  StringEquals: {
+                    'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${distributionId}`,
+                  },
                 },
-              },
-            })],
+              }),
+              new iam.PolicyStatement({
+                effect: iam.Effect.DENY,
+                principals: [new iam.AnyPrincipal()],
+                actions: ['s3:*'],
+                resources: [props.staticBucketArn, `${props.staticBucketArn}/*`],
+                conditions: { Bool: { 'aws:SecureTransport': 'false' } },
+              }),
+            ],
           }),
         });
-        importedStaticBucketPolicy.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
-        // Grant CloudFront OAC access to media S3 bucket for the existing distribution
-        const importedMediaBucketPolicy = new s3.CfnBucketPolicy(this, 'ImportedMediaBucketPolicy', {
-          bucket: props.mediaBucketName,
-          policyDocument: new iam.PolicyDocument({
-            statements: [new iam.PolicyStatement({
-              effect: iam.Effect.ALLOW,
-              principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
-              actions: ['s3:GetObject'],
-              resources: [`${props.mediaBucketArn}/*`],
-              conditions: {
-                StringEquals: {
-                  'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${distributionId}`,
-                },
+        // Grant CloudFront OAC access to media S3 bucket for the existing distribution.
+        // Single owner of ALL statements on the media bucket policy
+        // (OAC Allow + scanStatus Deny + SecureTransport Deny).
+        const importedMediaStatements: iam.PolicyStatement[] = [
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
+            actions: ['s3:GetObject'],
+            resources: [`${props.mediaBucketArn}/*`],
+            conditions: {
+              StringEquals: {
+                'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${distributionId}`,
               },
-            })],
+            },
           }),
+        ];
+        if (props.malwareScanRoleArn) {
+          importedMediaStatements.push(
+            new iam.PolicyStatement({
+              effect: iam.Effect.DENY,
+              principals: [new iam.AnyPrincipal()],
+              actions: ['s3:GetObject'],
+              resources: [`${props.mediaBucketArn}/media/*`],
+              conditions: {
+                StringEquals: { 's3:ExistingObjectTag/scanStatus': 'PENDING' },
+                StringNotEquals: { 'aws:PrincipalArn': props.malwareScanRoleArn },
+              },
+            }),
+          );
+        }
+        importedMediaStatements.push(
+          new iam.PolicyStatement({
+            effect: iam.Effect.DENY,
+            principals: [new iam.AnyPrincipal()],
+            actions: ['s3:*'],
+            resources: [props.mediaBucketArn, `${props.mediaBucketArn}/*`],
+            conditions: { Bool: { 'aws:SecureTransport': 'false' } },
+          }),
+        );
+        new s3.CfnBucketPolicy(this, 'ImportedMediaBucketPolicy', {
+          bucket: props.mediaBucketName,
+          policyDocument: new iam.PolicyDocument({ statements: importedMediaStatements }),
         });
-        importedMediaBucketPolicy.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
       }
     } else {
       // Create new distribution with S3 origin and BasePath support.
@@ -545,40 +581,76 @@ exports.handler = async (event, context) => {
         ...(geoRestriction ? { geoRestriction } : {}),
       });
 
-      // Grant CloudFront OAC access to static S3 bucket
+      // Grant CloudFront OAC access to static S3 bucket.
+      // Single owner of ALL statements on the static bucket policy (OAC Allow + SecureTransport Deny).
       new s3.CfnBucketPolicy(this, 'StaticBucketPolicy', {
         bucket: props.staticBucketName,
         policyDocument: new iam.PolicyDocument({
-          statements: [new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
-            actions: ['s3:GetObject'],
-            resources: [`${props.staticBucketArn}/*`],
-            conditions: {
-              StringEquals: {
-                'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${newDistribution.distributionId}`,
+          statements: [
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
+              actions: ['s3:GetObject'],
+              resources: [`${props.staticBucketArn}/*`],
+              conditions: {
+                StringEquals: {
+                  'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${newDistribution.distributionId}`,
+                },
               },
-            },
-          })],
+            }),
+            new iam.PolicyStatement({
+              effect: iam.Effect.DENY,
+              principals: [new iam.AnyPrincipal()],
+              actions: ['s3:*'],
+              resources: [props.staticBucketArn, `${props.staticBucketArn}/*`],
+              conditions: { Bool: { 'aws:SecureTransport': 'false' } },
+            }),
+          ],
         }),
       });
 
-      // Grant CloudFront OAC access to media S3 bucket
+      // Grant CloudFront OAC access to media S3 bucket.
+      // Single owner of ALL statements on the media bucket policy
+      // (OAC Allow + scanStatus Deny + SecureTransport Deny).
+      const mediaStatements: iam.PolicyStatement[] = [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
+          actions: ['s3:GetObject'],
+          resources: [`${props.mediaBucketArn}/*`],
+          conditions: {
+            StringEquals: {
+              'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${newDistribution.distributionId}`,
+            },
+          },
+        }),
+      ];
+      if (props.malwareScanRoleArn) {
+        mediaStatements.push(
+          new iam.PolicyStatement({
+            effect: iam.Effect.DENY,
+            principals: [new iam.AnyPrincipal()],
+            actions: ['s3:GetObject'],
+            resources: [`${props.mediaBucketArn}/media/*`],
+            conditions: {
+              StringEquals: { 's3:ExistingObjectTag/scanStatus': 'PENDING' },
+              StringNotEquals: { 'aws:PrincipalArn': props.malwareScanRoleArn },
+            },
+          }),
+        );
+      }
+      mediaStatements.push(
+        new iam.PolicyStatement({
+          effect: iam.Effect.DENY,
+          principals: [new iam.AnyPrincipal()],
+          actions: ['s3:*'],
+          resources: [props.mediaBucketArn, `${props.mediaBucketArn}/*`],
+          conditions: { Bool: { 'aws:SecureTransport': 'false' } },
+        }),
+      );
       new s3.CfnBucketPolicy(this, 'MediaBucketPolicy', {
         bucket: props.mediaBucketName,
-        policyDocument: new iam.PolicyDocument({
-          statements: [new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
-            actions: ['s3:GetObject'],
-            resources: [`${props.mediaBucketArn}/*`],
-            conditions: {
-              StringEquals: {
-                'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${newDistribution.distributionId}`,
-              },
-            },
-          })],
-        }),
+        policyDocument: new iam.PolicyDocument({ statements: mediaStatements }),
       });
 
       this.distribution = newDistribution;

@@ -221,7 +221,6 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
       "UpdateReplacePolicy": "Delete",
     },
     "ImportedMediaBucketPolicy": {
-      "DeletionPolicy": "Retain",
       "Properties": {
         "Bucket": "transcription-review-media-123456789012",
         "PolicyDocument": {
@@ -239,12 +238,27 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
               },
               "Resource": "arn:aws:s3:::transcription-review-media-123456789012/*",
             },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                "arn:aws:s3:::transcription-review-media-123456789012",
+                "arn:aws:s3:::transcription-review-media-123456789012/*",
+              ],
+            },
           ],
           "Version": "2012-10-17",
         },
       },
       "Type": "AWS::S3::BucketPolicy",
-      "UpdateReplacePolicy": "Retain",
     },
     "ImportedMediaOAC19AAFE55": {
       "DeletionPolicy": "Retain",
@@ -261,7 +275,6 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
       "UpdateReplacePolicy": "Retain",
     },
     "ImportedStaticBucketPolicy": {
-      "DeletionPolicy": "Retain",
       "Properties": {
         "Bucket": "transcription-review-data-123456789012",
         "PolicyDocument": {
@@ -279,12 +292,27 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
               },
               "Resource": "arn:aws:s3:::transcription-review-data-123456789012/*",
             },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                "arn:aws:s3:::transcription-review-data-123456789012",
+                "arn:aws:s3:::transcription-review-data-123456789012/*",
+              ],
+            },
           ],
           "Version": "2012-10-17",
         },
       },
       "Type": "AWS::S3::BucketPolicy",
-      "UpdateReplacePolicy": "Retain",
     },
     "ImportedStaticOAC82602696": {
       "DeletionPolicy": "Retain",
@@ -959,6 +987,22 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
               },
               "Resource": "arn:aws:s3:::transcription-review-media-123456789012/*",
             },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                "arn:aws:s3:::transcription-review-media-123456789012",
+                "arn:aws:s3:::transcription-review-media-123456789012/*",
+              ],
+            },
           ],
           "Version": "2012-10-17",
         },
@@ -1036,6 +1080,22 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
                 "Service": "cloudfront.amazonaws.com",
               },
               "Resource": "arn:aws:s3:::transcription-review-data-123456789012/*",
+            },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                "arn:aws:s3:::transcription-review-data-123456789012",
+                "arn:aws:s3:::transcription-review-data-123456789012/*",
+              ],
             },
           ],
           "Version": "2012-10-17",

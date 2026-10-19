@@ -369,53 +369,6 @@ exports[`FoundationStack - Snapshot > matches the snapshot for import mode 1`] =
       "Type": "AWS::S3::Bucket",
       "UpdateReplacePolicy": "Delete",
     },
-    "MediaBucketPolicy68C27F6B": {
-      "Properties": {
-        "Bucket": {
-          "Ref": "MediaBucketBCBB02BA",
-        },
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "s3:*",
-              "Condition": {
-                "Bool": {
-                  "aws:SecureTransport": "false",
-                },
-              },
-              "Effect": "Deny",
-              "Principal": {
-                "AWS": "*",
-              },
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
-                    "MediaBucketBCBB02BA",
-                    "Arn",
-                  ],
-                },
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      {
-                        "Fn::GetAtt": [
-                          "MediaBucketBCBB02BA",
-                          "Arn",
-                        ],
-                      },
-                      "/*",
-                    ],
-                  ],
-                },
-              ],
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-      },
-      "Type": "AWS::S3::BucketPolicy",
-    },
     "StaticBucket92253581": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -465,53 +418,6 @@ exports[`FoundationStack - Snapshot > matches the snapshot for import mode 1`] =
       },
       "Type": "AWS::S3::Bucket",
       "UpdateReplacePolicy": "Delete",
-    },
-    "StaticBucketPolicy4D0F6D8E": {
-      "Properties": {
-        "Bucket": {
-          "Ref": "StaticBucket92253581",
-        },
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "s3:*",
-              "Condition": {
-                "Bool": {
-                  "aws:SecureTransport": "false",
-                },
-              },
-              "Effect": "Deny",
-              "Principal": {
-                "AWS": "*",
-              },
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
-                    "StaticBucket92253581",
-                    "Arn",
-                  ],
-                },
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      {
-                        "Fn::GetAtt": [
-                          "StaticBucket92253581",
-                          "Arn",
-                        ],
-                      },
-                      "/*",
-                    ],
-                  ],
-                },
-              ],
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-      },
-      "Type": "AWS::S3::BucketPolicy",
     },
     "TranscriptionReviewApp38524381": {
       "DeletionPolicy": "Delete",
@@ -1037,53 +943,6 @@ exports[`FoundationStack - Snapshot > matches the snapshot for new creation mode
       "Type": "AWS::S3::Bucket",
       "UpdateReplacePolicy": "Delete",
     },
-    "MediaBucketPolicy68C27F6B": {
-      "Properties": {
-        "Bucket": {
-          "Ref": "MediaBucketBCBB02BA",
-        },
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "s3:*",
-              "Condition": {
-                "Bool": {
-                  "aws:SecureTransport": "false",
-                },
-              },
-              "Effect": "Deny",
-              "Principal": {
-                "AWS": "*",
-              },
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
-                    "MediaBucketBCBB02BA",
-                    "Arn",
-                  ],
-                },
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      {
-                        "Fn::GetAtt": [
-                          "MediaBucketBCBB02BA",
-                          "Arn",
-                        ],
-                      },
-                      "/*",
-                    ],
-                  ],
-                },
-              ],
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-      },
-      "Type": "AWS::S3::BucketPolicy",
-    },
     "StaticBucket92253581": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -1133,53 +992,6 @@ exports[`FoundationStack - Snapshot > matches the snapshot for new creation mode
       },
       "Type": "AWS::S3::Bucket",
       "UpdateReplacePolicy": "Delete",
-    },
-    "StaticBucketPolicy4D0F6D8E": {
-      "Properties": {
-        "Bucket": {
-          "Ref": "StaticBucket92253581",
-        },
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "s3:*",
-              "Condition": {
-                "Bool": {
-                  "aws:SecureTransport": "false",
-                },
-              },
-              "Effect": "Deny",
-              "Principal": {
-                "AWS": "*",
-              },
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
-                    "StaticBucket92253581",
-                    "Arn",
-                  ],
-                },
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      {
-                        "Fn::GetAtt": [
-                          "StaticBucket92253581",
-                          "Arn",
-                        ],
-                      },
-                      "/*",
-                    ],
-                  ],
-                },
-              ],
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-      },
-      "Type": "AWS::S3::BucketPolicy",
     },
     "TranscriptionReviewApp38524381": {
       "DeletionPolicy": "Delete",

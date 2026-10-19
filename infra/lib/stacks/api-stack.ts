@@ -43,6 +43,7 @@ export interface ApiStackProps extends cdk.StackProps {
 export class ApiStack extends cdk.Stack {
   public readonly httpApi: apigatewayv2.HttpApi;
   public readonly eventBus: events.EventBus;
+  public readonly malwareScanRoleArn: string;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
@@ -1191,6 +1192,7 @@ exports.handler = async (event, context) => {
       tableArn: props.table.tableArn,
       tableName: props.table.tableName,
     });
+    this.malwareScanRoleArn = malwareScan.scanRole.roleArn;
 
     // S3 ObjectCreated EventBridge rule → Malware Scan Lambda
     // Note: S3 events go to the default event bus when S3 Event Notifications to EventBridge is enabled
@@ -1203,47 +1205,6 @@ exports.handler = async (event, context) => {
         detailType: ['S3ObjectCreated'],
       },
       targets: [new eventsTargets.LambdaFunction(malwareScan.scanFunction)],
-    });
-
-    // --- S3 Bucket Policy: Deny GetObject for PENDING scanStatus objects except from malware scan Lambda ---
-    // Use CfnBucketPolicy in ApiStack to avoid cross-stack cyclic dependency
-    new s3.CfnBucketPolicy(this, 'MediaBucketScanPolicy', {
-      bucket: props.mediaBucket.bucketName,
-      policyDocument: {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Sid: 'DenyGetObjectForPendingScanStatus',
-            Effect: 'Deny',
-            Principal: '*',
-            Action: 's3:GetObject',
-            Resource: `${props.mediaBucket.bucketArn}/media/*`,
-            Condition: {
-              StringEquals: {
-                's3:ExistingObjectTag/scanStatus': 'PENDING',
-              },
-              StringNotEquals: {
-                'aws:PrincipalArn': malwareScan.scanRole.roleArn,
-              },
-            },
-          },
-          {
-            Sid: 'EnforceSSLOnly',
-            Effect: 'Deny',
-            Principal: '*',
-            Action: 's3:*',
-            Resource: [
-              props.mediaBucket.bucketArn,
-              `${props.mediaBucket.bucketArn}/*`,
-            ],
-            Condition: {
-              Bool: {
-                'aws:SecureTransport': 'false',
-              },
-            },
-          },
-        ],
-      },
     });
 
     // --- Admin Settings Lambda Functions ---

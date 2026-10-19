@@ -128,6 +128,63 @@ describe('CdnStack', () => {
         });
       });
 
+      // Single-owner consolidation: the static bucket policy carries both the OAC
+      // Allow and the SecureTransport Deny (no separate enforceSSL-derived policy).
+      it('static bucket policy includes the SecureTransport Deny', () => {
+        template.hasResourceProperties('AWS::S3::BucketPolicy', {
+          Bucket: 'transcription-review-data-123456789012',
+          PolicyDocument: {
+            Statement: Match.arrayWith([
+              Match.objectLike({
+                Effect: 'Deny',
+                Action: 's3:*',
+                Condition: { Bool: { 'aws:SecureTransport': 'false' } },
+              }),
+            ]),
+          },
+        });
+      });
+
+      // When malwareScanRoleArn is provided, the media bucket policy owns the
+      // scanStatus PENDING Deny and the SecureTransport Deny alongside the OAC Allow.
+      it('media bucket policy includes scanStatus and SecureTransport Denies when scan role provided', () => {
+        const app = new cdk.App();
+        const stack = new CdnStack(app, 'TestCdnStackWithScan', {
+          env: { account: '123456789012', region: 'ap-northeast-1' },
+          staticBucketName: 'transcription-review-data-123456789012',
+          staticBucketArn: 'arn:aws:s3:::transcription-review-data-123456789012',
+          mediaBucketName: 'transcription-review-media-123456789012',
+          mediaBucketArn: 'arn:aws:s3:::transcription-review-media-123456789012',
+          allowedIpCidrs: ['203.0.113.0/24'],
+          wafRegionalIpRateLimitPerFiveMinutes: 2000,
+          malwareScanRoleArn: 'arn:aws:iam::123456789012:role/test-scan-role',
+        });
+        const scanTemplate = Template.fromStack(stack);
+
+        scanTemplate.hasResourceProperties('AWS::S3::BucketPolicy', {
+          Bucket: 'transcription-review-media-123456789012',
+          PolicyDocument: {
+            Statement: Match.arrayWith([
+              Match.objectLike({
+                Effect: 'Deny',
+                Action: 's3:GetObject',
+                Condition: Match.objectLike({
+                  StringEquals: { 's3:ExistingObjectTag/scanStatus': 'PENDING' },
+                  StringNotEquals: {
+                    'aws:PrincipalArn': 'arn:aws:iam::123456789012:role/test-scan-role',
+                  },
+                }),
+              }),
+              Match.objectLike({
+                Effect: 'Deny',
+                Action: 's3:*',
+                Condition: { Bool: { 'aws:SecureTransport': 'false' } },
+              }),
+            ]),
+          },
+        });
+      });
+
       // Regression guard (FEAT-001): RETAIN belongs only to the import-path resources.
       // The new-create path must not retain its OAC or bucket policies on teardown.
       it('does not retain OAC or bucket policies on the new-create path', () => {
@@ -459,16 +516,21 @@ describe('CdnStack', () => {
 
     // RETAIN on the import-path resources lets `cdk destroy` reach DELETE_COMPLETE
     // instead of DELETE_FAILED on the shared distribution (FEAT-001).
-    it('retains the 5 import-path resources on teardown', () => {
+    // Bucket policies are intentionally NOT retained: they are the single owner of
+    // each CloudFront-exposed bucket's policy and must be re-applyable on redeploy.
+    it('retains the CloudFront Function and OACs on teardown', () => {
       template.hasResource('AWS::CloudFront::Function', {
         DeletionPolicy: 'Retain',
       });
       template.hasResource('AWS::CloudFront::OriginAccessControl', {
         DeletionPolicy: 'Retain',
       });
-      template.hasResource('AWS::S3::BucketPolicy', {
-        DeletionPolicy: 'Retain',
-      });
+    });
+
+    it('does not retain the import-path bucket policies on teardown', () => {
+      for (const resource of Object.values(template.findResources('AWS::S3::BucketPolicy'))) {
+        expect((resource as { DeletionPolicy?: string }).DeletionPolicy).not.toBe('Retain');
+      }
     });
   });
 });

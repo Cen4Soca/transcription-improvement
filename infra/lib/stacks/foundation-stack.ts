@@ -109,7 +109,6 @@ export class FoundationStack extends cdk.Stack {
       encryption: s3.BucketEncryption.KMS,
       encryptionKey: this.kmsKey,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      enforceSSL: true,
       removalPolicy: dataRemovalPolicy,
       // ブラウザからプリサインドURLで直接 PUT アップロードするための CORS 設定
       // これがないとブラウザが CORS でリクエストをブロックし、フロントで
@@ -176,7 +175,6 @@ export class FoundationStack extends cdk.Stack {
       encryption: s3.BucketEncryption.KMS,
       encryptionKey: this.kmsKey,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      enforceSSL: true,
       removalPolicy: dataRemovalPolicy,
       lifecycleRules: [
         {

@@ -557,41 +557,13 @@ describe('ApiStack - Transcription Workflow Resources', () => {
     });
   });
 
+  // The media bucket's scanStatus Deny policy is now owned by CdnStack (single
+  // BucketPolicy owner per CloudFront-exposed bucket). See cdn-stack.test.ts for
+  // its coverage. ApiStack no longer emits a media bucket policy.
   describe('S3 Bucket Policy for PENDING scanStatus', () => {
-    it('creates a bucket policy denying GetObject for PENDING scanStatus', () => {
-      template.hasResourceProperties('AWS::S3::BucketPolicy', {
-        PolicyDocument: {
-          Statement: Match.arrayWith([
-            Match.objectLike({
-              Sid: 'DenyGetObjectForPendingScanStatus',
-              Effect: 'Deny',
-              Action: 's3:GetObject',
-              Condition: Match.objectLike({
-                StringEquals: {
-                  's3:ExistingObjectTag/scanStatus': 'PENDING',
-                },
-              }),
-            }),
-          ]),
-        },
-      });
-    });
-
-    it('bucket policy excludes malware scan Lambda role from deny', () => {
-      template.hasResourceProperties('AWS::S3::BucketPolicy', {
-        PolicyDocument: {
-          Statement: Match.arrayWith([
-            Match.objectLike({
-              Sid: 'DenyGetObjectForPendingScanStatus',
-              Condition: Match.objectLike({
-                StringNotEquals: {
-                  'aws:PrincipalArn': Match.anyValue(),
-                },
-              }),
-            }),
-          ]),
-        },
-      });
+    it('no longer emits a media bucket policy from ApiStack', () => {
+      const policies = template.findResources('AWS::S3::BucketPolicy');
+      expect(Object.keys(policies)).toHaveLength(0);
     });
   });
 
