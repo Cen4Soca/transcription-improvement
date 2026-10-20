@@ -253,7 +253,10 @@ describe('generateJson (service function)', () => {
     });
   });
 
-  test('throws error when no confirmed segments exist', async () => {
+  test('includes non-confirmed segments using original text (no throw)', async () => {
+    // Regression (download-missing-unedited-segments-fix): unedited (UNDECIDED)
+    // and conflicting (CONFLICT) segments must be included with their original
+    // text, and a session with no CONFIRMED segments must not throw.
     mockedGetSessionById.mockResolvedValue({
       sessionId: 'session-001',
       name: '会議録_20240101',
@@ -285,11 +288,33 @@ describe('generateJson (service function)', () => {
       ],
     } as never);
 
-    await expect(generateJson('session-001')).rejects.toMatchObject({
-      code: 'VALIDATION_ERROR',
-      statusCode: 400,
-      message: '確定済みの Segment がありません。',
+    const result = await generateJson('session-001');
+    expect(result.segments).toHaveLength(2);
+    expect(result.segments[0].text).toBe('テスト');
+    expect(result.segments[1].text).toBe('テスト2');
+  });
+
+  test('mixes confirmed (consensusText) and non-confirmed (originalText) segments', async () => {
+    mockedGetSessionById.mockResolvedValue({
+      sessionId: 'session-001',
+      name: '会議録_20240101',
+      status: 'COMPLETED',
+      assignedReviewerCount: 3,
+      consensusThreshold: 67,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
     });
+
+    mockedDocClientSend.mockResolvedValue({
+      Items: [
+        { segmentId: 'seg-001', startTime: 0, endTime: 3, originalText: '元1', consensusStatus: 'UNDECIDED' },
+        { segmentId: 'seg-002', startTime: 3, endTime: 6, originalText: '元2', consensusText: '確定2', consensusStatus: 'CONFIRMED' },
+        { segmentId: 'seg-003', startTime: 6, endTime: 9, originalText: '元3', consensusStatus: 'CONFLICT' },
+      ],
+    } as never);
+
+    const result = await generateJson('session-001');
+    expect(result.segments.map((x) => x.text)).toEqual(['元1', '確定2', '元3']);
   });
 
   test('throws NOT_FOUND when session does not exist', async () => {
@@ -347,7 +372,7 @@ describe('generateSrt (service function)', () => {
     expect(result).toContain('2\n00:00:04,000 --> 00:00:07,200\n[spk_1] こちらこそよろしくお願いします。');
   });
 
-  test('throws error when no confirmed segments exist', async () => {
+  test('includes non-confirmed segments using original text (no throw)', async () => {
     mockedGetSessionById.mockResolvedValue({
       sessionId: 'session-001',
       name: '会議録_20240101',
@@ -370,11 +395,8 @@ describe('generateSrt (service function)', () => {
       ],
     } as never);
 
-    await expect(generateSrt('session-001')).rejects.toMatchObject({
-      code: 'VALIDATION_ERROR',
-      statusCode: 400,
-      message: '確定済みの Segment がありません。',
-    });
+    const result = await generateSrt('session-001');
+    expect(result).toContain('1\n00:00:00,000 --> 00:00:03,500\nテスト');
   });
 
   test('throws NOT_FOUND when session does not exist', async () => {

@@ -1,6 +1,6 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
-import { notFoundError, validationError } from '../utils/error-handler.js';
+import { notFoundError } from '../utils/error-handler.js';
 import * as sessionRepository from '../repositories/session-repository.js';
 import { getCorrections } from '../repositories/correction-repository.js';
 
@@ -282,20 +282,18 @@ export async function generateJson(
     throw notFoundError('指定された ReviewSession が見つかりません。');
   }
 
-  const allSegments = await getSessionSegments(sessionId);
-  let confirmedSegments = filterConfirmedSegments(allSegments);
-
-  if (confirmedSegments.length === 0) {
-    throw validationError('確定済みの Segment がありません。');
-  }
+  // Include ALL segments, not just CONFIRMED ones. getSessionSegments already
+  // resolves each segment's text as consensusText ?? originalText, so unedited
+  // (UNDECIDED) and conflicting (CONFLICT) segments export their original text.
+  let outputSegments = await getSessionSegments(sessionId);
 
   if (userId) {
     const speakerCorrections = await getUserSpeakerCorrections(sessionId, userId);
-    confirmedSegments = applySpeakerCorrections(confirmedSegments, speakerCorrections);
+    outputSegments = applySpeakerCorrections(outputSegments, speakerCorrections);
   }
 
   const exportedAt = new Date().toISOString();
-  return generateTranscriptionJson(session.name, confirmedSegments, exportedAt);
+  return generateTranscriptionJson(session.name, outputSegments, exportedAt);
 }
 
 /**
@@ -317,17 +315,13 @@ export async function generateSrt(
     throw notFoundError('指定された ReviewSession が見つかりません。');
   }
 
-  const allSegments = await getSessionSegments(sessionId);
-  let confirmedSegments = filterConfirmedSegments(allSegments);
-
-  if (confirmedSegments.length === 0) {
-    throw validationError('確定済みの Segment がありません。');
-  }
+  // Include ALL segments, not just CONFIRMED ones (see generateJson).
+  let outputSegments = await getSessionSegments(sessionId);
 
   if (userId) {
     const speakerCorrections = await getUserSpeakerCorrections(sessionId, userId);
-    confirmedSegments = applySpeakerCorrections(confirmedSegments, speakerCorrections);
+    outputSegments = applySpeakerCorrections(outputSegments, speakerCorrections);
   }
 
-  return generateTranscriptionSrt(confirmedSegments);
+  return generateTranscriptionSrt(outputSegments);
 }

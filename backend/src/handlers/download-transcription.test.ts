@@ -197,12 +197,12 @@ describe('GET /sessions/{sessionId}/download handler', () => {
     expect(body.error.code).toBe('FORBIDDEN');
   });
 
-  it('returns error when no confirmed segments exist', async () => {
+  it('propagates a service validation error as 400', async () => {
     const { AppError } = await import('../utils/error-handler.js');
     mockedGenerateJson.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: '確定済みの Segment がありません。',
+        message: 'format は json または srt を指定してください。',
         statusCode: 400,
       })
     );
@@ -212,7 +212,7 @@ describe('GET /sessions/{sessionId}/download handler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('確定済みの Segment');
+    expect(body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns 404 when session not found', async () => {
