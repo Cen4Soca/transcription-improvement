@@ -41,7 +41,10 @@ export function validateCorrectionInput(body: unknown): CreateCorrectionInput {
     throw validationError('correctionId は必須です。');
   }
 
-  if (!input.segmentId || typeof input.segmentId !== 'string') {
+  // segmentId must be a string, but an empty string is valid: SPEAKER_RENAME is a
+  // bulk operation not tied to a specific segment and sends segmentId: ''.
+  // Using `!input.segmentId` here dropped those requests (empty string is falsy).
+  if (typeof input.segmentId !== 'string') {
     throw validationError('segmentId は必須です。');
   }
 

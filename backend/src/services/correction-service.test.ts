@@ -85,6 +85,27 @@ describe('correction-service', () => {
       expect(result.affectedSegmentCount).toBe(5);
     });
 
+    it('should accept SPEAKER_RENAME with an empty segmentId (bulk rename)', () => {
+      // Regression (speaker-correction-save-fix): bulk speaker rename is not tied
+      // to a specific segment and sends segmentId: ''. An empty string must be
+      // accepted; previously `!input.segmentId` rejected it and dropped the save.
+      const input = {
+        correctionId: 'corr-rename',
+        segmentId: '',
+        correctionType: 'SPEAKER_RENAME',
+        beforeText: '',
+        afterText: '',
+        beforeSpeaker: 'spk_0',
+        afterSpeaker: 'Tanaka',
+        affectedSegmentCount: 3,
+      };
+      const result = validateCorrectionInput(input);
+      expect(result.segmentId).toBe('');
+      expect(result.beforeSpeaker).toBe('spk_0');
+      expect(result.afterSpeaker).toBe('Tanaka');
+      expect(result.affectedSegmentCount).toBe(3);
+    });
+
     it('should throw validation error when body is null', () => {
       expect(() => validateCorrectionInput(null)).toThrow('リクエストボディが不正です。');
     });
