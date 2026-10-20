@@ -23,48 +23,52 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
  * and resolve the role from DynamoDB user record.
  *
  * JWT is pre-validated by API Gateway; Lambda receives verified claims.
- * Role determination strategy:
- *   1. If JWT contains a valid custom:role claim → use it (single-app User Pool)
- *   2. Otherwise → lookup DynamoDB user record by email (shared User Pool).
- *      If no record exists, the user is auto-provisioned just-in-time (JIT)
- *      as a REVIEWER (see provisionUserOnFirstLogin).
  *
- * This dual-path approach supports both:
- *   - Dedicated Cognito User Pool with custom:role attribute
- *   - Shared Cognito User Pool without custom:role (role stored in DynamoDB)
+ * Identity resolution: the user is ALWAYS resolved to its canonical DynamoDB
+ * user record (keyed by a uuidv4 userId) by email. AuthUser.userId is that
+ * canonical userId — never the Cognito `sub` claim — because access-control
+ * records (ReviewAssignment, TeamMembership) are keyed on the canonical userId.
+ * Using `sub` here caused non-ADMIN users with legitimate assignments to be
+ * denied access (404).
+ *
+ * Role determination:
+ *   1. If JWT contains a valid custom:role claim → use it (dedicated User Pool)
+ *   2. Otherwise → use the role on the DynamoDB record (shared User Pool)
+ * If no record exists, the user is auto-provisioned just-in-time (JIT) as a
+ * REVIEWER (see provisionUserOnFirstLogin).
  */
 export async function extractUser(
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<AuthUser> {
   const claims = event.requestContext.authorizer.jwt.claims;
 
-  const userId = (claims['sub'] as string) ?? '';
+  const sub = (claims['sub'] as string) ?? '';
   const email = (claims['email'] as string) ?? '';
   const jwtRole = (claims['custom:role'] as string) ?? '';
 
-  if (!userId) {
+  if (!sub) {
     throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
   }
 
-  // If JWT contains a valid role, use it directly (backward-compatible path)
-  if (isValidRole(jwtRole)) {
-    const displayName = (claims['custom:displayName'] as string) ?? '';
-    return { userId, email, displayName, role: jwtRole };
-  }
-
-  // Fallback: resolve role from DynamoDB user record (shared User Pool path)
+  // Email is required to resolve the canonical DynamoDB user record.
   if (!email) {
     throw forbiddenError('認証情報が不正です。', 'Missing email claim in JWT');
   }
 
+  const claimDisplayName = (claims['custom:displayName'] as string) ?? '';
+
+  // Resolve the canonical DynamoDB user record by email. The record's userId
+  // (a uuidv4 assigned at user creation) is the identifier used as the key for
+  // ReviewAssignment / TeamMembership records. The Cognito `sub` claim is a
+  // separate identifier and MUST NOT be used for access-control lookups, or
+  // non-ADMIN users with legitimate assignments would be denied (404).
   let userRecord = await getUserByEmail(email);
 
   // JIT provisioning: a user authenticated via the shared Cognito User Pool but
   // has no DynamoDB record yet (e.g. registered in another app sharing the pool).
   // Auto-create a REVIEWER record on first login instead of rejecting them.
   if (!userRecord) {
-    const displayName = (claims['custom:displayName'] as string) ?? '';
-    userRecord = await provisionUserOnFirstLogin({ email, displayName });
+    userRecord = await provisionUserOnFirstLogin({ email, displayName: claimDisplayName });
   }
 
   if (!userRecord.isActive) {
@@ -74,11 +78,15 @@ export async function extractUser(
     );
   }
 
+  // Role precedence: a valid custom:role claim (dedicated User Pool) wins;
+  // otherwise fall back to the role stored in the DynamoDB record (shared pool).
+  const role: UserRole = isValidRole(jwtRole) ? jwtRole : userRecord.role;
+
   return {
     userId: userRecord.userId,
     email: userRecord.email,
-    displayName: userRecord.displayName,
-    role: userRecord.role,
+    displayName: userRecord.displayName || claimDisplayName,
+    role,
   };
 }
 

@@ -8,6 +8,13 @@ vi.mock('../repositories/user-repository.js', () => ({
   getUserByEmail: vi.fn(),
 }));
 
+vi.mock('../services/user-service.js', () => ({
+  provisionUserOnFirstLogin: vi.fn(),
+}));
+
+import { getUserByEmail } from '../repositories/user-repository.js';
+const mockGetUserByEmail = vi.mocked(getUserByEmail);
+
 const ALL_ROLES: UserRole[] = ['REVIEWER', 'TEAM_LEADER', 'ADMIN'];
 
 const ROLE_HIERARCHY: Record<UserRole, number> = {
@@ -70,7 +77,20 @@ describe('Feature: auth-middleware, Property 44: custom:role 属性の不変性'
         }),
         fc.constantFrom(...ALL_ROLES),
         async ({ userId, email, displayName, role }, requiredRole) => {
-          // Part 1: extractUser returns the role from JWT claims without modification
+          // The canonical DynamoDB userId is independent of the Cognito sub.
+          const canonicalUserId = `db-${userId}`;
+          mockGetUserByEmail.mockResolvedValue({
+            userId: canonicalUserId,
+            email,
+            displayName,
+            role,
+            isActive: true,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          });
+
+          // Part 1: extractUser returns the role from JWT claims without modification,
+          // and resolves userId to the canonical DynamoDB userId (not the Cognito sub).
           const event = createMockEvent({
             sub: userId,
             email,
@@ -82,7 +102,8 @@ describe('Feature: auth-middleware, Property 44: custom:role 属性の不変性'
 
           // The role must be exactly what was in the JWT claims - no modification allowed
           expect(user.role).toBe(role);
-          expect(user.userId).toBe(userId);
+          // userId must be the canonical DynamoDB userId, never the Cognito sub
+          expect(user.userId).toBe(canonicalUserId);
           expect(user.email).toBe(email);
 
           // Part 2: requireRole consistently enforces the hierarchy

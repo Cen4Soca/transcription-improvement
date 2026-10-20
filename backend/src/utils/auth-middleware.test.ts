@@ -49,9 +49,22 @@ describe('auth-middleware', () => {
   });
 
   describe('extractUser', () => {
-    it('should use custom:role from JWT when available', async () => {
+    it('should use custom:role from JWT but resolve canonical userId from DynamoDB', async () => {
+      // Regression (reviewer-media-playback-fix): the custom:role path must still
+      // resolve the canonical DynamoDB userId (not the Cognito sub), so that
+      // access-control lookups keyed on userId succeed for non-ADMIN users.
+      mockGetUserByEmail.mockResolvedValueOnce({
+        userId: 'db-user-123',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        role: 'REVIEWER',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
+
       const event = createMockEvent({
-        sub: 'user-123',
+        sub: 'cognito-sub-xyz',
         email: 'test@example.com',
         'custom:displayName': 'Test User',
         'custom:role': 'REVIEWER',
@@ -60,16 +73,49 @@ describe('auth-middleware', () => {
       const user = await extractUser(event);
 
       expect(user).toEqual({
-        userId: 'user-123',
+        userId: 'db-user-123', // canonical DynamoDB userId, NOT the sub
         email: 'test@example.com',
         displayName: 'Test User',
-        role: 'REVIEWER',
+        role: 'REVIEWER', // role still taken from custom:role claim
       });
-      // Should NOT call DynamoDB when JWT has valid role
-      expect(mockGetUserByEmail).not.toHaveBeenCalled();
+      expect(mockGetUserByEmail).toHaveBeenCalledWith('test@example.com');
+      expect(mockProvisionUser).not.toHaveBeenCalled();
+    });
+
+    it('should prefer custom:role over the DynamoDB record role', async () => {
+      mockGetUserByEmail.mockResolvedValueOnce({
+        userId: 'db-user-abc',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        role: 'REVIEWER', // record role differs from claim
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
+
+      const event = createMockEvent({
+        sub: 'cognito-sub-abc',
+        email: 'test@example.com',
+        'custom:role': 'ADMIN',
+      });
+
+      const user = await extractUser(event);
+
+      expect(user.userId).toBe('db-user-abc');
+      expect(user.role).toBe('ADMIN');
     });
 
     it('should extract ADMIN role from JWT claims', async () => {
+      mockGetUserByEmail.mockResolvedValueOnce({
+        userId: 'db-admin-789',
+        email: 'admin@example.com',
+        displayName: 'Admin User',
+        role: 'ADMIN',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
+
       const event = createMockEvent({
         sub: 'admin-789',
         email: 'admin@example.com',
@@ -79,7 +125,7 @@ describe('auth-middleware', () => {
 
       const user = await extractUser(event);
       expect(user.role).toBe('ADMIN');
-      expect(mockGetUserByEmail).not.toHaveBeenCalled();
+      expect(user.userId).toBe('db-admin-789');
     });
 
     it('should fallback to DynamoDB when custom:role is missing', async () => {
@@ -243,7 +289,17 @@ describe('auth-middleware', () => {
       expect(user.role).toBe('TEAM_LEADER');
     });
 
-    it('should NOT JIT-provision when custom:role is present in JWT (unchanged path)', async () => {
+    it('should NOT JIT-provision when custom:role is present and a record exists', async () => {
+      mockGetUserByEmail.mockResolvedValueOnce({
+        userId: 'db-role-user',
+        email: 'test@example.com',
+        displayName: 'Role User',
+        role: 'ADMIN',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
+
       const event = createMockEvent({
         sub: 'user-123',
         email: 'test@example.com',
@@ -253,9 +309,37 @@ describe('auth-middleware', () => {
 
       const user = await extractUser(event);
 
-      expect(mockGetUserByEmail).not.toHaveBeenCalled();
+      expect(mockGetUserByEmail).toHaveBeenCalledWith('test@example.com');
       expect(mockProvisionUser).not.toHaveBeenCalled();
+      expect(user.userId).toBe('db-role-user');
       expect(user.role).toBe('ADMIN');
+    });
+
+    it('should JIT-provision on the custom:role path when no record exists', async () => {
+      mockGetUserByEmail.mockResolvedValueOnce(null);
+      mockProvisionUser.mockResolvedValueOnce({
+        userId: 'jit-role-user',
+        email: 'new@example.com',
+        displayName: 'New',
+        role: 'REVIEWER',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
+
+      const event = createMockEvent({
+        sub: 'user-123',
+        email: 'new@example.com',
+        'custom:displayName': 'New',
+        'custom:role': 'TEAM_LEADER',
+      });
+
+      const user = await extractUser(event);
+
+      expect(mockProvisionUser).toHaveBeenCalledWith({ email: 'new@example.com', displayName: 'New' });
+      expect(user.userId).toBe('jit-role-user');
+      // custom:role claim still wins for role
+      expect(user.role).toBe('TEAM_LEADER');
     });
 
     it('should throw 403 when user is deactivated (fallback path)', async () => {
