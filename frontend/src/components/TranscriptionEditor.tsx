@@ -151,6 +151,11 @@ export function TranscriptionEditor({
         const showSuggestion =
           suggestion?.isVisible === true &&
           suggestion.segmentId === segment.segmentId;
+        // 確定済みセグメント（強制確定含む）は読み取り専用。確定結果を表示し、
+        // 編集・候補・話者変更・修正前に戻す操作を抑止する
+        // (force-confirm-consensus-display-fix, Req 2.3)。再生同期用の
+        // onSegmentClick は維持する。
+        const isConfirmed = segment.consensusStatus === 'CONFIRMED';
         return (
           <Fragment key={segment.segmentId}>
             <SegmentEditor
@@ -162,16 +167,16 @@ export function TranscriptionEditor({
               displayCorrection={displayCorrection}
               isCorrected={isCorrected}
               availableSpeakerLabels={availableSpeakerLabels}
-              onStartEdit={onStartEdit}
-              onUpdateText={onUpdateText}
-              onConfirm={onConfirmEdit}
-              onCancel={onCancelEdit}
+              onStartEdit={isConfirmed ? undefined : onStartEdit}
+              onUpdateText={isConfirmed ? undefined : onUpdateText}
+              onConfirm={isConfirmed ? undefined : onConfirmEdit}
+              onCancel={isConfirmed ? undefined : onCancelEdit}
               onClick={onSegmentClick}
-              onSuggestionRequest={onSuggestionRequest}
-              onRevert={onRevert}
-              onSpeakerChange={onSpeakerChange}
-              onHoverStart={onSegmentHoverStart}
-              onHoverEnd={onSegmentHoverEnd}
+              onSuggestionRequest={isConfirmed ? undefined : onSuggestionRequest}
+              onRevert={isConfirmed ? undefined : onRevert}
+              onSpeakerChange={isConfirmed ? undefined : onSpeakerChange}
+              onHoverStart={isConfirmed ? undefined : onSegmentHoverStart}
+              onHoverEnd={isConfirmed ? undefined : onSegmentHoverEnd}
             />
             {/* 修正候補は対象セグメントの直下に表示する (Req 8.x) */}
             {showSuggestion && suggestion && (

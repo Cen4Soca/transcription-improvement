@@ -463,13 +463,6 @@ function ReviewPageWrapper({ getToken, userRole }: { getToken: () => Promise<str
 
   // 復元済みの修正内容（テキスト・話者）を Segment に反映して表示する (Req 3.3, 2.10, 2.14)
   const segments = useMemo<Segment[]>(() => {
-    if (
-      appliedText.size === 0 &&
-      appliedSpeaker.size === 0 &&
-      speakerRenames.length === 0
-    ) {
-      return baseSegments;
-    }
     // 一括リネームを記録順に畳み込むためのラベル変換マップを構築する
     const labelMap = new Map<string, string>();
     const resolveLabel = (label: string): string => {
@@ -485,6 +478,14 @@ function ReviewPageWrapper({ getToken, userRole }: { getToken: () => Promise<str
     }
 
     return baseSegments.map((s) => {
+      // 確定済みセグメント（強制確定含む）は Consensus の確定結果を表示し、
+      // 個人 Correction（テキスト・話者）で上書きしない (force-confirm-consensus-display-fix)
+      if (s.consensusStatus === 'CONFIRMED') {
+        return s.consensusText !== undefined
+          ? { ...s, originalText: s.consensusText }
+          : s;
+      }
+
       let next = s;
       // テキスト反映
       if (appliedText.has(s.segmentId)) {

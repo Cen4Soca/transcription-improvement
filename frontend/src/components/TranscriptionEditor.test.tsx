@@ -88,6 +88,56 @@ describe('TranscriptionEditor', () => {
     });
   });
 
+  // force-confirm-consensus-display-fix (Req 2.3): CONFIRMED segments are
+  // read-only — editing handlers must not fire, playback click still works.
+  describe('CONFIRMED segments are read-only', () => {
+    it('does not call onStartEdit when a CONFIRMED segment is clicked', async () => {
+      const user = userEvent.setup();
+      const onStartEdit = vi.fn();
+      const onSegmentClick = vi.fn();
+      const segments = [
+        createSegment({
+          segmentId: 'seg-confirmed',
+          originalText: '確定本文',
+          consensusStatus: 'CONFIRMED',
+          consensusText: '確定本文',
+        }),
+      ];
+
+      render(
+        <TranscriptionEditor
+          segments={segments}
+          onStartEdit={onStartEdit}
+          onSegmentClick={onSegmentClick}
+        />
+      );
+
+      await user.click(screen.getByRole('listitem'));
+
+      // Read-only: no edit mode. Playback-sync click still fires.
+      expect(onStartEdit).not.toHaveBeenCalled();
+      expect(onSegmentClick).toHaveBeenCalledWith('seg-confirmed');
+    });
+
+    it('calls onStartEdit when a non-CONFIRMED segment is clicked', async () => {
+      const user = userEvent.setup();
+      const onStartEdit = vi.fn();
+      const segments = [
+        createSegment({
+          segmentId: 'seg-undecided',
+          originalText: '編集可能',
+          consensusStatus: 'UNDECIDED',
+        }),
+      ];
+
+      render(<TranscriptionEditor segments={segments} onStartEdit={onStartEdit} />);
+
+      await user.click(screen.getByRole('listitem'));
+
+      expect(onStartEdit).toHaveBeenCalledWith('seg-undecided', '編集可能');
+    });
+  });
+
   describe('empty state', () => {
     it('displays empty message when segments array is empty', () => {
       render(<TranscriptionEditor segments={[]} />);
