@@ -137,7 +137,8 @@ export interface DeleteIPEntryResponse {
 export interface AuditLogSearchParams {
   startDate?: string;
   endDate?: string;
-  actorUserId?: string;
+  /** 実行者名（displayName）での絞り込み。部分一致・大文字小文字無視。 */
+  actorName?: string;
   operationType?: AuditOperationType | '';
   page?: number;
 }
@@ -155,7 +156,7 @@ export interface AuditLogSearchResponse {
 export interface DeleteAuditLogsRequest {
   startDate?: string;
   endDate?: string;
-  actorUserId?: string;
+  actorName?: string;
   operationType?: AuditOperationType | '';
 }
 
@@ -359,8 +360,8 @@ export class AdminApi {
     if (params.endDate) {
       queryParts.push(`endDate=${encodeURIComponent(params.endDate)}`);
     }
-    if (params.actorUserId) {
-      queryParts.push(`actorUserId=${encodeURIComponent(params.actorUserId)}`);
+    if (params.actorName) {
+      queryParts.push(`actorName=${encodeURIComponent(params.actorName)}`);
     }
     if (params.operationType) {
       queryParts.push(`operationType=${encodeURIComponent(params.operationType)}`);
@@ -380,7 +381,7 @@ export class AdminApi {
     const body: Record<string, string> = {};
     if (filters.startDate) body.startDate = filters.startDate;
     if (filters.endDate) body.endDate = filters.endDate;
-    if (filters.actorUserId) body.actorUserId = filters.actorUserId;
+    if (filters.actorName) body.actorName = filters.actorName;
     if (filters.operationType) body.operationType = filters.operationType;
 
     return this.client.post<DeleteAuditLogsResponse>('/admin/audit-logs/delete', body);

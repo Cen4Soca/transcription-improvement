@@ -7,15 +7,21 @@ vi.mock('../repositories/audit-repository.js', () => ({
   deleteAuditLogs: vi.fn(),
 }));
 
+vi.mock('../repositories/user-repository.js', () => ({
+  findUsersByDisplayName: vi.fn(),
+}));
+
 import {
   putAuditLog,
   queryAuditLogs,
   deleteAuditLogs,
 } from '../repositories/audit-repository.js';
+import { findUsersByDisplayName } from '../repositories/user-repository.js';
 
 const mockedPutAuditLog = vi.mocked(putAuditLog);
 const mockedQueryAuditLogs = vi.mocked(queryAuditLogs);
 const mockedDeleteAuditLogs = vi.mocked(deleteAuditLogs);
+const mockedFindUsersByDisplayName = vi.mocked(findUsersByDisplayName);
 
 describe('recordAuditLog', () => {
   beforeEach(() => {
@@ -417,6 +423,78 @@ describe('searchAuditLogs', () => {
     const result = await searchAuditLogs({});
     expect(result).toEqual(expectedResult);
   });
+
+  it('resolves actorName to matching user IDs and queries by actorUserIds', async () => {
+    mockedFindUsersByDisplayName.mockResolvedValue([
+      {
+        userId: 'user-001',
+        email: 'a@example.com',
+        displayName: '山田太郎',
+        role: 'REVIEWER',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      },
+      {
+        userId: 'user-002',
+        email: 'b@example.com',
+        displayName: '山田太郎',
+        role: 'REVIEWER',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      },
+    ]);
+    mockedQueryAuditLogs.mockResolvedValue({
+      items: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 100,
+      totalPages: 1,
+    });
+
+    await searchAuditLogs({ actorName: '山田太郎', page: 1 });
+
+    expect(mockedFindUsersByDisplayName).toHaveBeenCalledWith('山田太郎');
+    expect(mockedQueryAuditLogs).toHaveBeenCalledWith({
+      actorUserId: undefined,
+      actorUserIds: ['user-001', 'user-002'],
+      page: 1,
+    });
+  });
+
+  it('passes empty actorUserIds when actorName matches no user', async () => {
+    mockedFindUsersByDisplayName.mockResolvedValue([]);
+    mockedQueryAuditLogs.mockResolvedValue({
+      items: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 100,
+      totalPages: 1,
+    });
+
+    await searchAuditLogs({ actorName: '存在しない名前' });
+
+    expect(mockedQueryAuditLogs).toHaveBeenCalledWith({
+      actorUserId: undefined,
+      actorUserIds: [],
+    });
+  });
+
+  it('does not resolve actorName when it is blank, honoring actorUserId', async () => {
+    mockedQueryAuditLogs.mockResolvedValue({
+      items: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 100,
+      totalPages: 1,
+    });
+
+    await searchAuditLogs({ actorName: '   ', actorUserId: 'user-001' });
+
+    expect(mockedFindUsersByDisplayName).not.toHaveBeenCalled();
+    expect(mockedQueryAuditLogs).toHaveBeenCalledWith({ actorUserId: 'user-001' });
+  });
 });
 
 describe('removeAuditLogs', () => {
@@ -547,5 +625,63 @@ describe('removeAuditLogs', () => {
     await removeAuditLogs({ actorUserId: 'user-001' });
 
     expect(mockedPutAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('resolves actorName to user IDs before deleting', async () => {
+    mockedFindUsersByDisplayName.mockResolvedValue([
+      {
+        userId: 'user-001',
+        email: 'a@example.com',
+        displayName: '山田太郎',
+        role: 'REVIEWER',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      },
+    ]);
+    mockedDeleteAuditLogs.mockResolvedValue(2);
+    mockedPutAuditLog.mockResolvedValue(undefined);
+
+    const result = await removeAuditLogs(
+      { actorName: '山田太郎' },
+      { userId: 'admin-001', role: 'ADMIN' }
+    );
+
+    expect(result).toBe(2);
+    expect(mockedFindUsersByDisplayName).toHaveBeenCalledWith('山田太郎');
+    expect(mockedDeleteAuditLogs).toHaveBeenCalledWith({
+      startDate: undefined,
+      endDate: undefined,
+      actorUserId: undefined,
+      actorUserIds: ['user-001'],
+      operationType: undefined,
+    });
+
+    const record = mockedPutAuditLog.mock.calls[0][0];
+    expect(record.metadata).toEqual({
+      count: '2',
+      reason:
+        'Deleted 2 audit log entries matching filter conditions: actorName=山田太郎',
+    });
+  });
+
+  it('returns 0 without deleting when only actorName is given but no filter resolves', async () => {
+    // actorName alone is a valid filter; an empty match set must delete nothing.
+    mockedFindUsersByDisplayName.mockResolvedValue([]);
+    mockedDeleteAuditLogs.mockResolvedValue(0);
+
+    const result = await removeAuditLogs(
+      { actorName: '存在しない名前' },
+      { userId: 'admin-001', role: 'ADMIN' }
+    );
+
+    expect(result).toBe(0);
+    expect(mockedDeleteAuditLogs).toHaveBeenCalledWith({
+      startDate: undefined,
+      endDate: undefined,
+      actorUserId: undefined,
+      actorUserIds: [],
+      operationType: undefined,
+    });
   });
 });

@@ -37,6 +37,13 @@ export interface AuditLogQueryParams {
   startDate?: string;
   endDate?: string;
   actorUserId?: string;
+  /**
+   * Restrict results to this set of actor user IDs. Used when searching by
+   * actor name: the service layer resolves a display name to the matching
+   * user IDs and passes them here. An empty array means "no actor matched the
+   * name", which yields no results.
+   */
+  actorUserIds?: string[];
   operationType?: AuditOperationType;
   page?: number;
 }
@@ -94,17 +101,8 @@ export async function queryAuditLogs(
   params: AuditLogQueryParams
 ): Promise<AuditLogQueryResult> {
   const page = params.page ?? 1;
-  const { startDate, endDate, actorUserId, operationType } = params;
 
-  let allItems: AuditLogRecord[];
-
-  if (actorUserId) {
-    allItems = await queryByActor(actorUserId, startDate, endDate);
-  } else if (operationType) {
-    allItems = await queryByOperationType(operationType, startDate, endDate);
-  } else {
-    allItems = await queryByDateRange(startDate, endDate);
-  }
+  const allItems = await collectAuditLogs(params);
 
   // Sort by createdAt descending (most recent first)
   allItems.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -130,17 +128,7 @@ export async function queryAuditLogs(
 export async function deleteAuditLogs(
   params: Omit<AuditLogQueryParams, 'page'>
 ): Promise<number> {
-  const { startDate, endDate, actorUserId, operationType } = params;
-
-  let allItems: AuditLogRecord[];
-
-  if (actorUserId) {
-    allItems = await queryByActor(actorUserId, startDate, endDate);
-  } else if (operationType) {
-    allItems = await queryByOperationType(operationType, startDate, endDate);
-  } else {
-    allItems = await queryByDateRange(startDate, endDate);
-  }
+  const allItems = await collectAuditLogs(params);
 
   if (allItems.length === 0) {
     return 0;
@@ -172,6 +160,45 @@ export async function deleteAuditLogs(
   }
 
   return allItems.length;
+}
+
+/**
+ * Collect audit log records matching the given filters, selecting the most
+ * efficient query strategy:
+ * - actorUserIds (name search): query GSI1 for each actor and merge, deduping
+ *   by logId. An empty array yields no results.
+ * - actorUserId: single-actor GSI1 query.
+ * - operationType: GSI2 query.
+ * - date range / none: primary-key query across month partitions.
+ */
+async function collectAuditLogs(
+  params: Omit<AuditLogQueryParams, 'page'>
+): Promise<AuditLogRecord[]> {
+  const { startDate, endDate, actorUserId, actorUserIds, operationType } = params;
+
+  if (actorUserIds !== undefined) {
+    if (actorUserIds.length === 0) {
+      return [];
+    }
+    const perActor = await Promise.all(
+      actorUserIds.map((id) => queryByActor(id, startDate, endDate))
+    );
+    const byLogId = new Map<string, AuditLogRecord>();
+    for (const records of perActor) {
+      for (const record of records) {
+        byLogId.set(record.logId, record);
+      }
+    }
+    return [...byLogId.values()];
+  }
+
+  if (actorUserId) {
+    return queryByActor(actorUserId, startDate, endDate);
+  }
+  if (operationType) {
+    return queryByOperationType(operationType, startDate, endDate);
+  }
+  return queryByDateRange(startDate, endDate);
 }
 
 /**

@@ -362,7 +362,7 @@ export function useAdmin(adminApi: AdminApi, sessionApi: SessionApi): UseAdminRe
     const params: AuditLogSearchParams = {
       startDate: filters.startDate || undefined,
       endDate: filters.endDate || undefined,
-      actorUserId: filters.actorUserId || undefined,
+      actorName: filters.actorName || undefined,
       operationType: filters.operationType || undefined,
       page: 1,
     };
@@ -380,7 +380,7 @@ export function useAdmin(adminApi: AdminApi, sessionApi: SessionApi): UseAdminRe
     const result = await apiRef.current.deleteAuditLogs({
       startDate: filters.startDate || undefined,
       endDate: filters.endDate || undefined,
-      actorUserId: filters.actorUserId || undefined,
+      actorName: filters.actorName || undefined,
       operationType: filters.operationType || undefined,
     });
     if (result.ok) {

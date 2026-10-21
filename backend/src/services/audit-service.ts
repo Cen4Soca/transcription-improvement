@@ -12,10 +12,10 @@ import {
   deleteAuditLogs,
   type AuditOperationType,
   type AuditLogRecord,
-  type AuditLogQueryParams,
   type AuditLogQueryResult,
 } from '../repositories/audit-repository.js';
 import { sanitizeMetadata } from '../utils/metadata-sanitizer.js';
+import { findUsersByDisplayName } from '../repositories/user-repository.js';
 
 export type { AuditOperationType, AuditLogRecord, AuditLogQueryResult };
 
@@ -28,10 +28,26 @@ export interface RecordAuditLogParams {
   metadata?: Record<string, unknown>;
 }
 
+export interface SearchAuditLogsParams {
+  startDate?: string;
+  endDate?: string;
+  /** Filter by actor user ID (exact match). */
+  actorUserId?: string;
+  /**
+   * Filter by actor display name (case-insensitive, substring match).
+   * Resolved to the matching user IDs before querying. Takes precedence over
+   * actorUserId when both are provided.
+   */
+  actorName?: string;
+  operationType?: AuditOperationType;
+  page?: number;
+}
+
 export interface DeleteAuditLogsParams {
   startDate?: string;
   endDate?: string;
   actorUserId?: string;
+  actorName?: string;
   operationType?: AuditOperationType;
 }
 
@@ -83,15 +99,43 @@ export async function recordAuditLog(params: RecordAuditLogParams): Promise<void
  *
  * Filters:
  * - startDate / endDate: Date range (ISO 8601)
- * - actorUserId: Filter by actor
+ * - actorUserId: Filter by actor user ID
+ * - actorName: Filter by actor display name (substring, case-insensitive).
+ *   Resolved to user IDs; takes precedence over actorUserId.
  * - operationType: Filter by operation type
  *
  * Returns max 100 entries per page.
  */
 export async function searchAuditLogs(
-  params: AuditLogQueryParams
+  params: SearchAuditLogsParams
 ): Promise<AuditLogQueryResult> {
-  return queryAuditLogs(params);
+  const queryParams = await resolveActorName(params);
+  return queryAuditLogs(queryParams);
+}
+
+/**
+ * Translate an actorName filter into the actorUserIds the repository expects.
+ *
+ * - actorName present: resolve to matching user IDs (possibly empty, meaning
+ *   "no user matched" -> no results). actorUserId is dropped in favor of the
+ *   name match.
+ * - actorName absent: pass through unchanged (actorUserId still honored).
+ */
+async function resolveActorName<
+  T extends { actorName?: string; actorUserId?: string }
+>(params: T): Promise<Omit<T, 'actorName'> & { actorUserIds?: string[] }> {
+  const { actorName, ...rest } = params;
+
+  if (actorName && actorName.trim().length > 0) {
+    const matchedUsers = await findUsersByDisplayName(actorName);
+    return {
+      ...rest,
+      actorUserId: undefined,
+      actorUserIds: matchedUsers.map((u) => u.userId),
+    };
+  }
+
+  return rest;
 }
 
 /**
@@ -105,14 +149,16 @@ export async function removeAuditLogs(
   params: DeleteAuditLogsParams,
   actor?: { userId: string; role: 'REVIEWER' | 'TEAM_LEADER' | 'ADMIN' }
 ): Promise<number> {
-  const { startDate, endDate, actorUserId, operationType } = params;
+  const { startDate, endDate, actorUserId, actorName, operationType } = params;
 
   // Require at least one filter to prevent accidental full deletion
-  if (!startDate && !endDate && !actorUserId && !operationType) {
+  if (!startDate && !endDate && !actorUserId && !actorName && !operationType) {
     return 0;
   }
 
-  const deletedCount = await deleteAuditLogs({ startDate, endDate, actorUserId, operationType });
+  const resolved = await resolveActorName({ startDate, endDate, actorUserId, actorName, operationType });
+
+  const deletedCount = await deleteAuditLogs(resolved);
 
   // Record the deletion operation itself in the audit log
   if (actor && deletedCount >= 0) {
@@ -120,6 +166,7 @@ export async function removeAuditLogs(
     if (startDate) conditionParts.push(`startDate=${startDate}`);
     if (endDate) conditionParts.push(`endDate=${endDate}`);
     if (actorUserId) conditionParts.push(`actorUserId=${actorUserId}`);
+    if (actorName) conditionParts.push(`actorName=${actorName}`);
     if (operationType) conditionParts.push(`operationType=${operationType}`);
 
     await recordAuditLog({

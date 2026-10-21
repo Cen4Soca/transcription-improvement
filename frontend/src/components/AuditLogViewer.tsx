@@ -4,7 +4,8 @@ import type { AuditLog, AuditOperationType } from '../types/audit';
 export interface AuditLogFilters {
   startDate?: string;
   endDate?: string;
-  actorUserId?: string;
+  /** 実行者名（displayName）での絞り込み。部分一致・大文字小文字無視。 */
+  actorName?: string;
   operationType?: AuditOperationType | '';
 }
 
@@ -14,6 +15,11 @@ export interface AuditLogViewerProps {
   currentPage: number;
   pageSize?: number;
   isLoading?: boolean;
+  /**
+   * 実行者ID→表示名のマップ。テーブルの実行者列で名前を表示するために使う。
+   * 対応する名前がない場合はIDをそのまま表示する。
+   */
+  actorNames?: Record<string, string>;
   onFilterChange?: (filters: AuditLogFilters) => void;
   onPageChange?: (page: number) => void;
   onDeleteLogs?: (filters: AuditLogFilters) => void;
@@ -54,6 +60,7 @@ export function AuditLogViewer({
   currentPage,
   pageSize = 100,
   isLoading = false,
+  actorNames = {},
   onFilterChange,
   onPageChange,
   onDeleteLogs,
@@ -61,7 +68,7 @@ export function AuditLogViewer({
   const [filters, setFilters] = useState<AuditLogFilters>({
     startDate: '',
     endDate: '',
-    actorUserId: '',
+    actorName: '',
     operationType: '',
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -150,15 +157,15 @@ export function AuditLogViewer({
           </div>
           <div>
             <label htmlFor="audit-actor" className="block text-sm font-medium text-gray-700">
-              実行者ID
+              実行者名
             </label>
             <input
               id="audit-actor"
               type="text"
-              value={filters.actorUserId}
-              onChange={(e) => handleFilterChange('actorUserId', e.target.value)}
+              value={filters.actorName}
+              onChange={(e) => handleFilterChange('actorName', e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="ユーザーID"
+              placeholder="実行者の名前"
             />
           </div>
           <div>
@@ -230,7 +237,7 @@ export function AuditLogViewer({
                     {new Date(log.createdAt).toLocaleString('ja-JP')}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
-                    {log.actorUserId}
+                    {actorNames[log.actorUserId] || log.actorUserId}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
                     {ROLE_LABELS[log.actorRole] || log.actorRole}

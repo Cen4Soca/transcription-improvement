@@ -53,6 +53,7 @@ const VALID_OPERATION_TYPES: AuditOperationType[] = [
  *   - startDate: ISO 8601 date string (optional)
  *   - endDate: ISO 8601 date string (optional)
  *   - actorUserId: Filter by actor user ID (optional)
+ *   - actorName: Filter by actor display name, substring match (optional)
  *   - operationType: Filter by operation type (optional)
  *   - page: Page number, default 1 (optional)
  *
@@ -74,6 +75,7 @@ export async function listAuditLogsHandler(
     const startDate = queryParams['startDate'];
     const endDate = queryParams['endDate'];
     const actorUserId = queryParams['actorUserId'];
+    const actorName = queryParams['actorName'];
     const operationType = queryParams['operationType'];
     const pageStr = queryParams['page'];
 
@@ -106,6 +108,7 @@ export async function listAuditLogsHandler(
       startDate,
       endDate,
       actorUserId,
+      actorName,
       operationType: operationType as AuditOperationType | undefined,
       page,
     });
@@ -135,6 +138,7 @@ export async function listAuditLogsHandler(
  *     startDate?: string,
  *     endDate?: string,
  *     actorUserId?: string,
+ *     actorName?: string,
  *     operationType?: string
  *   }
  *
@@ -155,10 +159,11 @@ export async function deleteAuditLogsHandler(
     const startDate = body['startDate'] as string | undefined;
     const endDate = body['endDate'] as string | undefined;
     const actorUserId = body['actorUserId'] as string | undefined;
+    const actorName = body['actorName'] as string | undefined;
     const operationType = body['operationType'] as string | undefined;
 
     // Require at least one filter
-    if (!startDate && !endDate && !actorUserId && !operationType) {
+    if (!startDate && !endDate && !actorUserId && !actorName && !operationType) {
       throw validationError(
         '削除条件を少なくとも1つ指定してください（期間・実行者・操作種別）。'
       );
@@ -185,6 +190,7 @@ export async function deleteAuditLogsHandler(
         startDate,
         endDate,
         actorUserId,
+        actorName,
         operationType: operationType as AuditOperationType | undefined,
       },
       { userId: user.userId, role: user.role }

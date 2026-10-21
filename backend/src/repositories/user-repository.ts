@@ -61,6 +61,27 @@ export async function getAllUsers(): Promise<UserRecord[]> {
 }
 
 /**
+ * Find users whose displayName matches the given name (case-insensitive,
+ * substring match).
+ *
+ * displayName is not unique and is not indexed, so this scans the User
+ * partition (same access pattern as getAllUsers) and filters in memory.
+ * Returns every matching user so that callers can, for example, aggregate
+ * audit logs for all actors sharing a name.
+ */
+export async function findUsersByDisplayName(
+  displayName: string
+): Promise<UserRecord[]> {
+  const needle = displayName.trim().toLowerCase();
+  if (needle.length === 0) {
+    return [];
+  }
+
+  const allUsers = await getAllUsers();
+  return allUsers.filter((u) => u.displayName.toLowerCase().includes(needle));
+}
+
+/**
  * Get a user by userId.
  * PK: USER#{userId}, SK: METADATA
  */

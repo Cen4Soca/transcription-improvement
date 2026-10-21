@@ -154,7 +154,7 @@ describe('AuditLogViewer', () => {
       );
     });
 
-    it('実行者IDフィルタ変更でonFilterChangeを呼び出す', async () => {
+    it('実行者名フィルタ変更でonFilterChangeを呼び出す', async () => {
       const user = userEvent.setup();
       const onFilterChange = vi.fn();
       render(
@@ -166,11 +166,24 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.type(screen.getByLabelText('実行者ID'), 'admin-001');
+      await user.type(screen.getByLabelText('実行者名'), '山田太郎');
 
       expect(onFilterChange).toHaveBeenCalled();
       const lastCall = onFilterChange.mock.calls[onFilterChange.mock.calls.length - 1][0];
-      expect(lastCall.actorUserId).toBe('admin-001');
+      expect(lastCall.actorName).toBe('山田太郎');
+    });
+
+    it('actorNamesマップがある場合、実行者列に表示名を表示する', () => {
+      render(
+        <AuditLogViewer
+          logs={sampleLogs}
+          totalCount={3}
+          currentPage={1}
+          actorNames={{ 'admin-001': '管理者 太郎' }}
+        />
+      );
+
+      expect(screen.getAllByText('管理者 太郎').length).toBeGreaterThan(0);
     });
 
     it('検索ボタンクリックでonFilterChangeを呼び出す', async () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { UserManagement } from '../components/UserManagement';
 import { TeamManagement } from '../components/TeamManagement';
 import { IPAllowlistSettings } from '../components/IPAllowlistSettings';
@@ -88,6 +88,16 @@ export function AdminPage({
 }: AdminPageProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
 
+  // 実行者ID→表示名のマップ。監査ログテーブルで名前を表示するために使う。
+  const actorNames = useMemo(
+    () =>
+      users.reduce<Record<string, string>>((acc, u) => {
+        acc[u.userId] = u.displayName;
+        return acc;
+      }, {}),
+    [users]
+  );
+
   return (
     <div className="flex flex-col h-full" role="main" aria-label="管理画面">
       {/* Header */}
@@ -170,6 +180,7 @@ export function AdminPage({
               totalCount={auditLogTotalCount}
               currentPage={auditLogCurrentPage}
               isLoading={isLoading}
+              actorNames={actorNames}
               onFilterChange={onAuditLogFilterChange}
               onPageChange={onAuditLogPageChange}
               onDeleteLogs={onDeleteAuditLogs}
