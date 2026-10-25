@@ -601,6 +601,27 @@ describe('ApiStack - Transcription Workflow Resources', () => {
     });
   });
 
+  describe('Admin Audit Log Routes', () => {
+    it('creates GET /admin/audit-logs route', () => {
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'GET /admin/audit-logs',
+      });
+    });
+
+    // Frontend (admin-api.ts deleteAuditLogs) calls POST /admin/audit-logs/delete.
+    it('creates POST /admin/audit-logs/delete route', () => {
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'POST /admin/audit-logs/delete',
+      });
+    });
+
+    it('creates DELETE /admin/audit-logs route', () => {
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'DELETE /admin/audit-logs',
+      });
+    });
+  });
+
   describe('Bedrock + Comprehend Permissions', () => {
     it('grants Bedrock InvokeModel permission to suggestions Lambda', () => {
       template.hasResourceProperties('AWS::IAM::Policy', {

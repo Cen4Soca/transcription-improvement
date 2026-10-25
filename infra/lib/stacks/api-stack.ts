@@ -1336,6 +1336,10 @@ exports.handler = async (event, context) => {
 
     // Admin - Audit Logs
     this.addRoute('GET', '/admin/audit-logs', getAuditLogsFn, jwtAuthorizer);
+    // Frontend (admin-api.ts deleteAuditLogs) calls POST /admin/audit-logs/delete
+    // with filters in the request body. The handler is method-agnostic.
+    this.addRoute('POST', '/admin/audit-logs/delete', deleteAuditLogsFn, jwtAuthorizer);
+    // Legacy DELETE route kept for backward compatibility; no current caller.
     this.addRoute('DELETE', '/admin/audit-logs', deleteAuditLogsFn, jwtAuthorizer);
 
     // Admin - Settings
