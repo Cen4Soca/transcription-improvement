@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from '
 import { LoginForm } from './components/LoginForm';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Navigation } from './components/Navigation';
+import { OfflineBanner } from './components/OfflineBanner';
+import { SessionTimeoutWarning } from './components/SessionTimeoutWarning';
 import { SessionListPage } from './pages/SessionListPage';
 import type { FilterStatus, PaginationInfo } from './pages/SessionListPage';
 import { SessionAssignmentControls } from './components/SessionAssignmentControls';
@@ -19,6 +21,8 @@ import { ProfilePage } from './pages/ProfilePage';
 import { useAuth } from './hooks/useAuth';
 import { useAdmin } from './hooks/useAdmin';
 import { useLanguageModels } from './hooks/useLanguageModels';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useMemo, useEffect, useState, useCallback, useRef } from 'react';
 import { ApiClient } from './services/api-client';
 import { AdminApi } from './services/admin-api';
@@ -1219,6 +1223,13 @@ function AppRoutes() {
     }
   }, [auth]);
 
+  // Network status banner (display-only). Shown on every authenticated page.
+  const online = useOnlineStatus();
+
+  // Idle session timeout. On full timeout, reuse the existing sign-out path
+  // (same as Navigation's "ログアウト"); "続行" resets the idle timer.
+  const { showWarning, remainingMs, reset } = useIdleTimeout({ onTimeout: handleLogout });
+
   const navProps = {
     userRole: auth.user?.role,
     displayName: auth.user?.displayName,
@@ -1227,6 +1238,8 @@ function AppRoutes() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <OfflineBanner isOffline={!online} />
+      <SessionTimeoutWarning visible={showWarning} remainingMs={remainingMs} onContinue={reset} />
       <Routes>
         <Route
           path="/"
