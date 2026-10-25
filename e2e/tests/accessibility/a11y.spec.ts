@@ -78,7 +78,7 @@ test.describe('アクセシビリティ (WCAG 2.1 AA)', () => {
 
       // ドロップエリアボタン
       const dropZone = page.getByRole('button', {
-        name: 'ファイルを選択またはドラッグ＆ドロップ',
+        name: /ファイルを選択 ?またはドラッグ＆ドロップ/,
       });
       await expect(dropZone).toBeVisible();
     });

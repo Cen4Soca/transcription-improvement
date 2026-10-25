@@ -90,9 +90,9 @@ test.describe('管理画面 - 監査ログ', () => {
     const nav = page.getByRole('navigation', { name: 'ページネーション' });
     await expect(nav).toBeVisible();
     await expect(nav.getByText('1 / 2')).toBeVisible();
-    await nav.getByRole('button', { name: '次のページ' }).click();
+    await nav.getByRole('button', { name: /次へ/ }).click();
     await expect(nav.getByText('2 / 2')).toBeVisible();
-    await nav.getByRole('button', { name: '前のページ' }).click();
+    await nav.getByRole('button', { name: /前へ/ }).click();
     await expect(nav.getByText('1 / 2')).toBeVisible();
   });
 

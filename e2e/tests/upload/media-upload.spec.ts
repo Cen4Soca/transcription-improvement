@@ -57,7 +57,7 @@ test.describe('メディアアップロードページ', () => {
       page.getByRole('main', { name: 'メディアアップロード' })
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'ファイルを選択またはドラッグ＆ドロップ' })
+      page.getByRole('button', { name: /ファイルを選択 ?またはドラッグ＆ドロップ/ })
     ).toBeVisible();
     await expect(page.getByText(/対応形式/).first()).toBeVisible();
   });
@@ -211,7 +211,7 @@ test.describe('メディアアップロードページ', () => {
 
   test('5.11 ドラッグオーバー時にエリアのスタイルが変わる', async ({ page }) => {
     const dropZone = page.getByRole('button', {
-      name: 'ファイルを選択またはドラッグ＆ドロップ',
+      name: /ファイルを選択 ?またはドラッグ＆ドロップ/,
     });
     await expect(dropZone).toBeVisible();
     // 実 DataTransfer を持つ dragover を発火し、ボーダーが青（border-blue-400）に変わることを確認する。

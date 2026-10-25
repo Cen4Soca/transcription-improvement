@@ -107,14 +107,14 @@ test.describe('校閲画面', () => {
     test('4.7 Admin に「メディア削除」ボタンが表示される', async ({ page, loginAsAdmin }) => {
       await openMediaReview(page, loginAsAdmin);
       await expect(
-        page.getByRole('button', { name: 'メディアファイルを削除' })
+        page.getByRole('button', { name: /メディア削除/ })
       ).toBeVisible();
     });
 
     test('4.8 Admin に「Transcription 削除」ボタンが表示される', async ({ page, loginAsAdmin }) => {
       await openMediaReview(page, loginAsAdmin);
       await expect(
-        page.getByRole('button', { name: 'Transcription を削除' })
+        page.getByRole('button', { name: /Transcription 削除/ })
       ).toBeVisible();
     });
 
@@ -123,10 +123,10 @@ test.describe('校閲画面', () => {
       // 文字起こしパネルが見える = 画面ロード済み
       await expect(page.getByLabel('文字起こしパネル')).toBeVisible();
       await expect(
-        page.getByRole('button', { name: 'メディアファイルを削除' })
+        page.getByRole('button', { name: /メディア削除/ })
       ).toBeHidden();
       await expect(
-        page.getByRole('button', { name: 'Transcription を削除' })
+        page.getByRole('button', { name: /Transcription 削除/ })
       ).toBeHidden();
     });
   });
@@ -137,7 +137,7 @@ test.describe('校閲画面', () => {
     });
 
     test('4.10 メディア削除確認ダイアログが表示される', async ({ page }) => {
-      await page.getByRole('button', { name: 'メディアファイルを削除' }).click();
+      await page.getByRole('button', { name: /メディア削除/ }).click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
       await expect(dialog.getByText('メディアファイルの削除')).toBeVisible();
@@ -145,7 +145,7 @@ test.describe('校閲画面', () => {
     });
 
     test('4.12 Transcription 削除確認ダイアログが表示される', async ({ page }) => {
-      await page.getByRole('button', { name: 'Transcription を削除' }).click();
+      await page.getByRole('button', { name: /Transcription 削除/ }).click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
       await expect(dialog.getByText('Transcription の削除')).toBeVisible();
@@ -168,7 +168,7 @@ test.describe('校閲画面', () => {
           body: JSON.stringify({ data: { deleted: true } }),
         });
       });
-      await page.getByRole('button', { name: 'メディアファイルを削除' }).click();
+      await page.getByRole('button', { name: /メディア削除/ }).click();
       await page.getByRole('dialog').getByRole('button', { name: '削除する' }).click();
 
       await expect(

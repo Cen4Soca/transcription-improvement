@@ -23,15 +23,14 @@ export const SEEDED_MEDIA_SESSION_IDS = [
 /**
  * Locate the "open review screen" button for a session list item.
  *
- * In the running app the session-select button carries
- * `aria-label="<name> - <status>"` and contains the visible text
- * 「校閲画面を開く」. Because the aria-label becomes the accessible name,
- * we match on the visible text node instead of the role name.
+ * After the WCAG 2.5.3 fix, the session-select button's aria-label is
+ * `校閲画面を開く（<name> - <status>）` (visible text 「校閲画面を開く」 is now a
+ * verbatim prefix of the accessible name). Match by that accessible name.
  */
 export function openReviewButtons(page: Page): Locator {
   return page
     .getByRole('list', { name: 'セッション一覧' })
-    .getByRole('button', { name: /.+ - (未着手|進行中|完了)$/ });
+    .getByRole('button', { name: /^校閲画面を開く（.+ - (未着手|進行中|完了)）$/ });
 }
 
 /**

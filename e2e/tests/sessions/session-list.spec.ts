@@ -120,13 +120,13 @@ test.describe('セッション一覧ページ', () => {
       // 次ページはサーバー再取得（?page=2）。応答を待ってからページ表示を検証する。
       await Promise.all([
         page.waitForResponse(isSessionsListResponse).catch(() => {}),
-        pagination.getByRole('button', { name: '次のページ' }).click(),
+        pagination.getByRole('button', { name: /次へ/ }).click(),
       ]);
       await expect(pagination.getByText('2 /')).toBeVisible();
 
       await Promise.all([
         page.waitForResponse(isSessionsListResponse).catch(() => {}),
-        pagination.getByRole('button', { name: '前のページ' }).click(),
+        pagination.getByRole('button', { name: /前へ/ }).click(),
       ]);
       await expect(pagination.getByText('1 /')).toBeVisible();
     });
