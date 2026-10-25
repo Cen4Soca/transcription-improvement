@@ -219,7 +219,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 60,
       },
       "Type": "AWS::Lambda::Function",
@@ -343,7 +343,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 60,
         "TracingConfig": {
           "Mode": "Active",
@@ -610,7 +610,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -796,7 +796,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -949,7 +949,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -1110,7 +1110,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -1290,7 +1290,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -1468,7 +1468,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -1646,7 +1646,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -1799,7 +1799,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -1952,7 +1952,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -2105,7 +2105,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -2283,7 +2283,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -2465,7 +2465,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -2618,7 +2618,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -2771,7 +2771,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -2924,7 +2924,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -3073,7 +3073,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -3226,7 +3226,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -3387,7 +3387,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -3557,7 +3557,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -3706,7 +3706,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -3859,7 +3859,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -4008,7 +4008,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -4164,7 +4164,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -4347,7 +4347,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -4501,7 +4501,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -4650,7 +4650,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -4799,7 +4799,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -4948,7 +4948,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -5101,7 +5101,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -5255,7 +5255,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 60,
         "TracingConfig": {
           "Mode": "Active",
@@ -5432,7 +5432,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -5586,7 +5586,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 60,
         "TracingConfig": {
           "Mode": "Active",
@@ -5763,7 +5763,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -5916,7 +5916,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -10281,7 +10281,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -10427,7 +10427,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300,
       },
       "Type": "AWS::Lambda::Function",
@@ -10560,7 +10560,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -10713,7 +10713,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -10878,7 +10878,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -11031,7 +11031,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -11184,7 +11184,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -11337,7 +11337,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -11497,7 +11497,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -11650,7 +11650,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -11803,7 +11803,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -11956,7 +11956,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -12109,7 +12109,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -12262,7 +12262,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -12426,7 +12426,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -12586,7 +12586,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -12749,7 +12749,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -12920,7 +12920,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -13094,7 +13094,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -13247,7 +13247,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -13400,7 +13400,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -13553,7 +13553,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -13706,7 +13706,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -13859,7 +13859,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -14012,7 +14012,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -14165,7 +14165,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 120,
         "TracingConfig": {
           "Mode": "Active",
@@ -14368,7 +14368,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 60,
         "TracingConfig": {
           "Mode": "Active",
@@ -14624,7 +14624,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 60,
       },
       "Type": "AWS::Lambda::Function",
@@ -14773,7 +14773,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 60,
         "TracingConfig": {
           "Mode": "Active",
@@ -14929,7 +14929,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",
@@ -15255,7 +15255,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 30,
         "TracingConfig": {
           "Mode": "Active",

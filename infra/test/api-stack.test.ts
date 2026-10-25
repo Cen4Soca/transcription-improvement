@@ -93,9 +93,9 @@ describe('ApiStack', () => {
   });
 
   describe('Lambda Functions', () => {
-    it('creates Lambda functions with Node.js 20.x runtime', () => {
+    it('creates Lambda functions with Node.js 24.x runtime', () => {
       template.hasResourceProperties('AWS::Lambda::Function', {
-        Runtime: 'nodejs20.x',
+        Runtime: 'nodejs24.x',
       });
     });
 

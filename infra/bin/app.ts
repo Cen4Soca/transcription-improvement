@@ -31,6 +31,9 @@ const readPositiveIntContext = (key: string, fallback: number): number => {
 const wafAuthRateLimitPer5Min = readPositiveIntContext('wafAuthRateLimitPer5Min', 25);
 const wafGeneralRateLimitPer5Min = readPositiveIntContext('wafGeneralRateLimitPer5Min', 500);
 const wafGeneralIpRateLimitPer5Min = readPositiveIntContext('wafGeneralIpRateLimitPer5Min', 2000);
+// WAF managed rule action: 'count' (default, observe) or 'block' (enforce).
+const wafManagedRuleAction =
+  (app.node.tryGetContext('wafManagedRuleAction') as string) === 'block' ? 'block' : 'count';
 
 // Monitoring alarm thresholds
 const alarmLambdaErrorRatePercent = readPositiveIntContext('alarmLambdaErrorRatePercent', 5);
@@ -57,6 +60,7 @@ const cloudFrontWafStack = new CloudFrontWafStack(app, `${env}-CloudFrontWafStac
   allowedIpCidrs,
   authRateLimitPerFiveMinutes: wafAuthRateLimitPer5Min,
   generalRateLimitPerFiveMinutes: wafGeneralRateLimitPer5Min,
+  managedRuleAction: wafManagedRuleAction,
 });
 
 const foundationStack = new FoundationStack(app, `${env}-FoundationStack`, {

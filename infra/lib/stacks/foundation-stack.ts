@@ -334,7 +334,7 @@ export class FoundationStack extends cdk.Stack {
       );
 
       const seedAdminHandler = new cdk.aws_lambda.Function(this, 'SeedAdminHandler', {
-        runtime: cdk.aws_lambda.Runtime.NODEJS_20_X,
+        runtime: cdk.aws_lambda.Runtime.NODEJS_24_X,
         handler: 'index.handler',
         role: seedAdminRole,
         timeout: cdk.Duration.seconds(30),

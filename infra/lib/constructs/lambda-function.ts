@@ -53,7 +53,7 @@ export class LambdaFunction extends Construct {
     if (skipBundling) {
       this.function = new lambda.Function(this, 'Function', {
         functionName: props.functionName,
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: `index.${props.handler ?? 'handler'}`,
         code: lambda.Code.fromInline('exports.handler = async () => ({statusCode:200})'),
         role: this.role,
@@ -66,7 +66,7 @@ export class LambdaFunction extends Construct {
     } else {
       this.function = new lambdaNodejs.NodejsFunction(this, 'Function', {
         functionName: props.functionName,
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         entry: props.entry,
         handler: props.handler ?? 'handler',
         role: this.role,
@@ -83,7 +83,7 @@ export class LambdaFunction extends Construct {
           externalModules: ['@aws-sdk/*'],
           sourceMap: true,
           minify: false,
-          target: 'node20',
+          target: 'node24',
           // Workaround for ESM: add banner to support require() if needed
           banner: "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
         },

@@ -10,6 +10,13 @@ export interface CloudFrontWafStackProps extends cdk.StackProps {
   authRateLimitPerFiveMinutes?: number;
   /** Rate limit for general endpoints per 5-minute window per IP */
   generalRateLimitPerFiveMinutes?: number;
+  /**
+   * Action for AWS Managed Rule groups.
+   * 'count' (default) observes matches without blocking — recommended for
+   * initial rollout. Switch to 'block' once sampled requests confirm no
+   * false positives against legitimate traffic.
+   */
+  managedRuleAction?: 'count' | 'block';
 }
 
 /**
@@ -28,6 +35,10 @@ export class CloudFrontWafStack extends cdk.Stack {
     const authLimit = props.authRateLimitPerFiveMinutes ?? 25;
     const generalLimit = props.generalRateLimitPerFiveMinutes ?? 500;
     const hasIpRestriction = props.allowedIpCidrs.length > 0;
+    // Managed rules default to COUNT so a rollout can observe matches before blocking.
+    const managedOverride = (props.managedRuleAction ?? 'count') === 'block'
+      ? { none: {} }
+      : { count: {} };
 
     // WAF v2 IP Set (CLOUDFRONT scope, us-east-1)
     const ipSet = new wafv2.CfnIPSet(this, 'CloudFrontIpSet', {
@@ -85,11 +96,68 @@ export class CloudFrontWafStack extends cdk.Stack {
       },
     });
 
-    // Rule 3: IP Allowlist (only when entries exist)
+    // Rules 3-5: AWS Managed Rule groups.
+    // Placed BEFORE the IP allowlist allow-rule on purpose: when IP restriction
+    // is active the WebACL default action is BLOCK and the allowlist rule is a
+    // terminating ALLOW, so any rule after it is never evaluated. Evaluating the
+    // managed rules first lets them inspect traffic even from allowlisted IPs.
+    // overrideAction uses COUNT by default (see managedRuleAction prop).
+    rules.push({
+      name: 'AWSManagedRulesCommonRuleSet',
+      priority: 3,
+      overrideAction: managedOverride,
+      statement: {
+        managedRuleGroupStatement: {
+          vendorName: 'AWS',
+          name: 'AWSManagedRulesCommonRuleSet',
+        },
+      },
+      visibilityConfig: {
+        sampledRequestsEnabled: true,
+        cloudWatchMetricsEnabled: true,
+        metricName: `${id}-CommonRuleSet`,
+      },
+    });
+
+    rules.push({
+      name: 'AWSManagedRulesKnownBadInputsRuleSet',
+      priority: 4,
+      overrideAction: managedOverride,
+      statement: {
+        managedRuleGroupStatement: {
+          vendorName: 'AWS',
+          name: 'AWSManagedRulesKnownBadInputsRuleSet',
+        },
+      },
+      visibilityConfig: {
+        sampledRequestsEnabled: true,
+        cloudWatchMetricsEnabled: true,
+        metricName: `${id}-KnownBadInputs`,
+      },
+    });
+
+    rules.push({
+      name: 'AWSManagedRulesAmazonIpReputationList',
+      priority: 5,
+      overrideAction: managedOverride,
+      statement: {
+        managedRuleGroupStatement: {
+          vendorName: 'AWS',
+          name: 'AWSManagedRulesAmazonIpReputationList',
+        },
+      },
+      visibilityConfig: {
+        sampledRequestsEnabled: true,
+        cloudWatchMetricsEnabled: true,
+        metricName: `${id}-AmazonIpReputation`,
+      },
+    });
+
+    // Rule 10: IP Allowlist (only when entries exist)
     if (hasIpRestriction) {
       rules.push({
         name: 'IPAllowlistRule',
-        priority: 3,
+        priority: 10,
         action: { allow: {} },
         statement: {
           ipSetReferenceStatement: {

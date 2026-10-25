@@ -36,6 +36,7 @@
     "wafAuthRateLimitPer5Min": 25,
     "wafGeneralRateLimitPer5Min": 500,
     "wafGeneralIpRateLimitPer5Min": 2000,
+    "wafManagedRuleAction": "block",
     "alarmLambdaErrorRatePercent": 5,
     "alarmDynamoThrottleCount": 10,
     "alarm4xxRatePercent": 10,
