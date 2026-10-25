@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MediaUploadPage } from './MediaUploadPage';
+import { checkA11y } from '../test-utils/axe-setup';
 import type { MediaApi } from '../services/media-api';
 
 function createMockMediaApi(overrides: Partial<MediaApi> = {}): MediaApi {
@@ -301,6 +302,26 @@ describe('MediaUploadPage', () => {
 
       const dropZone = screen.getByRole('button', { name: 'ファイルを選択 またはドラッグ＆ドロップ' });
       expect(dropZone).toHaveAttribute('tabIndex', '0');
+    });
+
+    // WCAG 2.1 AA SC 2.5.3 "Label in Name" (axe: label-content-name-mismatch).
+    // The drop-zone button's visible descendant text must be fully contained
+    // in its accessible name. The format-hint text lives OUTSIDE the button.
+    it('drop zone button contains no visible text beyond its accessible name', () => {
+      render(<MediaUploadPage mediaApi={mockApi} />);
+
+      const dropZone = screen.getByRole('button', { name: 'ファイルを選択 またはドラッグ＆ドロップ' });
+      const visibleText = dropZone.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+
+      // All visible text inside the button is included in the accessible name.
+      expect('ファイルを選択 またはドラッグ＆ドロップ').toContain(visibleText);
+      // The format hint must not be inside the button node.
+      expect(dropZone.textContent).not.toMatch(/対応形式/);
+    });
+
+    it('has no accessibility violations (catches label-content-name-mismatch)', async () => {
+      const { container } = render(<MediaUploadPage mediaApi={mockApi} />);
+      await checkA11y(container);
     });
 
     it('progress bar has proper ARIA attributes', async () => {

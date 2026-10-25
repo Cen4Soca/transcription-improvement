@@ -234,27 +234,35 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
 
           {/* Drop zone */}
           <div
-            role="button"
-            tabIndex={0}
-            aria-label="ファイルを選択 またはドラッグ＆ドロップ"
-            onClick={handleClickDropZone}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleClickDropZone();
-              }
-            }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
               isDragOver
                 ? 'border-blue-400 bg-blue-50'
                 : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
             } ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
           >
-
-            <div className="space-y-2">
+            {/*
+             * The button node must contain ONLY the text that matches its
+             * accessible name (WCAG 2.1 AA SC 2.5.3 "Label in Name").
+             * The format-hint paragraph lives outside the button node below.
+             * Drag-and-drop handlers stay on the outer container so the whole
+             * dashed area remains a drop target.
+             */}
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="ファイルを選択 またはドラッグ＆ドロップ"
+              onClick={handleClickDropZone}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleClickDropZone();
+                }
+              }}
+              className="space-y-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            >
               <svg
                 className="mx-auto h-12 w-12 text-gray-400"
                 fill="none"
@@ -273,10 +281,10 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
                 <span className="font-medium text-blue-600">ファイルを選択</span>
                 {' '}またはドラッグ＆ドロップ
               </p>
-              <p className="text-xs text-gray-500">
-                対応形式: {ALLOWED_EXTENSIONS.join(', ')} / 最大 2GB
-              </p>
             </div>
+            <p className="mt-2 text-xs text-gray-500">
+              対応形式: {ALLOWED_EXTENSIONS.join(', ')} / 最大 2GB
+            </p>
           </div>
 
           {/* Selected file info */}
