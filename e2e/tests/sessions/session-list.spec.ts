@@ -14,6 +14,36 @@ import {
  */
 const SESSIONS_LIST_RE = /\/sessions(\?.*)?$/;
 
+/**
+ * フィルタを適用し、表示中のセッションが「対象ステータスのみ」になったことを
+ * 自動リトライ付き expect で検証する。
+ *
+ * サーバー再取得後に DOM が差し替わるため、件数を手で数えると差し替え途中の
+ * 混在状態を拾って flaky になる。代わりに「他ステータスのバッジを持つ listitem が
+ * 0 件」かつ「対象ステータスの listitem が 1 件以上」を toHaveCount で待つ。
+ */
+async function assertFilteredToStatus(
+  page: import('@playwright/test').Page,
+  target: '全て' | '未着手' | '進行中' | '完了',
+  others: Array<'未着手' | '進行中' | '完了'>
+): Promise<void> {
+  await selectStatusFilter(page, target);
+  // ステータスは「校閲画面を開く（<name> - <status>）」ボタンの accessible name
+  // （aria-label）で判定する。listitem 本文には「進行中に戻す」「強制集約して確定」等の
+  // アクションボタン文言が含まれ hasText では誤マッチするため、role 名の正規表現で判定する。
+  const list = sessionList(page);
+  const byStatus = (s: string) =>
+    list.getByRole('button', { name: new RegExp(`^校閲画面を開く（.+ - ${s}）$`) });
+
+  // 対象ステータスの選択ボタンが 1 件以上表示される（DOM 差し替え完了を待つ）
+  await expect(byStatus(target).first()).toBeVisible({ timeout: 10_000 });
+  // 他ステータスの選択ボタンは 0 件（混在解消までリトライ）
+  for (const other of others) {
+    await expect(byStatus(other)).toHaveCount(0, { timeout: 10_000 });
+  }
+  expect(await byStatus(target).count()).toBeGreaterThan(0);
+}
+
 /** GET /sessions（一覧 XHR のみ、ドキュメント除外）にマッチするか（route インターセプト用）。 */
 function isSessionsListGet(route: Route): boolean {
   const req = route.request();
@@ -66,37 +96,15 @@ test.describe('セッション一覧ページ', () => {
     });
 
     test('3.3 ステータスフィルター「未着手」で絞り込みできる', async ({ page }) => {
-      // サーバーが status=PENDING で絞った結果を返す。表示中の全アイテムが「未着手」。
-      await selectStatusFilter(page, '未着手');
-      const items = sessionItems(page);
-      await expect(items.first()).toBeVisible();
-      const count = await items.count();
-      expect(count).toBeGreaterThan(0);
-      for (let i = 0; i < count; i++) {
-        await expect(items.nth(i)).toContainText('未着手');
-      }
+      await assertFilteredToStatus(page, '未着手', ['進行中', '完了']);
     });
 
     test('3.4 ステータスフィルター「進行中」で絞り込みできる', async ({ page }) => {
-      await selectStatusFilter(page, '進行中');
-      const items = sessionItems(page);
-      await expect(items.first()).toBeVisible();
-      const count = await items.count();
-      expect(count).toBeGreaterThan(0);
-      for (let i = 0; i < count; i++) {
-        await expect(items.nth(i)).toContainText('進行中');
-      }
+      await assertFilteredToStatus(page, '進行中', ['未着手', '完了']);
     });
 
     test('3.5 ステータスフィルター「完了」で絞り込みできる', async ({ page }) => {
-      await selectStatusFilter(page, '完了');
-      const items = sessionItems(page);
-      await expect(items.first()).toBeVisible();
-      const count = await items.count();
-      expect(count).toBeGreaterThan(0);
-      for (let i = 0; i < count; i++) {
-        await expect(items.nth(i)).toContainText('完了');
-      }
+      await assertFilteredToStatus(page, '完了', ['未着手', '進行中']);
     });
 
     test('3.6 セッションが作成日時の降順でソートされる', async ({ page }) => {

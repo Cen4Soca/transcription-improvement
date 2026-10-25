@@ -210,20 +210,24 @@ test.describe('メディアアップロードページ', () => {
   });
 
   test('5.11 ドラッグオーバー時にエリアのスタイルが変わる', async ({ page }) => {
-    const dropZone = page.getByRole('button', {
+    // a11y 構造修正後、ドラッグ&ドロップのハンドラとボーダー変化は role="button" の
+    // 内側ノードではなく、それを包む外側のドロップ領域（border-dashed コンテナ）にある。
+    const dropButton = page.getByRole('button', {
       name: /ファイルを選択 ?またはドラッグ＆ドロップ/,
     });
-    await expect(dropZone).toBeVisible();
-    // 実 DataTransfer を持つ dragover を発火し、ボーダーが青（border-blue-400）に変わることを確認する。
-    await dropZone.evaluate((el) => {
+    await expect(dropButton).toBeVisible();
+    // onDragOver を持つ外側コンテナ（border-dashed）を親から特定する。
+    const dropArea = dropButton.locator(
+      'xpath=ancestor::div[contains(@class,"border-dashed")][1]'
+    );
+    await expect(dropArea).toBeVisible();
+    // 実 DataTransfer を持つ dragover を外側コンテナに発火し、ボーダーが青に変わることを確認する。
+    await dropArea.evaluate((el) => {
       const dt = new DataTransfer();
-      const event = new DragEvent('dragover', {
-        bubbles: true,
-        cancelable: true,
-        dataTransfer: dt,
-      });
-      el.dispatchEvent(event);
+      el.dispatchEvent(
+        new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt })
+      );
     });
-    await expect(dropZone).toHaveClass(/border-blue-400/);
+    await expect(dropArea).toHaveClass(/border-blue-400/);
   });
 });
