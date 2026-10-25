@@ -64,27 +64,39 @@ test.describe('スイート10: エラーハンドリング', () => {
 
   // --- 以下は未配線コンポーネント。App への配線（実バグ #4 修正）+ dev 再デプロイ後に有効化する ---
 
-  test.fixme(
-    '10.2 ネットワークオフライン時にオフラインバナーが表示される',
-    async ({ page, loginAsReviewer, context }) => {
-      // 配線後: OfflineBanner が navigator.onLine / offline イベントに連動して表示される想定。
-      await loginAsReviewer(page);
-      await context.setOffline(true);
-      await expect(
-        page.getByRole('alert').filter({ hasText: 'オフライン' })
-      ).toBeVisible({ timeout: 10_000 });
-      await context.setOffline(false);
-    }
-  );
+  test('10.2 ネットワークオフライン時にオフラインバナーが表示される', async ({
+    page,
+    loginAsReviewer,
+    context,
+  }) => {
+    // OfflineBanner は useOnlineStatus（navigator.onLine + online/offline イベント）に連動。
+    await loginAsReviewer(page);
+    await expect(page.getByRole('main', { name: '校閲セッション一覧' })).toBeVisible();
 
-  test.fixme(
-    '10.3 セッションタイムアウト警告が表示される',
-    async () => {
-      // 配線後: アイドルタイマーが残り 5 分で SessionTimeoutWarning（role=alertdialog,
-      // 「セッションがまもなく期限切れになります」）を表示する想定。
-      // E2E でアイドル時間を早送りする仕組み（テスト用の短縮しきい値 or 時計操作）が必要。
-    }
-  );
+    // オフラインにするとバナー（role=alert「オフライン」）が表示される。
+    await context.setOffline(true);
+    // ブラウザに offline イベントを確実に発火させる
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'オフライン' })
+    ).toBeVisible({ timeout: 10_000 });
+
+    // オンライン復帰で自動的に消える。
+    await context.setOffline(false);
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'オフライン' })
+    ).toBeHidden({ timeout: 10_000 });
+  });
+
+  // 10.3 セッションタイムアウト警告は、本番しきい値（30分アイドル）での実時間 E2E が
+  // 非現実的で、短縮用 VITE_IDLE_* をビルドに焼き込むと dev 全体へ副作用が及ぶため、
+  // E2E では fixme 継続とする。表示ロジック（アイドル検知→警告→続行でリセット→
+  // タイムアウトで signOut）は frontend の useIdleTimeout.test.ts（fake timers）で
+  // 決定論的にカバー済み。
+  test.fixme('10.3 セッションタイムアウト警告が表示される', async () => {
+    // 検証は frontend ユニットテスト（useIdleTimeout.test.ts + SessionTimeoutWarning.test.tsx）に委譲。
+  });
 
   test.fixme(
     '10.5 同期ステータスインジケータが表示される',
