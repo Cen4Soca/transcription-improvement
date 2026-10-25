@@ -242,7 +242,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByLabelText('次のページ'));
+      await user.click(screen.getByLabelText('次へ（次のページ）'));
 
       expect(onPageChange).toHaveBeenCalledWith(2);
     });
@@ -259,7 +259,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByLabelText('前のページ'));
+      await user.click(screen.getByLabelText('前へ（前のページ）'));
 
       expect(onPageChange).toHaveBeenCalledWith(1);
     });
@@ -273,7 +273,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      expect(screen.getByLabelText('前のページ')).toBeDisabled();
+      expect(screen.getByLabelText('前へ（前のページ）')).toBeDisabled();
     });
 
     it('最後のページでは次へボタンが無効化される', () => {
@@ -285,7 +285,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      expect(screen.getByLabelText('次のページ')).toBeDisabled();
+      expect(screen.getByLabelText('次へ（次のページ）')).toBeDisabled();
     });
 
     it('1ページ以下の場合はページネーションUIを非表示にする', () => {

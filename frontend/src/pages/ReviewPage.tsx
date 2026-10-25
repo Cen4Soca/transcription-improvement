@@ -509,7 +509,7 @@ export function ReviewPage({
                   type="button"
                   onClick={() => setDeleteMediaDialogOpen(true)}
                   className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-                  aria-label="メディアファイルを削除"
+                  aria-label="メディア削除（メディアファイルを削除）"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -532,7 +532,7 @@ export function ReviewPage({
                   type="button"
                   onClick={() => setDeleteTranscriptionDialogOpen(true)}
                   className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-                  aria-label="Transcription を削除"
+                  aria-label="Transcription 削除（このセッションの文字起こしを削除）"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

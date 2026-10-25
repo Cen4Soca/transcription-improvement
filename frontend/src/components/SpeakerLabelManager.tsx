@@ -296,7 +296,7 @@ export function SpeakerLabelManager({
                     <button
                       type="button"
                       onClick={() => handleStartRename(label)}
-                      aria-label={`${label} の名前を変更`}
+                      aria-label={`${label} の名前変更`}
                       className="px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
                     >
                       名前変更
@@ -407,7 +407,7 @@ export function SpeakerLabelManager({
               <button
                 type="button"
                 onClick={handleMergeConfirm}
-                aria-label="統合を確定"
+                aria-label="統合する（話者ラベルを統合して確定）"
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
               >
                 統合する

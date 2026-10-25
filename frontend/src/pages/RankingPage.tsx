@@ -217,7 +217,7 @@ export function RankingPage({
               disabled={!pagination.hasPreviousPage}
               onClick={() => onPageChange?.(pagination.currentPage - 1)}
               className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="前のページ"
+              aria-label="前へ（前のページ）"
             >
               前へ
             </button>
@@ -229,7 +229,7 @@ export function RankingPage({
               disabled={!pagination.hasNextPage}
               onClick={() => onPageChange?.(pagination.currentPage + 1)}
               className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="次のページ"
+              aria-label="次へ（次のページ）"
             >
               次へ
             </button>

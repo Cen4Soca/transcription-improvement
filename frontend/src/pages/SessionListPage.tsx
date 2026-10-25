@@ -197,7 +197,7 @@ export function SessionListPage({
                     type="button"
                     onClick={() => onSessionSelect?.(session.sessionId)}
                     className="w-full text-left rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                    aria-label={`${session.name} - ${STATUS_LABELS[session.status]}`}
+                    aria-label={`校閲画面を開く（${session.name} - ${STATUS_LABELS[session.status]}）`}
                   >
                     <div className="flex items-center justify-between">
                       {onRenameSession ? (
@@ -241,7 +241,7 @@ export function SessionListPage({
                     onClick={() => onPageChange?.(pagination.currentPage - 1)}
                     disabled={!pagination.hasPreviousPage}
                     className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-                    aria-label="前のページ"
+                    aria-label="前へ（前のページ）"
                   >
                     前へ
                   </button>
@@ -253,7 +253,7 @@ export function SessionListPage({
                     onClick={() => onPageChange?.(pagination.currentPage + 1)}
                     disabled={!pagination.hasNextPage}
                     className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-                    aria-label="次のページ"
+                    aria-label="次へ（次のページ）"
                   >
                     次へ
                   </button>

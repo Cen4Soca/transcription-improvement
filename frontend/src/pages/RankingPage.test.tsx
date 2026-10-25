@@ -231,8 +231,8 @@ describe('RankingPage', () => {
       );
 
       expect(screen.getByRole('navigation', { name: 'ページネーション' })).toBeInTheDocument();
-      expect(screen.getByLabelText('前のページ')).toBeInTheDocument();
-      expect(screen.getByLabelText('次のページ')).toBeInTheDocument();
+      expect(screen.getByLabelText('前へ（前のページ）')).toBeInTheDocument();
+      expect(screen.getByLabelText('次へ（次のページ）')).toBeInTheDocument();
       expect(screen.getByText('2 / 3')).toBeInTheDocument();
     });
 
@@ -277,8 +277,8 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByLabelText('前のページ')).toBeDisabled();
-      expect(screen.getByLabelText('次のページ')).not.toBeDisabled();
+      expect(screen.getByLabelText('前へ（前のページ）')).toBeDisabled();
+      expect(screen.getByLabelText('次へ（次のページ）')).not.toBeDisabled();
     });
 
     it('disables next button on last page', () => {
@@ -300,8 +300,8 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByLabelText('前のページ')).not.toBeDisabled();
-      expect(screen.getByLabelText('次のページ')).toBeDisabled();
+      expect(screen.getByLabelText('前へ（前のページ）')).not.toBeDisabled();
+      expect(screen.getByLabelText('次へ（次のページ）')).toBeDisabled();
     });
 
     it('calls onPageChange with correct page number', async () => {
@@ -318,10 +318,10 @@ describe('RankingPage', () => {
         />
       );
 
-      await user.click(screen.getByLabelText('次のページ'));
+      await user.click(screen.getByLabelText('次へ（次のページ）'));
       expect(onPageChange).toHaveBeenCalledWith(3);
 
-      await user.click(screen.getByLabelText('前のページ'));
+      await user.click(screen.getByLabelText('前へ（前のページ）'));
       expect(onPageChange).toHaveBeenCalledWith(1);
     });
 

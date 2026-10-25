@@ -108,7 +108,7 @@ describe('SessionListPage', () => {
 
     expect(screen.getByText('会議録A')).toBeInTheDocument();
     // The status badge inside the session item
-    const sessionButton = screen.getByRole('button', { name: '会議録A - 進行中' });
+    const sessionButton = screen.getByRole('button', { name: '校閲画面を開く（会議録A - 進行中）' });
     expect(sessionButton).toBeInTheDocument();
     expect(screen.getByText('2024-06-15 14:30')).toBeInTheDocument();
   });
@@ -406,7 +406,7 @@ describe('SessionListPage', () => {
       render(<SessionListPage sessions={sessions} />);
 
       expect(
-        screen.getByRole('button', { name: '会議録 - 進行中' })
+        screen.getByRole('button', { name: '校閲画面を開く（会議録 - 進行中）' })
       ).toBeInTheDocument();
     });
 
@@ -510,7 +510,7 @@ describe('SessionListPage', () => {
         />
       );
 
-      await user.click(screen.getByRole('button', { name: '次のページ' }));
+      await user.click(screen.getByRole('button', { name: '次へ（次のページ）' }));
 
       expect(onPageChange).toHaveBeenCalledWith(2);
     });
@@ -529,7 +529,7 @@ describe('SessionListPage', () => {
         />
       );
 
-      await user.click(screen.getByRole('button', { name: '前のページ' }));
+      await user.click(screen.getByRole('button', { name: '前へ（前のページ）' }));
 
       expect(onPageChange).toHaveBeenCalledWith(1);
     });
@@ -546,7 +546,7 @@ describe('SessionListPage', () => {
         />
       );
 
-      expect(screen.getByRole('button', { name: '前のページ' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '前へ（前のページ）' })).toBeDisabled();
     });
 
     it('disables next button when hasNextPage is false', () => {
@@ -561,7 +561,7 @@ describe('SessionListPage', () => {
         />
       );
 
-      expect(screen.getByRole('button', { name: '次のページ' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '次へ（次のページ）' })).toBeDisabled();
     });
 
     it('displays page info text derived from the pagination prop', () => {

@@ -264,7 +264,7 @@ export function MediaPlayer({
               key={speed}
               type="button"
               onClick={() => handleSpeedChange(speed)}
-              aria-label={`再生速度 ${speed}倍`}
+              aria-label={`${speed}x（再生速度 ${speed}倍）`}
               aria-pressed={playbackRate === speed}
               className={`px-2 py-1 text-xs rounded font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 playbackRate === speed

@@ -223,7 +223,7 @@ describe('Accessibility: WCAG 2.1 AA Compliance', () => {
       );
 
       const dropZone = container.querySelector('[role="button"]');
-      expect(dropZone).toHaveAttribute('aria-label', 'ファイルを選択またはドラッグ＆ドロップ');
+      expect(dropZone).toHaveAttribute('aria-label', 'ファイルを選択 またはドラッグ＆ドロップ');
       expect(dropZone).toHaveAttribute('tabIndex', '0');
     });
   });

@@ -45,17 +45,17 @@ describe('MediaPlayer', () => {
   it('renders all playback speed buttons', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    expect(screen.getByRole('button', { name: '再生速度 0.5倍' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '再生速度 1倍' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '再生速度 1.25倍' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '再生速度 1.5倍' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '再生速度 2倍' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '0.5x（再生速度 0.5倍）' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1x（再生速度 1倍）' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1.25x（再生速度 1.25倍）' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1.5x（再生速度 1.5倍）' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '2x（再生速度 2倍）' })).toBeInTheDocument();
   });
 
   it('marks 1.0x speed as active by default', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    const activeButton = screen.getByRole('button', { name: '再生速度 1倍' });
+    const activeButton = screen.getByRole('button', { name: '1x（再生速度 1倍）' });
     expect(activeButton).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -103,12 +103,12 @@ describe('MediaPlayer', () => {
   it('changes playback speed when speed button is clicked', async () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    const speedButton = screen.getByRole('button', { name: '再生速度 1.5倍' });
+    const speedButton = screen.getByRole('button', { name: '1.5x（再生速度 1.5倍）' });
     await userEvent.click(speedButton);
 
     expect(speedButton).toHaveAttribute('aria-pressed', 'true');
     // Previous active button should no longer be pressed
-    const prevButton = screen.getByRole('button', { name: '再生速度 1倍' });
+    const prevButton = screen.getByRole('button', { name: '1x（再生速度 1倍）' });
     expect(prevButton).toHaveAttribute('aria-pressed', 'false');
   });
 
@@ -118,7 +118,7 @@ describe('MediaPlayer', () => {
 
     const speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
     for (const speed of speeds) {
-      const speedButton = screen.getByRole('button', { name: `再生速度 ${speed}倍` });
+      const speedButton = screen.getByRole('button', { name: `${speed}x（再生速度 ${speed}倍）` });
       await userEvent.click(speedButton);
       expect(audio.playbackRate).toBe(speed);
     }
@@ -236,7 +236,7 @@ describe('MediaPlayer', () => {
       const audio = document.querySelector('audio')!;
 
       // Set speed to 1.5x
-      await userEvent.click(screen.getByRole('button', { name: '再生速度 1.5倍' }));
+      await userEvent.click(screen.getByRole('button', { name: '1.5x（再生速度 1.5倍）' }));
       expect(audio.playbackRate).toBe(1.5);
 
       // Seek to a different position
@@ -251,27 +251,27 @@ describe('MediaPlayer', () => {
       render(<MediaPlayer {...defaultProps} />);
 
       // Click 2.0x
-      await userEvent.click(screen.getByRole('button', { name: '再生速度 2倍' }));
+      await userEvent.click(screen.getByRole('button', { name: '2x（再生速度 2倍）' }));
 
       // Verify only 2.0x is pressed
-      expect(screen.getByRole('button', { name: '再生速度 0.5倍' })).toHaveAttribute('aria-pressed', 'false');
-      expect(screen.getByRole('button', { name: '再生速度 1倍' })).toHaveAttribute('aria-pressed', 'false');
-      expect(screen.getByRole('button', { name: '再生速度 1.25倍' })).toHaveAttribute('aria-pressed', 'false');
-      expect(screen.getByRole('button', { name: '再生速度 1.5倍' })).toHaveAttribute('aria-pressed', 'false');
-      expect(screen.getByRole('button', { name: '再生速度 2倍' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: '0.5x（再生速度 0.5倍）' })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: '1x（再生速度 1倍）' })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: '1.25x（再生速度 1.25倍）' })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: '1.5x（再生速度 1.5倍）' })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: '2x（再生速度 2倍）' })).toHaveAttribute('aria-pressed', 'true');
     });
 
     it('can switch between speeds rapidly', async () => {
       render(<MediaPlayer {...defaultProps} />);
       const audio = document.querySelector('audio')!;
 
-      await userEvent.click(screen.getByRole('button', { name: '再生速度 0.5倍' }));
+      await userEvent.click(screen.getByRole('button', { name: '0.5x（再生速度 0.5倍）' }));
       expect(audio.playbackRate).toBe(0.5);
 
-      await userEvent.click(screen.getByRole('button', { name: '再生速度 2倍' }));
+      await userEvent.click(screen.getByRole('button', { name: '2x（再生速度 2倍）' }));
       expect(audio.playbackRate).toBe(2.0);
 
-      await userEvent.click(screen.getByRole('button', { name: '再生速度 1.25倍' }));
+      await userEvent.click(screen.getByRole('button', { name: '1.25x（再生速度 1.25倍）' }));
       expect(audio.playbackRate).toBe(1.25);
     });
   });

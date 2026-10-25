@@ -215,7 +215,7 @@ describe('ReviewPage - Transcription 削除', () => {
     renderReviewPage({ deletionApi, onTranscriptionDeleted });
 
     // ツールバーの削除ボタンでダイアログを開く
-    fireEvent.click(screen.getByRole('button', { name: 'Transcription を削除' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Transcription 削除（このセッションの文字起こしを削除）' }));
 
     // ダイアログ内の「削除する」で確定
     fireEvent.click(screen.getByRole('button', { name: '削除する' }));
@@ -237,7 +237,7 @@ describe('ReviewPage - Transcription 削除', () => {
 
     renderReviewPage({ deletionApi, onTranscriptionDeleted });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Transcription を削除' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Transcription 削除（このセッションの文字起こしを削除）' }));
     fireEvent.click(screen.getByRole('button', { name: '削除する' }));
 
     await waitFor(() => {

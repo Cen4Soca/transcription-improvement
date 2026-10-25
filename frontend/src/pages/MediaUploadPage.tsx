@@ -236,7 +236,7 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
           <div
             role="button"
             tabIndex={0}
-            aria-label="ファイルを選択またはドラッグ＆ドロップ"
+            aria-label="ファイルを選択 またはドラッグ＆ドロップ"
             onClick={handleClickDropZone}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {

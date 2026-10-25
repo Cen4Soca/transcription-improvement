@@ -56,7 +56,7 @@ describe('SpeakerLabelManager', () => {
     it('shows rename button for each label', () => {
       render(<SpeakerLabelManager {...defaultProps} />);
 
-      const renameButtons = screen.getAllByRole('button', { name: /の名前を変更/ });
+      const renameButtons = screen.getAllByRole('button', { name: /の名前変更/ });
       expect(renameButtons).toHaveLength(3);
     });
 
@@ -84,7 +84,7 @@ describe('SpeakerLabelManager', () => {
       render(<SpeakerLabelManager {...defaultProps} />);
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
 
       expect(
@@ -100,7 +100,7 @@ describe('SpeakerLabelManager', () => {
       );
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       const input = screen.getByLabelText('spk_0 の新しいラベル名');
       await user.clear(input);
@@ -129,7 +129,7 @@ describe('SpeakerLabelManager', () => {
       );
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       const input = screen.getByLabelText('spk_0 の新しいラベル名');
       await user.clear(input);
@@ -154,7 +154,7 @@ describe('SpeakerLabelManager', () => {
       );
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       // Don't change the text, just confirm
       await user.click(screen.getByLabelText('ラベル名変更を確定'));
@@ -170,7 +170,7 @@ describe('SpeakerLabelManager', () => {
       render(<SpeakerLabelManager {...defaultProps} onCancel={onCancel} />);
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       await user.click(screen.getByLabelText('ラベル名変更をキャンセル'));
 
@@ -183,7 +183,7 @@ describe('SpeakerLabelManager', () => {
       render(<SpeakerLabelManager {...defaultProps} onCancel={onCancel} />);
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       const input = screen.getByLabelText('spk_0 の新しいラベル名');
       input.focus();
@@ -197,7 +197,7 @@ describe('SpeakerLabelManager', () => {
       render(<SpeakerLabelManager {...defaultProps} />);
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       expect(
         screen.getByLabelText('spk_0 の新しいラベル名')
@@ -217,7 +217,7 @@ describe('SpeakerLabelManager', () => {
       render(<SpeakerLabelManager {...defaultProps} />);
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       const input = screen.getByLabelText('spk_0 の新しいラベル名');
       await user.clear(input);
@@ -237,7 +237,7 @@ describe('SpeakerLabelManager', () => {
       );
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       const input = screen.getByLabelText('spk_0 の新しいラベル名');
       await user.clear(input);
@@ -245,7 +245,7 @@ describe('SpeakerLabelManager', () => {
       await user.click(screen.getByLabelText('ラベル名変更を確定'));
 
       // Confirm merge
-      await user.click(screen.getByLabelText('統合を確定'));
+      await user.click(screen.getByLabelText('統合する（話者ラベルを統合して確定）'));
 
       expect(onRenameConfirm).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -268,7 +268,7 @@ describe('SpeakerLabelManager', () => {
       );
 
       await user.click(
-        screen.getByRole('button', { name: 'spk_0 の名前を変更' })
+        screen.getByRole('button', { name: 'spk_0 の名前変更' })
       );
       const input = screen.getByLabelText('spk_0 の新しいラベル名');
       await user.clear(input);

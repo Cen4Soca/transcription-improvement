@@ -299,7 +299,7 @@ describe('MediaUploadPage', () => {
     it('drop zone is keyboard accessible', () => {
       render(<MediaUploadPage mediaApi={mockApi} />);
 
-      const dropZone = screen.getByRole('button', { name: 'ファイルを選択またはドラッグ＆ドロップ' });
+      const dropZone = screen.getByRole('button', { name: 'ファイルを選択 またはドラッグ＆ドロップ' });
       expect(dropZone).toHaveAttribute('tabIndex', '0');
     });
 

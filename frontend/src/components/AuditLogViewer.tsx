@@ -265,7 +265,7 @@ export function AuditLogViewer({
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage <= 1}
             className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="前のページ"
+            aria-label="前へ（前のページ）"
           >
             前へ
           </button>
@@ -277,7 +277,7 @@ export function AuditLogViewer({
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
             className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="次のページ"
+            aria-label="次へ（次のページ）"
           >
             次へ
           </button>
