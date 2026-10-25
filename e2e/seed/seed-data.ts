@@ -38,7 +38,9 @@ const docClient = DynamoDBDocumentClient.from(client, {
 // Constants
 // ============================================================
 
-const ADMIN_USER_ID = 'e2e-admin-user-001';
+// ADMIN_USER_ID can be overridden via env so seeded records can be owned by
+// the real pre-registered Admin userId. Falls back to a fixed test id.
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID || 'e2e-admin-user-001';
 const TEAM_ID = 'e2e-team-001';
 const PREFIX = 'e2e-';
 

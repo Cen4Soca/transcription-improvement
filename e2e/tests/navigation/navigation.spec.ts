@@ -40,8 +40,20 @@ test.describe('ナビゲーション', () => {
   test('2.5 アクティブページのリンクがハイライトされる', async ({ page, loginAsAdmin }) => {
     await loginAsAdmin(page);
 
+    // ホーム（/）にいるのでセッション一覧がアクティブ。
+    // react-router の NavLink は active 時に aria-current="page" を付与する（堅牢な判定）。
     const sessionLink = page.getByRole('menuitem', { name: 'セッション一覧' });
+    await expect(sessionLink).toHaveAttribute('aria-current', 'page');
+    // 視覚的ハイライト（bg-blue-50）も併せて確認
     await expect(sessionLink).toHaveClass(/bg-blue-50/);
+
+    // 別ページへ移動するとアクティブが移る
+    await page.getByRole('menuitem', { name: 'ランキング' }).click();
+    await expect(page).toHaveURL(/\/ranking/);
+    await expect(
+      page.getByRole('menuitem', { name: 'ランキング' })
+    ).toHaveAttribute('aria-current', 'page');
+    await expect(sessionLink).not.toHaveAttribute('aria-current', 'page');
   });
 
   test('2.6 ナビゲーションリンクをクリックしてページ遷移する', async ({ page, loginAsAdmin }) => {

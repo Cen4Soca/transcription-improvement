@@ -137,6 +137,46 @@ DYNAMODB_TABLE_NAME=TranscriptionReviewApp
 | `API_ENDPOINT` | `aws cloudformation describe-stacks --stack-name ApiStack` の Outputs から API URL |
 | `COGNITO_USER_POOL_ID` | `aws cognito-idp list-user-pools --max-results 10` |
 | `COGNITO_CLIENT_ID` | `aws cognito-idp list-user-pool-clients --user-pool-id <pool-id>` |
+| `MEDIA_BUCKET_NAME` | `aws cloudformation describe-stacks --stack-name FoundationStack` の Outputs から MediaBucketName |
+| `ADMIN_USER_ID` | 事前登録済み Admin の DynamoDB userId（任意。未設定時は `e2e-admin-user-001`） |
+
+### コマンド例（dev・プロファイル指定）
+
+```bash
+PROFILE=dev
+REGION=ap-northeast-1
+
+# API_ENDPOINT — 末尾スラッシュなし・ステージ込みのベース URL を取得する。
+# スタック名は環境接尾辞が付く場合あり（例: ApiStack-dev）。まず一覧で確認する:
+aws cloudformation list-stacks \
+  --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE \
+  --query "StackSummaries[].StackName" --output text \
+  --region "$REGION" --profile "$PROFILE"
+
+# Outputs から API URL を絞り込む
+aws cloudformation describe-stacks --stack-name ApiStack \
+  --query "Stacks[0].Outputs[?contains(OutputKey,'Api')||contains(OutputKey,'Endpoint')].OutputValue" \
+  --output text --region "$REGION" --profile "$PROFILE"
+
+# 代替: API Gateway から直接
+aws apigatewayv2 get-apis \
+  --query "Items[].{Name:Name,Endpoint:ApiEndpoint}" \
+  --output table --region "$REGION" --profile "$PROFILE"
+
+# BASE_URL — CloudFront URL（basePath 配下配信なら完全パスまで含める。例: https://xxxx.cloudfront.net/transcription-improvement-dev/）
+aws cloudformation describe-stacks --stack-name CdnStack \
+  --query "Stacks[0].Outputs" --output table \
+  --region "$REGION" --profile "$PROFILE"
+
+# MEDIA_BUCKET_NAME — Foundation スタックの Output
+aws cloudformation describe-stacks --stack-name FoundationStack \
+  --query "Stacks[0].Outputs[?contains(OutputKey,'Media')].OutputValue" \
+  --output text --region "$REGION" --profile "$PROFILE"
+```
+
+> **疎通確認**: `curl -i "<API_ENDPOINT>/admin/users"` が `401`（JWT 認証エラー）を返せば URL は到達可能。
+> `404` の場合はステージ名やパスの付け方（HTTP API の `$default` ステージか名前付きステージか）を見直す。
+> `API_ENDPOINT` は `helpers/api-helper.ts` が `${API_ENDPOINT}/admin/users` のように連結するため、**末尾スラッシュを付けない**。
 
 ---
 

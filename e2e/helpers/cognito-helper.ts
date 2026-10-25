@@ -2,6 +2,7 @@ import {
   CognitoIdentityProviderClient,
   AdminInitiateAuthCommand,
   AdminSetUserPasswordCommand,
+  AdminCreateUserCommand,
   AdminDeleteUserCommand,
   AdminDisableUserCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
@@ -57,4 +58,49 @@ export async function setUserPassword(
       Permanent: true,
     })
   );
+}
+
+/**
+ * Create a Cognito user that stays in FORCE_CHANGE_PASSWORD state.
+ *
+ * The user is created with a temporary password and the welcome email
+ * suppressed, and the password is NOT made permanent. Signing in with the
+ * temporary password therefore triggers the NEW_PASSWORD_REQUIRED challenge,
+ * which the app renders as the "新しいパスワードを設定" form. Used by auth
+ * test 1.4. Caller must delete the user afterwards via deleteUser().
+ */
+export async function createForceChangePasswordUser(
+  email: string,
+  temporaryPassword: string
+): Promise<void> {
+  await client.send(
+    new AdminCreateUserCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: email,
+      MessageAction: 'SUPPRESS',
+      TemporaryPassword: temporaryPassword,
+      UserAttributes: [
+        { Name: 'email', Value: email },
+        { Name: 'email_verified', Value: 'true' },
+        { Name: 'custom:role', Value: 'REVIEWER' },
+        { Name: 'custom:displayName', Value: 'E2E 初回ログインユーザー' },
+      ],
+    })
+  );
+}
+
+/**
+ * Delete a Cognito user. Swallows errors so cleanup never fails a test.
+ */
+export async function deleteUser(email: string): Promise<void> {
+  try {
+    await client.send(
+      new AdminDeleteUserCommand({
+        UserPoolId: USER_POOL_ID,
+        Username: email,
+      })
+    );
+  } catch {
+    // ignore cleanup failures
+  }
 }
