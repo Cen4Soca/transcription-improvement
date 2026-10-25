@@ -1,4 +1,5 @@
 import { test, expect } from '../../fixtures/auth.js';
+import type { Route } from '@playwright/test';
 import {
   openFirstSession,
   selectStatusFilter,
@@ -7,13 +8,34 @@ import {
 } from '../../helpers/ui-helper.js';
 
 /**
- * GET /sessions 一覧取得レスポンスにマッチするルートを待ち受ける。
- * basePath 配下配信でも API は API Gateway ドメインなので path 末尾で判定する。
+ * GET /sessions の API 呼び出し（XHR/fetch, クエリ付き可）だけにマッチする正規表現。
+ * SPA のドキュメントナビゲーション（/sessions/{id} の HTML 取得等）は resourceType で除外する。
+ * セッション一覧はサーバー駆動（?status= / ?page=）になったため、クエリ付き URL も拾う。
  */
-const SESSIONS_LIST_GLOB = '**/sessions';
+const SESSIONS_LIST_RE = /\/sessions(\?.*)?$/;
+
+/** GET /sessions（一覧 XHR のみ、ドキュメント除外）にマッチするか（route インターセプト用）。 */
+function isSessionsListGet(route: Route): boolean {
+  const req = route.request();
+  return (
+    SESSIONS_LIST_RE.test(req.url()) &&
+    req.method() === 'GET' &&
+    req.resourceType() !== 'document'
+  );
+}
+
+/** GET /sessions のレスポンス待ち用述語（waitForResponse 用）。 */
+function isSessionsListResponse(res: { url(): string; request(): { method(): string; resourceType(): string } }): boolean {
+  const req = res.request();
+  return (
+    SESSIONS_LIST_RE.test(res.url()) &&
+    req.method() === 'GET' &&
+    req.resourceType() !== 'document'
+  );
+}
 
 test.describe('セッション一覧ページ', () => {
-  test.describe('通常表示（seed データ前提）', () => {
+  test.describe('通常表示（seed データ前提・サーバー駆動）', () => {
     test.beforeEach(async ({ page, loginAsAdmin }) => {
       await loginAsAdmin(page);
     });
@@ -26,10 +48,8 @@ test.describe('セッション一覧ページ', () => {
       const list = sessionList(page);
       await expect(list).toBeVisible();
       const items = sessionItems(page);
-      // seed に 65 件あるため 1 ページ目に 50 件表示される
       await expect(items.first()).toBeVisible();
       expect(await items.count()).toBeGreaterThan(0);
-      // ステータスバッジ（テキスト）が表示される
       await expect(
         items.first().getByText(/未着手|進行中|完了/).first()
       ).toBeVisible();
@@ -39,15 +59,17 @@ test.describe('セッション一覧ページ', () => {
       const tablist = page.getByRole('tablist', { name: 'ステータスフィルター' });
       const allTab = tablist.getByRole('tab', { name: '全て' });
       await expect(allTab).toHaveAttribute('aria-selected', 'true');
-      // 全件で 2 ページ（65 件 / 50 件）になるためページネーションが出る
+      // 全件 65 件 / 50 件ページで 2 ページ → サーバー pagination によりページネーションが出る
       await expect(
         page.getByRole('navigation', { name: 'ページネーション' })
       ).toBeVisible();
     });
 
     test('3.3 ステータスフィルター「未着手」で絞り込みできる', async ({ page }) => {
+      // サーバーが status=PENDING で絞った結果を返す。表示中の全アイテムが「未着手」。
       await selectStatusFilter(page, '未着手');
       const items = sessionItems(page);
+      await expect(items.first()).toBeVisible();
       const count = await items.count();
       expect(count).toBeGreaterThan(0);
       for (let i = 0; i < count; i++) {
@@ -58,6 +80,7 @@ test.describe('セッション一覧ページ', () => {
     test('3.4 ステータスフィルター「進行中」で絞り込みできる', async ({ page }) => {
       await selectStatusFilter(page, '進行中');
       const items = sessionItems(page);
+      await expect(items.first()).toBeVisible();
       const count = await items.count();
       expect(count).toBeGreaterThan(0);
       for (let i = 0; i < count; i++) {
@@ -68,6 +91,7 @@ test.describe('セッション一覧ページ', () => {
     test('3.5 ステータスフィルター「完了」で絞り込みできる', async ({ page }) => {
       await selectStatusFilter(page, '完了');
       const items = sessionItems(page);
+      await expect(items.first()).toBeVisible();
       const count = await items.count();
       expect(count).toBeGreaterThan(0);
       for (let i = 0; i < count; i++) {
@@ -76,7 +100,7 @@ test.describe('セッション一覧ページ', () => {
     });
 
     test('3.6 セッションが作成日時の降順でソートされる', async ({ page }) => {
-      // 先頭 2 件の <time datetime> を比較し、降順（新しい順）を検証する。
+      // サーバーが降順で返す。表示順が降順であることを先頭 2 件の datetime で検証する。
       const times = sessionItems(page).locator('time');
       await expect(times.first()).toBeVisible();
       const first = await times.nth(0).getAttribute('datetime');
@@ -93,10 +117,17 @@ test.describe('セッション一覧ページ', () => {
       await expect(pagination).toBeVisible();
       await expect(pagination.getByText('1 /')).toBeVisible();
 
-      await pagination.getByRole('button', { name: '次のページ' }).click();
+      // 次ページはサーバー再取得（?page=2）。応答を待ってからページ表示を検証する。
+      await Promise.all([
+        page.waitForResponse(isSessionsListResponse).catch(() => {}),
+        pagination.getByRole('button', { name: '次のページ' }).click(),
+      ]);
       await expect(pagination.getByText('2 /')).toBeVisible();
 
-      await pagination.getByRole('button', { name: '前のページ' }).click();
+      await Promise.all([
+        page.waitForResponse(isSessionsListResponse).catch(() => {}),
+        pagination.getByRole('button', { name: '前のページ' }).click(),
+      ]);
       await expect(pagination.getByText('1 /')).toBeVisible();
     });
 
@@ -111,9 +142,8 @@ test.describe('セッション一覧ページ', () => {
 
   test.describe('状態別表示（レスポンス注入）', () => {
     test('3.9 読み込み中スピナーが表示される', async ({ page, loginAsAdmin }) => {
-      // 一覧 API を遅延させ、スピナー（role=status 読み込み中）が出ることを確認する。
-      await page.route(SESSIONS_LIST_GLOB, async (route) => {
-        if (route.request().method() !== 'GET') return route.fallback();
+      await page.route(SESSIONS_LIST_RE, async (route: Route) => {
+        if (!isSessionsListGet(route)) return route.fallback();
         await new Promise((r) => setTimeout(r, 2_000));
         return route.fallback();
       });
@@ -125,9 +155,8 @@ test.describe('セッション一覧ページ', () => {
 
     test('3.10 エラー時にエラーメッセージが表示される', async ({ page, loginAsAdmin }) => {
       await loginAsAdmin(page);
-      // ログイン後に一覧 API を 500 に差し替えてから再読込する。
-      await page.route(SESSIONS_LIST_GLOB, async (route) => {
-        if (route.request().method() !== 'GET') return route.fallback();
+      await page.route(SESSIONS_LIST_RE, async (route: Route) => {
+        if (!isSessionsListGet(route)) return route.fallback();
         return route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -144,8 +173,8 @@ test.describe('セッション一覧ページ', () => {
       page,
       loginAsAdmin,
     }) => {
-      await page.route(SESSIONS_LIST_GLOB, async (route) => {
-        if (route.request().method() !== 'GET') return route.fallback();
+      await page.route(SESSIONS_LIST_RE, async (route: Route) => {
+        if (!isSessionsListGet(route)) return route.fallback();
         return route.fulfill({
           status: 200,
           contentType: 'application/json',

@@ -1,5 +1,5 @@
-import { test, expect, type Page } from '../../fixtures/auth.js';
-import type { Route } from '@playwright/test';
+import { test, expect } from '../../fixtures/auth.js';
+import type { Page, Route } from '@playwright/test';
 
 /**
  * 管理画面 - 監査ログ。
@@ -112,6 +112,7 @@ test.describe('管理画面 - 監査ログ', () => {
 
     const deleteButton = page.getByRole('button', { name: 'フィルタ条件で削除' });
     // 対象 0 件だと disabled。件数があるときのみ削除フローを検証する。
+    await expect(deleteButton).toBeEnabled({ timeout: 10_000 }).catch(() => {});
     if (await deleteButton.isDisabled()) {
       test.info().annotations.push({
         type: 'note',
@@ -124,13 +125,17 @@ test.describe('管理画面 - 監査ログ', () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('この操作は取り消せません')).toBeVisible();
 
+    // 削除 POST を待つ（パターンは contains で緩める）。
     const [resp] = await Promise.all([
       page.waitForResponse(
         (r) =>
-          /\/audit-logs\/delete$/.test(r.url()) && r.request().method() === 'POST'
+          r.url().includes('/audit-logs/delete') && r.request().method() === 'POST',
+        { timeout: 20_000 }
       ),
       dialog.getByRole('button', { name: '削除する' }).click(),
     ]);
     expect(resp.ok()).toBeTruthy();
+    // ダイアログが閉じ、一覧が再取得される
+    await expect(dialog).toBeHidden({ timeout: 10_000 });
   });
 });

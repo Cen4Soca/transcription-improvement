@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '../../fixtures/auth.js';
+import { test, expect } from '../../fixtures/auth.js';
+import type { Page } from '@playwright/test';
 
 /**
  * 管理画面 - IPアドレス制限。dev 環境に対して実操作で検証する。

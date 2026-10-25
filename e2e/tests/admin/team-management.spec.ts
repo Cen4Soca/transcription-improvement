@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '../../fixtures/auth.js';
+import { test, expect } from '../../fixtures/auth.js';
+import type { Page } from '@playwright/test';
 
 /**
  * 管理画面 - チーム管理。dev 環境に対して実操作で検証する。
@@ -61,10 +62,13 @@ test.describe('管理画面 - チーム管理', () => {
   test('8.3.3 チーム名を編集できる', async ({ page }) => {
     const name = await createTeam(page);
     const renamed = `${name}-renamed`;
-    const item = teamItem(page, name);
-    await item.getByRole('button', { name: `${name}を編集` }).click();
-    await item.getByLabel('チーム名を編集').fill(renamed);
-    await item.getByRole('button', { name: '保存' }).click();
+    await teamItem(page, name).getByRole('button', { name: `${name}を編集` }).click();
+    // 編集モードでは入力欄に名前が移り listitem の hasText フィルタから外れるため、
+    // ページ全体から編集入力欄を特定する。
+    const editInput = page.getByLabel('チーム名を編集');
+    await expect(editInput).toBeVisible({ timeout: 10_000 });
+    await editInput.fill(renamed);
+    await page.getByRole('button', { name: '保存' }).click();
     await expect(page.getByText(renamed, { exact: true })).toBeVisible({ timeout: 15_000 });
     await deleteTeam(page, renamed);
   });
@@ -108,6 +112,7 @@ test.describe('管理画面 - チーム管理', () => {
   test('8.3.7 チームにセッションを割り当てできる', async ({ page }) => {
     const name = await createTeam(page);
     const item = teamItem(page, name);
+    // 割り当てセクションを開く（aria-label 完全一致で開くボタンを特定）
     await item.getByRole('button', { name: `${name}にセッション割り当て` }).click();
 
     const sessionSelect = item.getByLabel('割り当てるセッションを選択');
@@ -117,7 +122,8 @@ test.describe('管理画面 - チーム管理', () => {
     const optionValue = await options.nth(1).getAttribute('value');
     expect(optionValue).toBeTruthy();
     await sessionSelect.selectOption(optionValue!);
-    await item.getByRole('button', { name: '割り当て' }).click();
+    // 実行ボタンは exact で開くボタン（aria-label）と区別する
+    await item.getByRole('button', { name: '割り当て', exact: true }).click();
 
     // 割り当て済みリストに表示される
     await expect(

@@ -49,7 +49,11 @@ export async function openFirstSession(page: Page): Promise<void> {
 }
 
 /**
- * Switch the session list status filter and wait for the tab to become selected.
+ * Switch the session list status filter and wait for the server re-fetch.
+ *
+ * The list is server-driven: changing the filter sends `?status=` and the
+ * server returns only matching sessions. We wait for that GET /sessions
+ * response so assertions run against the refreshed DOM, not the stale one.
  */
 export async function selectStatusFilter(
   page: Page,
@@ -57,7 +61,17 @@ export async function selectStatusFilter(
 ): Promise<void> {
   const tablist = page.getByRole('tablist', { name: 'ステータスフィルター' });
   const tab = tablist.getByRole('tab', { name: label });
-  await tab.click();
+  await Promise.all([
+    page
+      .waitForResponse(
+        (r) =>
+          /\/sessions(\?.*)?$/.test(r.url()) &&
+          r.request().method() === 'GET' &&
+          r.request().resourceType() !== 'document'
+      )
+      .catch(() => {}),
+    tab.click(),
+  ]);
   await expect(tab).toHaveAttribute('aria-selected', 'true');
 }
 

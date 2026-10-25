@@ -70,8 +70,8 @@ test.describe('管理画面 - ユーザー管理', () => {
       await expect(disableDialog).toBeVisible();
       await disableDialog.getByRole('button', { name: '無効化する' }).click();
 
-      // ステータスが「無効」になり、有効化ボタンが出る
-      await expect(row.getByText('無効')).toBeVisible({ timeout: 15_000 });
+      // ステータスバッジが「無効」になり、有効化ボタンが出る（exact でボタン文言と区別）
+      await expect(row.getByText('無効', { exact: true })).toBeVisible({ timeout: 15_000 });
 
       // 後始末も兼ねて再有効化を検証する
       await row.getByRole('button', { name: /を有効化$/ }).click();

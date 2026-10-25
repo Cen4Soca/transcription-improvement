@@ -1,4 +1,6 @@
 import { test, expect } from '../../fixtures/auth.js';
+import { expectNoAxeViolations } from '../../helpers/axe-helper.js';
+import { openFirstSession } from '../../helpers/ui-helper.js';
 
 test.describe('アクセシビリティ (WCAG 2.1 AA)', () => {
   test.describe('ランドマークとARIA属性', () => {
@@ -150,6 +152,102 @@ test.describe('アクセシビリティ (WCAG 2.1 AA)', () => {
       // タブパネルに正しいaria-labelledbyがある
       const tabpanel = page.locator('#tabpanel-users');
       await expect(tabpanel).toHaveAttribute('aria-labelledby', 'tab-users');
+    });
+  });
+
+  test.describe('role="status" と フォーカスリング', () => {
+    test('9.5 ステータスメッセージに role="status" がある', async ({
+      page,
+      loginAsReviewer,
+    }) => {
+      // アップロード成功メッセージは role="status"。実 S3 を汚さないようモックで完了させる。
+      const uploadTarget = new URL('/e2e-a11y-upload-put', process.env.BASE_URL).toString();
+      await loginAsReviewer(page);
+      await page.route(/\/upload-url$/, (route) => {
+        if (route.request().method() !== 'POST') return route.fallback();
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            presignedUrl: uploadTarget,
+            mediaFileId: 'e2e-a11y-001',
+            s3Key: 'media/x/a.mp3',
+            expiresAt: '2099-01-01T00:00:00.000Z',
+          }),
+        });
+      });
+      await page.route(uploadTarget, (route) =>
+        route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, body: '' })
+      );
+
+      await page.getByRole('menuitem', { name: 'メディアアップロード' }).click();
+      await page.locator('input[type="file"]').setInputFiles({
+        name: 'a11y-audio.mp3',
+        mimeType: 'audio/mpeg',
+        buffer: Buffer.alloc(1024, 0),
+      });
+      await page.getByRole('button', { name: 'アップロード開始' }).click();
+
+      // 成功メッセージが role="status" で通知される
+      const status = page.getByRole('status').filter({ hasText: 'アップロードが完了しました' });
+      await expect(status).toBeVisible({ timeout: 15_000 });
+    });
+
+    test('9.9 フォーカスリングが表示される', async ({ page, loginAsReviewer }) => {
+      await loginAsReviewer(page);
+      await expect(page.getByRole('main', { name: '校閲セッション一覧' })).toBeVisible();
+      // ステータスフィルターのタブは focus:ring-2 を持つ。フォーカス時にリングが
+      // 付与される契約（focus:ring-2 クラスの存在）を検証する。
+      const tab = page
+        .getByRole('tablist', { name: 'ステータスフィルター' })
+        .getByRole('tab', { name: '未着手' });
+      await tab.focus();
+      await expect(tab).toBeFocused();
+      await expect(tab).toHaveClass(/focus:ring-2/);
+    });
+  });
+
+  test.describe('axe-core 自動スキャン (WCAG 2.1 AA)', () => {
+    test('9.A ログイン画面に axe 違反がない', async ({ page }) => {
+      await page.goto('./');
+      await page.waitForSelector('input[type="email"]', { timeout: 15_000 });
+      await expectNoAxeViolations(page);
+    });
+
+    test('9.B セッション一覧ページに axe 違反がない', async ({ page, loginAsReviewer }) => {
+      await loginAsReviewer(page);
+      await expect(page.getByRole('main', { name: '校閲セッション一覧' })).toBeVisible();
+      await expectNoAxeViolations(page);
+    });
+
+    test('9.C 校閲画面に axe 違反がない', async ({ page, loginAsAdmin }) => {
+      await loginAsAdmin(page);
+      await openFirstSession(page);
+      await expect(page.getByRole('main', { name: '校閲画面' })).toBeVisible();
+      await expectNoAxeViolations(page);
+    });
+
+    test('9.D メディアアップロードページに axe 違反がない', async ({ page, loginAsReviewer }) => {
+      await loginAsReviewer(page);
+      await page.getByRole('menuitem', { name: 'メディアアップロード' }).click();
+      await expect(page.getByRole('main', { name: 'メディアアップロード' })).toBeVisible();
+      await expectNoAxeViolations(page);
+    });
+
+    test('9.E ランキングページに axe 違反がない', async ({ page, loginAsReviewer }) => {
+      await loginAsReviewer(page);
+      await page.getByRole('menuitem', { name: 'ランキング' }).click();
+      await expect(
+        page.getByRole('main', { name: 'コントリビューターランキング' })
+      ).toBeVisible();
+      await expectNoAxeViolations(page);
+    });
+
+    test('9.F 管理画面に axe 違反がない', async ({ page, loginAsAdmin }) => {
+      await loginAsAdmin(page);
+      await page.getByRole('menuitem', { name: '管理', exact: true }).click();
+      await expect(page.getByRole('main', { name: '管理画面' })).toBeVisible();
+      await expectNoAxeViolations(page);
     });
   });
 });
