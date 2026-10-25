@@ -5,4 +5,9 @@ dist/
 test-results/
 playwright-report/
 blob-report/
-seed/media-files/
+# メディア実体は無視するが、置き方を説明する README は管理する
+seed/media-files/*
+!seed/media-files/README.md
+
+# マニュアル生成物（スクショ・HTML）は無視する
+manual/output/

@@ -29,8 +29,22 @@ export default defineConfig({
   },
   projects: [
     {
+      // バグ検出 E2E（既定）。testDir の tests/ のみを対象にする。
       name: 'chromium',
+      testDir: './tests',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      // マニュアル用スクリーンショット収集シナリオ（正常系）。
+      // `npm run manual` から --project=manual で実行する。
+      name: 'manual',
+      testDir: './manual',
+      use: {
+        ...devices['Desktop Chrome'],
+        // マニュアルのスクショは一貫した大きさで撮る。
+        viewport: { width: 1280, height: 900 },
+        screenshot: 'off',
+      },
     },
   ],
 });

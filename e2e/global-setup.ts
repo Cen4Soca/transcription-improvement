@@ -38,6 +38,25 @@ export default async function globalSetup() {
 
   const testPassword = process.env.TEST_USER_PASSWORD!;
 
+  // 最適化: 固定ユーザーは一度作れば使い回せるため、.auth/test-users.json が既に
+  // 存在すれば AWS SDK（Cognito/DynamoDB）の事前確認をスキップして再利用する。
+  // マニュアル生成など繰り返し実行時に AWS 認証切れの影響を受けにくくするため。
+  // （アプリへのログインはブラウザ経由で Cognito を使うため、この最適化の対象外。）
+  // E2E_FORCE_USER_PROVISION=1 で強制的に再プロビジョニングできる。
+  const forceProvision = process.env.E2E_FORCE_USER_PROVISION === '1';
+  if (!forceProvision && fs.existsSync(TEST_USERS_FILE)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(TEST_USERS_FILE, 'utf-8'));
+      if (existing?.teamLeader?.email && existing?.reviewer?.email) {
+        console.log('  ✓ 既存の .auth/test-users.json を再利用（AWS 事前確認をスキップ）');
+        console.log('🔧 Global Setup 完了\n');
+        return;
+      }
+    } catch {
+      // 壊れている場合は通常のプロビジョニングにフォールバック
+    }
+  }
+
   // TeamLeader — ensure Cognito user (email-free) + DynamoDB record.
   const leaderUserId = crypto.randomUUID();
   const leaderResolvedId = await ensureDualUser({

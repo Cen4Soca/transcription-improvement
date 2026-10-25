@@ -21,6 +21,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -184,7 +185,7 @@ function generateDummyMp4(): Buffer {
   return Buffer.concat([ftyp, moovHeader, mvhd]);
 }
 
-function getDummyFileContent(contentType: string): Buffer {
+function generateDummyFileContent(contentType: string): Buffer {
   switch (contentType) {
     case 'audio/mpeg':
       return generateDummyMp3();
@@ -195,6 +196,22 @@ function getDummyFileContent(contentType: string): Buffer {
     default:
       return Buffer.alloc(1024, 0);
   }
+}
+
+/**
+ * メディアファイルの本体バイトを解決する。
+ *
+ * `e2e/seed/media-files/<filename>` に実ファイルが置かれていればそれを使い
+ * （マニュアル用のリアルなスクリーンショットに有用）、無ければ再生可能な最小
+ * ダミー（無音/空コンテナ）にフォールバックする。実ファイルを置けば、校閲画面の
+ * メディアプレーヤーに実際の音声・動画が表示される。
+ */
+function getFileContent(filename: string, contentType: string): Buffer {
+  const realPath = path.resolve(__dirname, 'media-files', filename);
+  if (fs.existsSync(realPath)) {
+    return fs.readFileSync(realPath);
+  }
+  return generateDummyFileContent(contentType);
 }
 
 // ============================================================
@@ -210,7 +227,7 @@ async function main() {
 
   for (const item of SEED_ITEMS) {
     const s3Key = `media/${item.mediaFileId}/${item.filename}`;
-    const fileContent = getDummyFileContent(item.contentType);
+    const fileContent = getFileContent(item.filename, item.contentType);
 
     // 1. S3 にダミーファイルをアップロード
     console.log(`  [S3] Uploading: ${s3Key} (${fileContent.length} bytes)`);
