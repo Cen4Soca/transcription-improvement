@@ -5,7 +5,16 @@ import type { AppError } from '../types/api';
 import { SessionNameEditor } from '../components/SessionNameEditor';
 import { formatSessionDate } from '../utils/session-format';
 
-const PAGE_SIZE = 50;
+export type FilterStatus = 'ALL' | ReviewSessionStatus;
+
+export interface PaginationInfo {
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
 
 export interface SessionListPageProps {
   sessions: ReviewSession[];
@@ -18,9 +27,26 @@ export interface SessionListPageProps {
   renderSessionActions?: (session: ReviewSession) => ReactNode;
   /** セッション名の変更コールバック（成功で null, 失敗で AppError）。指定時のみ各項目に編集 UI を表示する */
   onRenameSession?: (sessionId: string, name: string) => Promise<AppError | null>;
+  /**
+   * 選択中のステータスフィルター（既定 'ALL'）。
+   * onStatusChange と併せて指定するとフィルターは「サーバー駆動（制御）」モードになる。
+   */
+  selectedStatus?: FilterStatus;
+  /**
+   * ステータスフィルター変更コールバック。
+   * 指定時はタブ選択がこのコールバックを呼ぶだけで、コンポーネント内ではフィルターしない（制御モード）。
+   * 省略時はコンポーネント内の state でローカルフィルターする（非制御フォールバック: assigned/joinable 用）。
+   */
+  onStatusChange?: (status: FilterStatus) => void;
+  /**
+   * サーバーが返すページネーション情報。
+   * 指定時はこの prop からページ UI を描画する（制御モード）。
+   * 省略時はページ UI を表示しない（assigned/joinable は小さなリストのため）。
+   */
+  pagination?: PaginationInfo;
+  /** ページ変更コールバック（制御モードのページ UI から呼ばれる） */
+  onPageChange?: (page: number) => void;
 }
-
-type FilterStatus = 'ALL' | ReviewSessionStatus;
 
 const STATUS_LABELS: Record<ReviewSessionStatus, string> = {
   PENDING: '未着手',
@@ -38,6 +64,9 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 /**
  * SessionListPage - ReviewSession一覧画面
  *
+ * プレゼンテーショナルコンポーネント。制御モード（server-driven）と
+ * 非制御フォールバックモード（assigned/joinable）の2モードを props の有無で切り替える。
+ *
  * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.7, 11.7
  */
 export function SessionListPage({
@@ -48,35 +77,41 @@ export function SessionListPage({
   title = '校閲セッション一覧',
   renderSessionActions,
   onRenameSession,
+  selectedStatus = 'ALL',
+  onStatusChange,
+  pagination,
+  onPageChange,
 }: SessionListPageProps) {
-  const [filter, setFilter] = useState<FilterStatus>('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
+  // onStatusChange が渡された場合は制御（サーバー駆動）フィルターモード。
+  const isControlledFilter = !!onStatusChange;
+  const [localFilter, setLocalFilter] = useState<FilterStatus>('ALL');
 
-  const filteredAndSortedSessions = useMemo(() => {
+  // 表示中のアクティブなフィルター: 制御モードでは selectedStatus、非制御ではローカル state。
+  const activeFilter = isControlledFilter ? selectedStatus : localFilter;
+
+  const handleFilterChange = (newFilter: FilterStatus) => {
+    if (isControlledFilter) {
+      onStatusChange?.(newFilter);
+      return;
+    }
+    setLocalFilter(newFilter);
+  };
+
+  // 制御モードではサーバーが既にフィルター＋降順ソート＋ページング済みのため、
+  // 受け取った sessions をそのまま描画する（クライアント再ソート／再フィルターしない）。
+  // 非制御フォールバックモードではローカルでフィルター＋降順ソートする。
+  const displayedSessions = useMemo(() => {
+    if (isControlledFilter) {
+      return sessions;
+    }
     const filtered =
-      filter === 'ALL'
+      localFilter === 'ALL'
         ? sessions
-        : sessions.filter((s) => s.status === filter);
-
+        : sessions.filter((s) => s.status === localFilter);
     return [...filtered].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [sessions, filter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredAndSortedSessions.length / PAGE_SIZE));
-
-  // Reset to page 1 when filter changes and current page exceeds total
-  const safePage = Math.min(currentPage, totalPages);
-
-  const paginatedSessions = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE;
-    return filteredAndSortedSessions.slice(start, start + PAGE_SIZE);
-  }, [filteredAndSortedSessions, safePage]);
-
-  const handleFilterChange = (newFilter: FilterStatus) => {
-    setFilter(newFilter);
-    setCurrentPage(1);
-  };
+  }, [sessions, isControlledFilter, localFilter]);
 
   if (isLoading) {
     return (
@@ -122,10 +157,10 @@ export function SessionListPage({
             key={option.value}
             type="button"
             role="tab"
-            aria-selected={filter === option.value}
+            aria-selected={activeFilter === option.value}
             onClick={() => handleFilterChange(option.value)}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              filter === option.value
+              activeFilter === option.value
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
             }`}
@@ -137,14 +172,14 @@ export function SessionListPage({
 
       {/* Session list */}
       <div className="flex-1 overflow-auto px-4 py-3" role="tabpanel">
-        {filteredAndSortedSessions.length === 0 ? (
+        {displayedSessions.length === 0 ? (
           <div className="flex items-center justify-center h-48">
             <p className="text-gray-500">校閲セッションがありません</p>
           </div>
         ) : (
           <>
             <ul className="space-y-2" aria-label="セッション一覧">
-              {paginatedSessions.map((session) => (
+              {displayedSessions.map((session) => (
                 <li
                   key={session.sessionId}
                   className="px-4 py-3 bg-white border border-gray-200 rounded-lg"
@@ -185,34 +220,38 @@ export function SessionListPage({
               ))}
             </ul>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
+            {/* Pagination (server-driven; rendered only when pagination prop has >1 page) */}
+            {pagination && pagination.totalPages > 1 && (
               <nav
                 className="flex items-center justify-between px-2 py-3 mt-4 border-t border-gray-200"
                 aria-label="ページネーション"
               >
                 <p className="text-sm text-gray-600">
-                  {filteredAndSortedSessions.length}件中{' '}
-                  {(safePage - 1) * PAGE_SIZE + 1}〜
-                  {Math.min(safePage * PAGE_SIZE, filteredAndSortedSessions.length)}件を表示
+                  {pagination.totalItems}件中{' '}
+                  {(pagination.currentPage - 1) * pagination.pageSize + 1}〜
+                  {Math.min(
+                    pagination.currentPage * pagination.pageSize,
+                    pagination.totalItems
+                  )}
+                  件を表示
                 </p>
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setCurrentPage(safePage - 1)}
-                    disabled={safePage <= 1}
+                    onClick={() => onPageChange?.(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPreviousPage}
                     className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
                     aria-label="前のページ"
                   >
                     前へ
                   </button>
                   <span className="flex items-center px-2 text-sm text-gray-600">
-                    {safePage} / {totalPages}
+                    {pagination.currentPage} / {pagination.totalPages}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setCurrentPage(safePage + 1)}
-                    disabled={safePage >= totalPages}
+                    onClick={() => onPageChange?.(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage}
                     className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
                     aria-label="次のページ"
                   >

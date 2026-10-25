@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { SessionListPage } from './SessionListPage';
+import type { PaginationInfo } from './SessionListPage';
 import { formatSessionDate } from '../utils/session-format';
 import type { ReviewSession } from '../types/session';
 
@@ -17,6 +18,32 @@ function createSession(overrides: Partial<ReviewSession> = {}): ReviewSession {
     partialAggregationEnabled: false,
     createdAt: '2024-06-15T10:30:00.000Z',
     updatedAt: '2024-06-15T10:30:00.000Z',
+    ...overrides,
+  };
+}
+
+/**
+ * createManySessions - sessions prop に流し込む配列を生成するヘルパー。
+ * サーバーが降順ソート済みで返す前提に合わせ、createdAt は降順（先頭が最新）で並ぶ。
+ */
+function createManySessions(count: number): ReviewSession[] {
+  return Array.from({ length: count }, (_, i) =>
+    createSession({
+      sessionId: `s-${i}`,
+      name: `セッション${i + 1}`,
+      createdAt: new Date(2024, 0, 1, 0, 0, 0, count - i).toISOString(),
+    })
+  );
+}
+
+function createPagination(overrides: Partial<PaginationInfo> = {}): PaginationInfo {
+  return {
+    currentPage: 1,
+    pageSize: 50,
+    totalItems: 75,
+    totalPages: 2,
+    hasNextPage: true,
+    hasPreviousPage: false,
     ...overrides,
   };
 }
@@ -86,23 +113,36 @@ describe('SessionListPage', () => {
     expect(screen.getByText('2024-06-15 14:30')).toBeInTheDocument();
   });
 
-  it('sorts sessions by createdAt descending', () => {
+  it('renders sessions in the given order without client re-sort (controlled mode)', () => {
+    // Server returns sessions pre-sorted createdAt desc. The component must render
+    // them exactly as provided and must NOT reorder.
     const sessions = [
-      createSession({
-        sessionId: 's1',
-        name: '古いセッション',
-        createdAt: '2024-01-01T00:00:00.000Z',
-      }),
-      createSession({
-        sessionId: 's2',
-        name: '新しいセッション',
-        createdAt: '2024-06-15T00:00:00.000Z',
-      }),
-      createSession({
-        sessionId: 's3',
-        name: '中間セッション',
-        createdAt: '2024-03-10T00:00:00.000Z',
-      }),
+      createSession({ sessionId: 's2', name: '新しいセッション', createdAt: '2024-06-15T00:00:00.000Z' }),
+      createSession({ sessionId: 's3', name: '中間セッション', createdAt: '2024-03-10T00:00:00.000Z' }),
+      createSession({ sessionId: 's1', name: '古いセッション', createdAt: '2024-01-01T00:00:00.000Z' }),
+    ];
+
+    render(
+      <SessionListPage
+        sessions={sessions}
+        selectedStatus="ALL"
+        onStatusChange={vi.fn()}
+        pagination={createPagination({ totalItems: 3, totalPages: 1, hasNextPage: false })}
+        onPageChange={vi.fn()}
+      />
+    );
+
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('新しいセッション');
+    expect(items[1]).toHaveTextContent('中間セッション');
+    expect(items[2]).toHaveTextContent('古いセッション');
+  });
+
+  it('sorts sessions by createdAt descending in uncontrolled fallback mode', () => {
+    const sessions = [
+      createSession({ sessionId: 's1', name: '古いセッション', createdAt: '2024-01-01T00:00:00.000Z' }),
+      createSession({ sessionId: 's2', name: '新しいセッション', createdAt: '2024-06-15T00:00:00.000Z' }),
+      createSession({ sessionId: 's3', name: '中間セッション', createdAt: '2024-03-10T00:00:00.000Z' }),
     ];
 
     render(<SessionListPage sessions={sessions} />);
@@ -183,7 +223,81 @@ describe('SessionListPage', () => {
     expect(onRenameSession).toHaveBeenCalledWith('rename-1', '新しい名前');
   });
 
-  describe('filtering', () => {
+  describe('filtering (controlled / server-driven)', () => {
+    const sessions = [
+      createSession({ sessionId: 's1', name: '未着手A', status: 'PENDING' }),
+      createSession({ sessionId: 's2', name: '進行中A', status: 'IN_PROGRESS' }),
+      createSession({ sessionId: 's3', name: '完了A', status: 'COMPLETED' }),
+      createSession({ sessionId: 's4', name: '未着手B', status: 'PENDING' }),
+    ];
+
+    it('calls onStatusChange with PENDING when 未着手 tab is clicked', async () => {
+      const user = userEvent.setup();
+      const onStatusChange = vi.fn();
+      render(
+        <SessionListPage sessions={sessions} selectedStatus="ALL" onStatusChange={onStatusChange} />
+      );
+
+      await user.click(screen.getByRole('tab', { name: '未着手' }));
+
+      expect(onStatusChange).toHaveBeenCalledWith('PENDING');
+    });
+
+    it('calls onStatusChange with IN_PROGRESS when 進行中 tab is clicked', async () => {
+      const user = userEvent.setup();
+      const onStatusChange = vi.fn();
+      render(
+        <SessionListPage sessions={sessions} selectedStatus="ALL" onStatusChange={onStatusChange} />
+      );
+
+      await user.click(screen.getByRole('tab', { name: '進行中' }));
+
+      expect(onStatusChange).toHaveBeenCalledWith('IN_PROGRESS');
+    });
+
+    it('calls onStatusChange with COMPLETED when 完了 tab is clicked', async () => {
+      const user = userEvent.setup();
+      const onStatusChange = vi.fn();
+      render(
+        <SessionListPage sessions={sessions} selectedStatus="ALL" onStatusChange={onStatusChange} />
+      );
+
+      await user.click(screen.getByRole('tab', { name: '完了' }));
+
+      expect(onStatusChange).toHaveBeenCalledWith('COMPLETED');
+    });
+
+    it('calls onStatusChange with ALL when 全て tab is clicked', async () => {
+      const user = userEvent.setup();
+      const onStatusChange = vi.fn();
+      render(
+        <SessionListPage sessions={sessions} selectedStatus="PENDING" onStatusChange={onStatusChange} />
+      );
+
+      await user.click(screen.getByRole('tab', { name: '全て' }));
+
+      expect(onStatusChange).toHaveBeenCalledWith('ALL');
+    });
+
+    it('reflects selectedStatus via aria-selected and does NOT filter locally', () => {
+      render(
+        <SessionListPage sessions={sessions} selectedStatus="IN_PROGRESS" onStatusChange={vi.fn()} />
+      );
+
+      expect(screen.getByRole('tab', { name: '進行中' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('tab', { name: '全て' })).toHaveAttribute('aria-selected', 'false');
+      expect(screen.getByRole('tab', { name: '未着手' })).toHaveAttribute('aria-selected', 'false');
+
+      // All passed sessions remain rendered: the component does not filter in controlled mode
+      // (the server already filtered). The input array is rendered verbatim.
+      expect(screen.getByText('未着手A')).toBeInTheDocument();
+      expect(screen.getByText('進行中A')).toBeInTheDocument();
+      expect(screen.getByText('完了A')).toBeInTheDocument();
+      expect(screen.getByText('未着手B')).toBeInTheDocument();
+    });
+  });
+
+  describe('filtering (uncontrolled fallback — assigned/joinable)', () => {
     const sessions = [
       createSession({ sessionId: 's1', name: '未着手A', status: 'PENDING' }),
       createSession({ sessionId: 's2', name: '進行中A', status: 'IN_PROGRESS' }),
@@ -200,7 +314,7 @@ describe('SessionListPage', () => {
       expect(screen.getByText('未着手B')).toBeInTheDocument();
     });
 
-    it('filters by PENDING status', async () => {
+    it('filters by PENDING status locally', async () => {
       const user = userEvent.setup();
       render(<SessionListPage sessions={sessions} />);
 
@@ -212,7 +326,7 @@ describe('SessionListPage', () => {
       expect(screen.queryByText('完了A')).not.toBeInTheDocument();
     });
 
-    it('filters by IN_PROGRESS status', async () => {
+    it('filters by IN_PROGRESS status locally', async () => {
       const user = userEvent.setup();
       render(<SessionListPage sessions={sessions} />);
 
@@ -223,7 +337,7 @@ describe('SessionListPage', () => {
       expect(screen.queryByText('完了A')).not.toBeInTheDocument();
     });
 
-    it('filters by COMPLETED status', async () => {
+    it('filters by COMPLETED status locally', async () => {
       const user = userEvent.setup();
       render(<SessionListPage sessions={sessions} />);
 
@@ -234,7 +348,7 @@ describe('SessionListPage', () => {
       expect(screen.queryByText('進行中A')).not.toBeInTheDocument();
     });
 
-    it('shows empty message when filter matches no sessions', async () => {
+    it('shows empty message when local filter matches no sessions', async () => {
       const user = userEvent.setup();
       const pendingOnly = [
         createSession({ sessionId: 's1', name: '未着手のみ', status: 'PENDING' }),
@@ -247,7 +361,7 @@ describe('SessionListPage', () => {
       expect(screen.getByText('校閲セッションがありません')).toBeInTheDocument();
     });
 
-    it('marks active filter tab with aria-selected', async () => {
+    it('marks active filter tab with aria-selected (local state)', async () => {
       const user = userEvent.setup();
       render(<SessionListPage sessions={sessions} />);
 
@@ -261,6 +375,14 @@ describe('SessionListPage', () => {
         'aria-selected',
         'true'
       );
+    });
+
+    it('does not render pagination nav when pagination prop is omitted', () => {
+      render(<SessionListPage sessions={sessions} />);
+
+      expect(
+        screen.queryByRole('navigation', { name: 'ページネーション' })
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -303,145 +425,190 @@ describe('SessionListPage', () => {
       const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
+
+    it('has no accessibility violations in controlled mode with pagination (WCAG 2.1 AA)', async () => {
+      const sessions = createManySessions(50);
+
+      const { container } = render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ totalItems: 75, totalPages: 2, hasNextPage: true })}
+          onPageChange={vi.fn()}
+        />
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
   });
 
-  describe('pagination', () => {
-    function createManySessions(count: number): ReviewSession[] {
-      return Array.from({ length: count }, (_, i) =>
-        createSession({
-          sessionId: `s-${i}`,
-          name: `セッション${i + 1}`,
-          createdAt: new Date(2024, 0, 1, 0, 0, 0, count - i).toISOString(),
-        })
-      );
-    }
-
-    it('does not show pagination when sessions fit in one page (<=50)', () => {
+  describe('pagination (controlled / server-driven)', () => {
+    it('does not show pagination when pagination has a single page', () => {
       const sessions = createManySessions(50);
-      render(<SessionListPage sessions={sessions} />);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ totalItems: 50, totalPages: 1, hasNextPage: false })}
+          onPageChange={vi.fn()}
+        />
+      );
 
-      expect(screen.queryByRole('navigation', { name: 'ページネーション' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('navigation', { name: 'ページネーション' })
+      ).not.toBeInTheDocument();
     });
 
-    it('shows pagination when sessions exceed one page (>50)', () => {
-      const sessions = createManySessions(51);
-      render(<SessionListPage sessions={sessions} />);
+    it('shows pagination when pagination has more than one page', () => {
+      const sessions = createManySessions(50);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ totalItems: 75, totalPages: 2, hasNextPage: true })}
+          onPageChange={vi.fn()}
+        />
+      );
 
-      expect(screen.getByRole('navigation', { name: 'ページネーション' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('navigation', { name: 'ページネーション' })
+      ).toBeInTheDocument();
     });
 
-    it('shows first 50 sessions on page 1', () => {
-      const sessions = createManySessions(75);
-      render(<SessionListPage sessions={sessions} />);
+    it('renders exactly the sessions it is given (server already sliced)', () => {
+      // Server returned 50 items for page 1 of a 75-item set. The component renders
+      // all 50 as-is and does NOT slice.
+      const sessions = createManySessions(50);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ totalItems: 75, totalPages: 2, hasNextPage: true })}
+          onPageChange={vi.fn()}
+        />
+      );
 
-      const items = screen.getAllByRole('listitem');
-      expect(items).toHaveLength(50);
+      expect(screen.getAllByRole('listitem')).toHaveLength(50);
     });
 
-    it('navigates to next page and shows remaining sessions', async () => {
+    it('calls onPageChange with next page when 次のページ is clicked', async () => {
       const user = userEvent.setup();
-      const sessions = createManySessions(75);
-      render(<SessionListPage sessions={sessions} />);
+      const onPageChange = vi.fn();
+      const sessions = createManySessions(50);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ currentPage: 1, totalItems: 75, totalPages: 2, hasNextPage: true, hasPreviousPage: false })}
+          onPageChange={onPageChange}
+        />
+      );
 
       await user.click(screen.getByRole('button', { name: '次のページ' }));
 
-      const items = screen.getAllByRole('listitem');
-      expect(items).toHaveLength(25);
+      expect(onPageChange).toHaveBeenCalledWith(2);
     });
 
-    it('navigates back to previous page', async () => {
+    it('calls onPageChange with previous page when 前のページ is clicked', async () => {
       const user = userEvent.setup();
-      const sessions = createManySessions(75);
-      render(<SessionListPage sessions={sessions} />);
+      const onPageChange = vi.fn();
+      const sessions = createManySessions(25);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ currentPage: 2, totalItems: 75, totalPages: 2, hasNextPage: false, hasPreviousPage: true })}
+          onPageChange={onPageChange}
+        />
+      );
 
-      await user.click(screen.getByRole('button', { name: '次のページ' }));
       await user.click(screen.getByRole('button', { name: '前のページ' }));
 
-      const items = screen.getAllByRole('listitem');
-      expect(items).toHaveLength(50);
+      expect(onPageChange).toHaveBeenCalledWith(1);
     });
 
-    it('disables prev button on first page', () => {
-      const sessions = createManySessions(75);
-      render(<SessionListPage sessions={sessions} />);
+    it('disables prev button when hasPreviousPage is false', () => {
+      const sessions = createManySessions(50);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ currentPage: 1, totalPages: 2, hasPreviousPage: false, hasNextPage: true })}
+          onPageChange={vi.fn()}
+        />
+      );
 
       expect(screen.getByRole('button', { name: '前のページ' })).toBeDisabled();
     });
 
-    it('disables next button on last page', async () => {
-      const user = userEvent.setup();
-      const sessions = createManySessions(75);
-      render(<SessionListPage sessions={sessions} />);
-
-      await user.click(screen.getByRole('button', { name: '次のページ' }));
+    it('disables next button when hasNextPage is false', () => {
+      const sessions = createManySessions(25);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ currentPage: 2, totalPages: 2, hasNextPage: false, hasPreviousPage: true })}
+          onPageChange={vi.fn()}
+        />
+      );
 
       expect(screen.getByRole('button', { name: '次のページ' })).toBeDisabled();
     });
 
-    it('displays page info text', () => {
-      const sessions = createManySessions(75);
-      render(<SessionListPage sessions={sessions} />);
+    it('displays page info text derived from the pagination prop', () => {
+      const sessions = createManySessions(50);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ currentPage: 1, pageSize: 50, totalItems: 75, totalPages: 2, hasNextPage: true, hasPreviousPage: false })}
+          onPageChange={vi.fn()}
+        />
+      );
 
       expect(screen.getByText(/75件中/)).toBeInTheDocument();
       expect(screen.getByText(/1〜50件を表示/)).toBeInTheDocument();
     });
 
-    it('displays current page / total pages', () => {
-      const sessions = createManySessions(75);
-      render(<SessionListPage sessions={sessions} />);
+    it('displays current page / total pages from the pagination prop', () => {
+      const sessions = createManySessions(50);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ currentPage: 1, totalPages: 2 })}
+          onPageChange={vi.fn()}
+        />
+      );
 
       expect(screen.getByText('1 / 2')).toBeInTheDocument();
     });
 
-    it('resets to page 1 when filter changes', async () => {
-      const user = userEvent.setup();
-      const sessions = [
-        ...createManySessions(60).map((s) => ({ ...s, status: 'PENDING' as const })),
-        createSession({ sessionId: 'in-progress-1', name: '進行中セッション', status: 'IN_PROGRESS' }),
-      ];
-      render(<SessionListPage sessions={sessions} />);
+    it('reflects page 2 info from the pagination prop', () => {
+      const sessions = createManySessions(25);
+      render(
+        <SessionListPage
+          sessions={sessions}
+          selectedStatus="ALL"
+          onStatusChange={vi.fn()}
+          pagination={createPagination({ currentPage: 2, pageSize: 50, totalItems: 75, totalPages: 2, hasNextPage: false, hasPreviousPage: true })}
+          onPageChange={vi.fn()}
+        />
+      );
 
-      // Go to page 2
-      await user.click(screen.getByRole('button', { name: '次のページ' }));
       expect(screen.getByText('2 / 2')).toBeInTheDocument();
-
-      // Change filter - should reset to page 1
-      await user.click(screen.getByRole('tab', { name: '未着手' }));
-
-      expect(screen.getByText('1 / 2')).toBeInTheDocument();
-    });
-
-    it('paginates exactly 100 items into 2 full pages', async () => {
-      const user = userEvent.setup();
-      const sessions = createManySessions(100);
-      render(<SessionListPage sessions={sessions} />);
-
-      expect(screen.getAllByRole('listitem')).toHaveLength(50);
-      expect(screen.getByText('1 / 2')).toBeInTheDocument();
-
-      await user.click(screen.getByRole('button', { name: '次のページ' }));
-
-      expect(screen.getAllByRole('listitem')).toHaveLength(50);
-      expect(screen.getByText('2 / 2')).toBeInTheDocument();
-    });
-
-    it('applies pagination to filtered results only', async () => {
-      const user = userEvent.setup();
-      const sessions = [
-        ...createManySessions(55).map((s) => ({ ...s, status: 'PENDING' as const })),
-        ...createManySessions(10).map((s, i) => ({
-          ...s,
-          sessionId: `completed-${i}`,
-          status: 'COMPLETED' as const,
-        })),
-      ];
-      render(<SessionListPage sessions={sessions} />);
-
-      // Filter to COMPLETED - should have only 10 items, no pagination
-      await user.click(screen.getByRole('tab', { name: '完了' }));
-
-      expect(screen.getAllByRole('listitem')).toHaveLength(10);
-      expect(screen.queryByRole('navigation', { name: 'ページネーション' })).not.toBeInTheDocument();
+      expect(screen.getByText(/51〜75件を表示/)).toBeInTheDocument();
     });
   });
 

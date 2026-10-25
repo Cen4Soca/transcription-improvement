@@ -3,6 +3,7 @@ import { LoginForm } from './components/LoginForm';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Navigation } from './components/Navigation';
 import { SessionListPage } from './pages/SessionListPage';
+import type { FilterStatus, PaginationInfo } from './pages/SessionListPage';
 import { SessionAssignmentControls } from './components/SessionAssignmentControls';
 import { SessionAggregateControls } from './components/SessionAggregateControls';
 import { SessionReopenControls } from './components/SessionReopenControls';
@@ -86,6 +87,10 @@ export function SessionListPageWrapper({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<{ message: string } | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
+  // 'all' スコープ専用のサーバー駆動 state（RankingPageWrapper と同じパターン）。
+  const [selectedStatus, setSelectedStatus] = useState<FilterStatus>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationInfo | undefined>();
 
   const canManage = userRole === 'ADMIN' || userRole === 'TEAM_LEADER';
 
@@ -124,6 +129,7 @@ export function SessionListPageWrapper({
       const result = await sessionApi.listAssignedSessions();
       if (result.ok) {
         setSessions(result.value.data.items);
+        setPagination(undefined);
         setError(null);
       } else {
         setError({ message: result.error.message });
@@ -134,20 +140,26 @@ export function SessionListPageWrapper({
       const result = await sessionApi.listJoinableSessions();
       if (result.ok) {
         setSessions(result.value.data.items);
+        setPagination(undefined);
         setError(null);
       } else {
         setError({ message: result.error.message });
       }
       return;
     }
-    const result = await sessionApi.listSessions();
+    // 'all' スコープ: サーバー側のフィルター＋ページングを尊重する。
+    const result = await sessionApi.listSessions({
+      status: selectedStatus === 'ALL' ? undefined : selectedStatus,
+      page: currentPage,
+    });
     if (result.ok) {
       setSessions(result.value.items);
+      setPagination(result.value.pagination);
       setError(null);
     } else {
       setError({ message: result.error.message });
     }
-  }, [sessionApi, scope]);
+  }, [sessionApi, scope, selectedStatus, currentPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -163,6 +175,17 @@ export function SessionListPageWrapper({
   const handleSessionSelect = (sessionId: string) => {
     navigate(`/sessions/${sessionId}`);
   };
+
+  // ステータス変更時は 1 ページ目に戻してから再取得する（再取得は loadSessions の
+  // 依存配列経由で mount effect が再実行される）。
+  const handleStatusChange = useCallback((status: FilterStatus) => {
+    setSelectedStatus(status);
+    setCurrentPage(1);
+  }, []);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
 
   const handleClaim = useCallback(
     async (sessionId: string) => {
@@ -274,6 +297,10 @@ export function SessionListPageWrapper({
     [userRole, userId, scope, handleClaim, handleSelfAssign, handleAssign, canManage, teams, loadTeamMembers, handleForceAggregate, handleReopen]
   );
 
+  // 'all' スコープのみサーバー駆動の制御 props を渡す。assigned/joinable は
+  // これらを undefined のままにして非制御フォールバック（ローカルフィルター／ページ UI 非表示）にする。
+  const isAllScope = scope === 'all';
+
   return (
     <SessionListPage
       title={title}
@@ -283,6 +310,10 @@ export function SessionListPageWrapper({
       onSessionSelect={handleSessionSelect}
       renderSessionActions={renderSessionActions}
       onRenameSession={handleRenameSession}
+      selectedStatus={isAllScope ? selectedStatus : undefined}
+      onStatusChange={isAllScope ? handleStatusChange : undefined}
+      pagination={isAllScope ? pagination : undefined}
+      onPageChange={isAllScope ? handlePageChange : undefined}
     />
   );
 }
