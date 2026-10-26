@@ -10,7 +10,10 @@
     "test:debug": "playwright test --debug",
     "report": "playwright show-report",
     "seed": "tsx seed/seed-data.ts",
-    "seed:media": "tsx seed/seed-media-files.ts"
+    "seed:media": "tsx seed/seed-media-files.ts",
+    "manual": "playwright test --project=manual",
+    "manual:build": "tsx manual/build-manual.ts",
+    "manual:test": "tsx --test manual/build-manual.test.ts manual/build-manual.property.test.ts manual/build-manual.property-groupsort.test.ts manual/build-manual.property-sectionorder.test.ts manual/build-manual.property-shouldshow.test.ts manual/build-manual.property-renderstep.test.ts manual/build-manual.property-heading.test.ts manual/build-manual.property-renderhtml-aggregate.test.ts"
   },
   "devDependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.700.0",
@@ -21,6 +24,7 @@
     "@playwright/test": "^1.48.0",
     "@types/node": "^26.0.1",
     "dotenv": "^16.4.0",
+    "fast-check": "^4.10.2",
     "tsx": "^4.19.0",
     "typescript": "^6.0.3"
   }

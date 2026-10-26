@@ -39,6 +39,9 @@ export default defineConfig({
       // `npm run manual` から --project=manual で実行する。
       name: 'manual',
       testDir: './manual',
+      // Manual_Spec の *.spec.ts のみを対象にし、Builder の node:test ファイル
+      // (*.test.ts) が Playwright に拾われないようにする。
+      testMatch: '**/*.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
         // マニュアルのスクショは一貫した大きさで撮る。
