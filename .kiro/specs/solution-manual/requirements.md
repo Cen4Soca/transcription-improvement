@@ -21,6 +21,8 @@
 - **Steps_JSON**: ManualRecorder が 1 セクションにつき 1 ファイル書き出す手順メタデータファイル（`output/steps/{slug}.json`）。section / slug / steps 配列を含む。
 - **Manual_Section**: マニュアルの機能単位。ログイン、ホーム（校閲セッション一覧）、文字起こし校閲、Consensus、アップロード、言語モデル管理、ランキング、管理 - ユーザー管理、管理 - IP制御、管理 - 監査ログ。
 - **Auth_Fixture**: 既存の `e2e/fixtures/auth.ts` が提供するログインフィクスチャ（loginAsReviewer / loginAsTeamLeader / loginAsAdmin）。
+- **Transcription_Job**: アップロード画面の文字起こしジョブ作成フォームから開始する Amazon Transcribe 実行要求。メディアファイル、最大話者数、言語、カスタム言語モデル（任意）を指定して開始する。
+- **Transcription_Download**: 校閲画面で修正後の Transcription を JSON 形式または SRT 形式で取得するダウンロード操作。
 
 ## Requirements
 
@@ -45,11 +47,13 @@
 1. THE ソリューション・マニュアル SHALL ログインセクションの手順を Manual_Spec として提供する
 2. THE ソリューション・マニュアル SHALL ホーム（校閲セッション一覧）セクションの手順を Manual_Spec として提供する
 3. THE ソリューション・マニュアル SHALL 文字起こし校閲セクションの手順を、セグメント編集、音声同期再生、AI修正候補の操作を含めて Manual_Spec として提供する
-4. THE ソリューション・マニュアル SHALL Consensus（多数決）セクションの手順を Manual_Spec として提供する
-5. THE ソリューション・マニュアル SHALL アップロードセクションの手順を Manual_Spec として提供する
-6. THE ソリューション・マニュアル SHALL 言語モデル管理セクションの手順を Manual_Spec として提供する
-7. THE ソリューション・マニュアル SHALL ランキングセクションの手順を Manual_Spec として提供する
-8. THE ソリューション・マニュアル SHALL 管理機能セクションの手順を、ユーザー管理、IP制御、監査ログの操作を含めて Manual_Spec として提供する
+4. THE ソリューション・マニュアル SHALL 文字起こし校閲セクションの手順に、修正後 Transcription を JSON 形式および SRT 形式で取得する Transcription_Download の操作を含める
+5. THE ソリューション・マニュアル SHALL Consensus（多数決）セクションの手順を Manual_Spec として提供する
+6. THE ソリューション・マニュアル SHALL アップロードセクションの手順を Manual_Spec として提供する
+7. THE ソリューション・マニュアル SHALL アップロードセクションの手順に、Transcription_Job を開始する文字起こしジョブ作成の操作を含める
+8. THE ソリューション・マニュアル SHALL 言語モデル管理セクションの手順を Manual_Spec として提供する
+9. THE ソリューション・マニュアル SHALL ランキングセクションの手順を Manual_Spec として提供する
+10. THE ソリューション・マニュアル SHALL 管理機能セクションの手順を、ユーザー管理、IP制御、監査ログの操作を含めて Manual_Spec として提供する
 
 ### Requirement 3: ロール別認証と手順記録
 

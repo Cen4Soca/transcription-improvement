@@ -152,6 +152,21 @@
   - Builder のユニット／プロパティテストを実行して全て通す。各 Manual_Spec（02〜08）がファイルとして存在し、design の撮影計画どおりのセクション・roles・日本語 description で記録することをレビューで確認する
   - Ensure all tests pass, ask the user if questions arise.
 
+- [x] 13. トランスクリプションジョブ実行とダウンロードの手順を Manual_Spec に追加する
+  - [x] 13.1 `05-upload.spec.ts` に文字起こしジョブ作成の手順（order 4, 5）を追加する
+    - 既存 3 手順の後に、アップロード画面下部の `section[文字起こしジョブ作成セクション]` → `form[Transcription ジョブ作成フォーム]`（メディアファイル `select#media-file-select`、最大話者数 `input#max-speaker-labels`、言語 `select#language-code-select`、カスタム言語モデル任意）を撮影する手順（order 4）と、`button[文字起こしジョブを開始]` を押す手順（order 5）を追加。roles は全手順 REVIEWER/TEAM_LEADER/ADMIN、description は日本語
+    - ジョブ開始 API（transcriptionApi.startJob）とモデル一覧取得（languageModelApi.listModels）、メディア一覧取得は `page.route` で成功固定し、実ジョブを起動しない
+    - _Requirements: 2.7, 3.1, 3.4, 1.4, 1.5_
+
+  - [x] 13.2 `03-review.spec.ts` に修正後 Transcription のダウンロード手順（order 7）を追加する
+    - 既存 6 手順の後に、校閲画面下部の `div[aria-label=Transcription ダウンロード]` で形式ラジオ JSON/SRT を選び `button[ダウンロード]` を押す手順を追加。roles は全ロール、description は日本語
+    - ダウンロード API（downloadJson / downloadSrt）は `page.route` で固定レスポンスに差し替え、実ファイル保存は発火させずフォーム表示状態を撮影
+    - _Requirements: 2.4, 3.1, 3.4, 1.4, 1.5_
+
+  - [x] 13.3 再撮影して Manual_HTML を再生成し、追加手順が含まれることを確認する
+    - dev 環境に対し `npm run manual` と `npm run manual:build` を実行し、アップロード 5 手順・文字起こし校閲 7 手順が manual.html に出力されることを確認
+    - _Requirements: 4.2, 5.5_
+
 ## Notes
 
 - `*` 付きサブタスクはテスト（ユニット／プロパティ／エッジ）で、MVP では省略可。`*` なしのコア実装タスクは必ず実装する。
@@ -172,7 +187,9 @@
     { "id": 4, "tasks": ["4.4", "5.1"] },
     { "id": 5, "tasks": ["5.2", "5.3", "5.4", "6.1"] },
     { "id": 6, "tasks": ["6.2", "8.1", "8.2", "8.3", "9.1", "9.2", "9.3", "10.1"] },
-    { "id": 7, "tasks": ["11"] }
+    { "id": 7, "tasks": ["11"] },
+    { "id": 8, "tasks": ["13.1", "13.2"] },
+    { "id": 9, "tasks": ["13.3"] }
   ]
 }
 ```

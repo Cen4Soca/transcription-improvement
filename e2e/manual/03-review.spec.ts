@@ -6,7 +6,7 @@ import { ManualRecorder } from './manual-recorder.js';
  * マニュアル・セクション「文字起こし校閲」。
  *
  * 校閲画面の全体構成、セグメント編集、音声同期再生、AI 修正候補、
- * レイアウト切り替えを撮影する。seed のメディア紐付きセッション
+ * レイアウト切り替え、修正後 Transcription のダウンロードを撮影する。seed のメディア紐付きセッション
  * （e2e-session-001: 音声 + 5 セグメント）へ直接遷移して撮る。
  *
  * AI 修正候補は外部 API（Bedrock / Comprehend）に依存しコスト・非決定性が
@@ -26,6 +26,19 @@ const STUB_SUGGESTIONS = {
   hasExternalApiError: false,
 };
 
+/** 撮影用の固定ダウンロードレスポンス（JSON）。 */
+const STUB_DOWNLOAD_JSON = {
+  sessionName: 'e2e-session-001',
+  exportedAt: '2025-01-01T00:00:00.000Z',
+  segments: [
+    { startTime: 0, endTime: 4.2, text: '本日はお集まりいただきありがとうございます。' },
+  ],
+};
+
+/** 撮影用の固定ダウンロードレスポンス（SRT）。 */
+const STUB_DOWNLOAD_SRT =
+  '1\n00:00:00,000 --> 00:00:04,200\n本日はお集まりいただきありがとうございます。\n';
+
 test('manual: 文字起こし校閲', async ({ page, loginAsAdmin }) => {
   const rec = new ManualRecorder(page, '文字起こし校閲', 'review');
 
@@ -37,6 +50,26 @@ test('manual: 文字起こし校閲', async ({ page, loginAsAdmin }) => {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(STUB_SUGGESTIONS),
+    });
+  });
+
+  // 修正後 Transcription ダウンロード API（GET /sessions/{id}/download?format=...）を
+  // 固定レスポンスに差し替える。実データ取得を避け、確定済みセグメントの有無に
+  // 依存しないようにするため。ApiClient はエンベロープ無しで JSON / テキストをそのまま読む。
+  await page.route(/\/sessions\/[^/]+\/download(\?.*)?$/, async (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const format = new URL(route.request().url()).searchParams.get('format');
+    if (format === 'srt') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: STUB_DOWNLOAD_SRT,
+      });
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(STUB_DOWNLOAD_JSON),
     });
   });
 
@@ -146,6 +179,30 @@ test('manual: 文字起こし校閲', async ({ page, loginAsAdmin }) => {
     description:
       '文字起こしパネルとメディアパネルの配置は、左右分割と上下分割を切り替えられます。画面サイズや作業スタイルに合わせて見やすいレイアウトを選んでください。',
     roles: ['REVIEWER', 'TEAM_LEADER', 'ADMIN'],
+    settleMs: 300,
+  });
+
+  // 7. 修正後 Transcription をダウンロードする
+  // 手順 6 で上下分割に切り替わっているため、左右分割に戻してから撮影する
+  await page
+    .getByRole('button', { name: 'レイアウトを左右分割に切り替え' })
+    .click({ timeout: 5_000 })
+    .catch(() => {});
+  const downloadSection = page.locator('div[aria-label="Transcription ダウンロード"]');
+  await downloadSection
+    .scrollIntoViewIfNeeded({ timeout: 5_000 })
+    .catch(() => {});
+  // 形式選択の UI が伝わるよう SRT を選択した状態にする（JSON / SRT 両方が写る）
+  await downloadSection
+    .getByLabel('SRT')
+    .check({ timeout: 5_000 })
+    .catch(() => {});
+  await rec.capture({
+    title: '修正後 Transcription をダウンロードする',
+    description:
+      '校閲画面下部の「修正後 Transcription ダウンロード」で、ダウンロード形式（JSON または SRT）を選んで「ダウンロード」ボタンを押すと、修正後の文字起こしをファイルとして取得できます。JSON は分析やほかのシステムでの再利用に、SRT は字幕ツールや動画編集ソフトでの利用に向いています。ファイル名は「セッション名_日付.拡張子」（例: e2e-session-001_20250101.srt）になります。確定済みのセグメントがまだ無い場合は、エラーメッセージが表示されダウンロードされません。',
+    roles: ['REVIEWER', 'TEAM_LEADER', 'ADMIN'],
+    fullPage: false,
     settleMs: 300,
   });
 

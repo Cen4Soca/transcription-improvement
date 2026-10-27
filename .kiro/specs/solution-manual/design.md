@@ -161,8 +161,9 @@ test('manual: {セクション名}', async ({ page, loginAsXxx }) => {
 | 4 | 音声と同期して再生する | `region[メディアプレイヤー]`（`button[再生]`・`[シーク]`・`group[再生速度]`） | REVIEWER, TEAM_LEADER, ADMIN |
 | 5 | AI 修正候補を表示する | `button[修正候補を表示]` クリック → `dialog[修正候補]`（`listbox[候補一覧]`） | REVIEWER, TEAM_LEADER, ADMIN |
 | 6 | レイアウトを切り替える | `button[レイアウトを上下分割に切り替え]` | REVIEWER, TEAM_LEADER, ADMIN |
+| 7 | 修正後 Transcription をダウンロードする | 校閲画面下部の `div[aria-label=Transcription ダウンロード]`（見出し「修正後 Transcription ダウンロード」）で形式ラジオ `JSON`/`SRT` を選び `button[ダウンロード]` を押す | REVIEWER, TEAM_LEADER, ADMIN |
 
-AI 修正候補は外部 API コスト/非決定性があるため、`page.route` で `suggestions` 取得 API を固定レスポンスに差し替えてから撮影する（決定論的なスクショのため）。
+AI 修正候補は外部 API コスト/非決定性があるため、`page.route` で `suggestions` 取得 API を固定レスポンスに差し替えてから撮影する（決定論的なスクショのため）。ダウンロード API（transcriptionApi.downloadJson / downloadSrt）は実データ取得・ブラウザDL副作用があるため `page.route` で固定レスポンスに差し替え、実ファイル保存は発火させずフォーム表示状態を撮影する。
 
 **04-consensus.spec.ts** — セクション「Consensus」（slug: `consensus`、`loginAsAdmin`）
 参照: `components/SessionAggregateControls.tsx`（`button[強制集約して確定]`）, `components/ConflictResolutionPanel.tsx`
@@ -183,8 +184,10 @@ AI 修正候補は外部 API コスト/非決定性があるため、`page.route
 | 1 | アップロード画面 | `menuitem[メディアアップロード]` → `main[メディアアップロード]`（`button[ファイルを選択…]`、対応形式） | REVIEWER, TEAM_LEADER, ADMIN |
 | 2 | ファイルを選択する | `input[type=file]` に音声ファイル投入 → `[選択されたファイル]` 表示 | REVIEWER, TEAM_LEADER, ADMIN |
 | 3 | アップロードを開始する | `button[アップロード開始]` クリック後の進捗/完了表示 | REVIEWER, TEAM_LEADER, ADMIN |
+| 4 | 文字起こしジョブを作成する | アップロード画面下部の `section[文字起こしジョブ作成セクション]` → `form[Transcription ジョブ作成フォーム]`（見出し「文字起こしジョブ作成」）で `select#media-file-select`・`input#max-speaker-labels`(2〜10)・`select#language-code-select`・カスタム言語モデル(任意) を設定 | REVIEWER, TEAM_LEADER, ADMIN |
+| 5 | ジョブを開始する | `button[文字起こしジョブを開始]` を押してジョブを開始（開始後はセッション一覧へ誘導） | REVIEWER, TEAM_LEADER, ADMIN |
 
-`upload-url` と S3 PUT は `page.route` で成功固定（`tests/upload` と同手法）し、実 S3 を叩かない。
+`upload-url` と S3 PUT は `page.route` で成功固定（`tests/upload` と同手法）し、実 S3 を叩かない。ジョブ開始 API（transcriptionApi.startJob）とモデル一覧取得（languageModelApi.listModels）は外部コスト/副作用があるため `page.route` で成功固定し、実ジョブを起動せず UI 状態のみ撮影する。
 
 **06-language-models.spec.ts** — セクション「言語モデル管理」（slug: `language-models`、`loginAsAdmin`）
 参照: `tests/language-models/language-model.spec.ts`

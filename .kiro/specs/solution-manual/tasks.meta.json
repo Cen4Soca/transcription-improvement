@@ -609,6 +609,64 @@
         "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
         "timestamp": 1793029345378
       }
+    ],
+    "13.1 `05-upload.spec.ts` に文字起こしジョブ作成の手順（order 4, 5）を追加する": [
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793111943498
+      },
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793111950525
+      },
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793112084937
+      }
+    ],
+    "13.2 `03-review.spec.ts` に修正後 Transcription のダウンロード手順（order 7）を追加する": [
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793111943573
+      },
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793111951532
+      },
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793112085076
+      }
+    ],
+    "13.3 再撮影して Manual_HTML を再生成し、追加手順が含まれることを確認する": [
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793111943595
+      },
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793112093241
+      },
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793112227171
+      }
+    ],
+    "13. トランスクリプションジョブ実行とダウンロードの手順を Manual_Spec に追加する": [
+      {
+        "executionId": "15f0d478-7067-46f1-8a9f-26ea1ccdca58",
+        "chatSessionId": "sess_e6dda794-84fc-4ddd-a5eb-17191738533b",
+        "timestamp": 1793112227252
+      }
     ]
   }
 }
