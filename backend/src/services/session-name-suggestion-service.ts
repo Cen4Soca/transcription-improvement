@@ -5,6 +5,7 @@ import {
 } from '@aws-sdk/client-bedrock-runtime';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import { resolveBedrockRegion } from '../utils/bedrock-region.js';
+import { inferenceControlParams } from '../utils/bedrock-model-features.js';
 
 /**
  * Result of the session-name suggestion process.
@@ -85,7 +86,10 @@ export const defaultSessionNameProvider: SessionNameProvider = {
     const requestBody = {
       anthropic_version: 'bedrock-2023-05-31',
       max_tokens: 128,
-      temperature: 0,
+      // Deterministic/efficient output via the control the model supports:
+      // `temperature: 0` for Haiku 4.5, `output_config.effort: 'low'` for
+      // Haiku 5.5 (which removed temperature). The two are mutually exclusive.
+      ...inferenceControlParams(BEDROCK_MODEL_ID),
       messages: [
         {
           role: 'user',

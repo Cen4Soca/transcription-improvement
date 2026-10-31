@@ -11,6 +11,7 @@ import {
 } from '@aws-sdk/client-comprehend';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import { resolveBedrockRegion } from '../utils/bedrock-region.js';
+import { inferenceControlParams } from '../utils/bedrock-model-features.js';
 
 /**
  * Suggestion source types indicating where a candidate originated.
@@ -233,7 +234,10 @@ export const defaultBedrockProvider: BedrockSuggestionProvider = {
     const requestBody = {
       anthropic_version: 'bedrock-2023-05-31',
       max_tokens: 512,
-      temperature: 0,
+      // Deterministic/efficient output via the control the model supports:
+      // `temperature: 0` for Haiku 4.5, `output_config.effort: 'low'` for
+      // Haiku 5.5 (which removed temperature). The two are mutually exclusive.
+      ...inferenceControlParams(BEDROCK_MODEL_ID),
       messages: [
         {
           role: 'user',
