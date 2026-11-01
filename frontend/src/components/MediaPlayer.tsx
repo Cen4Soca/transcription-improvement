@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface MediaPlayerProps {
   mediaUrl: string | null;
@@ -42,6 +43,7 @@ export function MediaPlayer({
   onPlayStateChange,
   seekTo,
 }: MediaPlayerProps) {
+  const { t } = useTranslation('review');
   const mediaRef = useRef<HTMLAudioElement | HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -97,10 +99,10 @@ export function MediaPlayer({
 
   const handleMediaError = useCallback(() => {
     setHasError(true);
-    const message = 'メディアファイルの読み込みに失敗しました';
+    const message = t('mediaPlayer.loadError');
     setErrorMessage(message);
     onError?.(message);
-  }, [onError]);
+  }, [onError, t]);
 
   const togglePlayPause = useCallback(() => {
     if (!mediaRef.current || hasError) return;
@@ -135,10 +137,10 @@ export function MediaPlayer({
       <div
         className="p-4 bg-red-50 border border-red-200 rounded-lg"
         role="alert"
-        aria-label="メディアエラー"
+        aria-label={t('mediaPlayer.errorAriaLabel')}
       >
         <p className="text-sm text-red-700">
-          {errorMessage || 'メディアファイルの読み込みに失敗しました'}
+          {errorMessage || t('mediaPlayer.loadError')}
         </p>
       </div>
     );
@@ -150,10 +152,10 @@ export function MediaPlayer({
       <div
         className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg"
         role="status"
-        aria-label="メディア利用不可"
+        aria-label={t('mediaPlayer.unavailableAriaLabel')}
       >
         <p className="text-sm text-yellow-700">
-          メディアファイルが利用できません。テキスト編集のみ可能です。
+          {t('mediaPlayer.unavailable')}
         </p>
       </div>
     );
@@ -168,14 +170,14 @@ export function MediaPlayer({
     onPause: handlePause,
     onError: handleMediaError,
     preload: 'metadata' as const,
-    'aria-label': 'メディアプレイヤー',
+    'aria-label': t('mediaPlayer.playerAriaLabel'),
   };
 
   return (
     <div
       className="flex flex-col gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200"
       role="region"
-      aria-label="メディアプレイヤー"
+      aria-label={t('mediaPlayer.playerAriaLabel')}
     >
       {/* Media element */}
       {effectiveMediaType === 'video' ? (
@@ -198,7 +200,7 @@ export function MediaPlayer({
         <button
           type="button"
           onClick={togglePlayPause}
-          aria-label={isPlaying ? '一時停止' : '再生'}
+          aria-label={isPlaying ? t('mediaPlayer.pause') : t('mediaPlayer.play')}
           className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
         >
           {isPlaying ? (
@@ -235,7 +237,7 @@ export function MediaPlayer({
         {/* Time display */}
         <span
           className="text-xs font-mono text-gray-600 min-w-[90px]"
-          aria-label="再生時間"
+          aria-label={t('mediaPlayer.playbackTime')}
           aria-live="polite"
         >
           {formatTime(currentTime)} / {formatTime(duration)}
@@ -249,7 +251,7 @@ export function MediaPlayer({
           step={0.1}
           value={currentTime}
           onChange={handleSeek}
-          aria-label="シーク"
+          aria-label={t('mediaPlayer.seek')}
           aria-valuemin={0}
           aria-valuemax={duration}
           aria-valuenow={currentTime}
@@ -258,13 +260,13 @@ export function MediaPlayer({
         />
 
         {/* Playback speed selector */}
-        <div className="flex items-center gap-1" role="group" aria-label="再生速度">
+        <div className="flex items-center gap-1" role="group" aria-label={t('mediaPlayer.playbackSpeed')}>
           {PLAYBACK_SPEEDS.map((speed) => (
             <button
               key={speed}
               type="button"
               onClick={() => handleSpeedChange(speed)}
-              aria-label={`${speed}x（再生速度 ${speed}倍）`}
+              aria-label={t('mediaPlayer.speedAriaLabel', { speed })}
               aria-pressed={playbackRate === speed}
               className={`px-2 py-1 text-xs rounded font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 playbackRate === speed

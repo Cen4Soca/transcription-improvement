@@ -77,6 +77,33 @@
     "emptyConfirmCancelAriaLabel": "Cancel confirming empty string",
     "emptyConfirmConfirmAriaLabel": "Confirm as empty string"
   },
+  "search": {
+    "ariaLabel": "Text search",
+    "keywordPlaceholder": "Search keyword...",
+    "keywordAriaLabel": "Search keyword",
+    "matchCount": "{{count}} matches",
+    "previous": "Previous",
+    "previousTitle": "Previous (Shift+Enter)",
+    "next": "Next",
+    "nextTitle": "Next (Enter)",
+    "clear": "Clear search",
+    "clearTitle": "Clear search (Escape)",
+    "uncorrectedOnly": "Uncorrected only",
+    "uncorrectedOnlyAriaLabel": "Show uncorrected only"
+  },
+  "mediaPlayer": {
+    "loadError": "Failed to load the media file",
+    "errorAriaLabel": "Media error",
+    "unavailable": "The media file is unavailable. Only text editing is possible.",
+    "unavailableAriaLabel": "Media unavailable",
+    "playerAriaLabel": "Media player",
+    "play": "Play",
+    "pause": "Pause",
+    "playbackTime": "Playback time",
+    "seek": "Seek",
+    "playbackSpeed": "Playback speed",
+    "speedAriaLabel": "{{speed}}x (playback speed {{speed}}x)"
+  },
   "reopen": {
     "groupAriaLabel": "Reopen actions",
     "reopenButton": "Reopen to in progress",

@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { SearchBar } from './SearchBar';
+
+const ts = (key: string, opts?: Record<string, unknown>) => i18n.t(`review:search.${key}`, opts);
 
 describe('SearchBar', () => {
   const defaultProps = {
@@ -16,7 +19,7 @@ describe('SearchBar', () => {
 
   it('renders search input', () => {
     render(<SearchBar {...defaultProps} />);
-    expect(screen.getByLabelText('検索キーワード')).toBeInTheDocument();
+    expect(screen.getByLabelText(ts('keywordAriaLabel'))).toBeInTheDocument();
   });
 
   it('calls onSearch when typing', async () => {
@@ -24,7 +27,7 @@ describe('SearchBar', () => {
     const onSearch = vi.fn();
     render(<SearchBar {...defaultProps} onSearch={onSearch} />);
 
-    await user.type(screen.getByLabelText('検索キーワード'), 'test');
+    await user.type(screen.getByLabelText(ts('keywordAriaLabel')), 'test');
     expect(onSearch).toHaveBeenCalledWith('t');
     expect(onSearch).toHaveBeenCalledWith('te');
     expect(onSearch).toHaveBeenCalledWith('tes');
@@ -36,7 +39,7 @@ describe('SearchBar', () => {
     const onNext = vi.fn();
     render(<SearchBar {...defaultProps} onNext={onNext} matchCount={3} currentIndex={0} />);
 
-    const input = screen.getByLabelText('検索キーワード');
+    const input = screen.getByLabelText(ts('keywordAriaLabel'));
     await user.type(input, 'a');
     await user.keyboard('{Enter}');
     expect(onNext).toHaveBeenCalled();
@@ -47,7 +50,7 @@ describe('SearchBar', () => {
     const onPrevious = vi.fn();
     render(<SearchBar {...defaultProps} onPrevious={onPrevious} matchCount={3} currentIndex={1} />);
 
-    const input = screen.getByLabelText('検索キーワード');
+    const input = screen.getByLabelText(ts('keywordAriaLabel'));
     await user.type(input, 'a');
     await user.keyboard('{Shift>}{Enter}{/Shift}');
     expect(onPrevious).toHaveBeenCalled();
@@ -58,7 +61,7 @@ describe('SearchBar', () => {
     const onClear = vi.fn();
     render(<SearchBar {...defaultProps} onClear={onClear} />);
 
-    const input = screen.getByLabelText('検索キーワード');
+    const input = screen.getByLabelText(ts('keywordAriaLabel'));
     await user.type(input, 'test');
     await user.keyboard('{Escape}');
     expect(onClear).toHaveBeenCalled();
@@ -69,10 +72,10 @@ describe('SearchBar', () => {
     const onClear = vi.fn();
     render(<SearchBar {...defaultProps} onClear={onClear} matchCount={2} currentIndex={0} />);
 
-    const input = screen.getByLabelText('検索キーワード');
+    const input = screen.getByLabelText(ts('keywordAriaLabel'));
     await user.type(input, 'test');
 
-    const clearButton = screen.getByLabelText('検索クリア');
+    const clearButton = screen.getByLabelText(ts('clear'));
     await user.click(clearButton);
     expect(onClear).toHaveBeenCalled();
   });
@@ -81,19 +84,19 @@ describe('SearchBar', () => {
     const user = userEvent.setup();
     const { rerender } = render(<SearchBar {...defaultProps} matchCount={5} currentIndex={-1} />);
 
-    const input = screen.getByLabelText('検索キーワード');
+    const input = screen.getByLabelText(ts('keywordAriaLabel'));
     await user.type(input, 'a');
 
     rerender(<SearchBar {...defaultProps} matchCount={5} currentIndex={-1} />);
     // After typing, the match label should show
-    expect(screen.getByText('5件一致')).toBeInTheDocument();
+    expect(screen.getByText(ts('matchCount', { count: 5 }))).toBeInTheDocument();
   });
 
   it('displays position when currentIndex is valid', async () => {
     const user = userEvent.setup();
     const { rerender } = render(<SearchBar {...defaultProps} matchCount={5} currentIndex={2} />);
 
-    const input = screen.getByLabelText('検索キーワード');
+    const input = screen.getByLabelText(ts('keywordAriaLabel'));
     await user.type(input, 'a');
 
     rerender(<SearchBar {...defaultProps} matchCount={5} currentIndex={2} />);
@@ -103,15 +106,15 @@ describe('SearchBar', () => {
   it('disables navigation buttons when no matches', () => {
     render(<SearchBar {...defaultProps} matchCount={0} currentIndex={-1} />);
 
-    expect(screen.getByLabelText('次へ')).toBeDisabled();
-    expect(screen.getByLabelText('前へ')).toBeDisabled();
+    expect(screen.getByLabelText(ts('next'))).toBeDisabled();
+    expect(screen.getByLabelText(ts('previous'))).toBeDisabled();
   });
 
   it('enables navigation buttons when matches exist', () => {
     render(<SearchBar {...defaultProps} matchCount={3} currentIndex={0} />);
 
-    expect(screen.getByLabelText('次へ')).not.toBeDisabled();
-    expect(screen.getByLabelText('前へ')).not.toBeDisabled();
+    expect(screen.getByLabelText(ts('next'))).not.toBeDisabled();
+    expect(screen.getByLabelText(ts('previous'))).not.toBeDisabled();
   });
 
   it('calls onNext when next button is clicked', async () => {
@@ -119,7 +122,7 @@ describe('SearchBar', () => {
     const onNext = vi.fn();
     render(<SearchBar {...defaultProps} onNext={onNext} matchCount={3} currentIndex={0} />);
 
-    await user.click(screen.getByLabelText('次へ'));
+    await user.click(screen.getByLabelText(ts('next')));
     expect(onNext).toHaveBeenCalled();
   });
 
@@ -128,7 +131,7 @@ describe('SearchBar', () => {
     const onPrevious = vi.fn();
     render(<SearchBar {...defaultProps} onPrevious={onPrevious} matchCount={3} currentIndex={1} />);
 
-    await user.click(screen.getByLabelText('前へ'));
+    await user.click(screen.getByLabelText(ts('previous')));
     expect(onPrevious).toHaveBeenCalled();
   });
 
@@ -137,14 +140,14 @@ describe('SearchBar', () => {
     const onToggle = vi.fn();
     render(<SearchBar {...defaultProps} onToggleUncorrectedOnly={onToggle} />);
 
-    await user.click(screen.getByLabelText('未修正のみ表示'));
+    await user.click(screen.getByLabelText(ts('uncorrectedOnlyAriaLabel')));
     expect(onToggle).toHaveBeenCalledWith(true);
   });
 
   it('has proper ARIA attributes for accessibility', () => {
     render(<SearchBar {...defaultProps} />);
 
-    expect(screen.getByRole('search')).toHaveAttribute('aria-label', 'テキスト検索');
-    expect(screen.getByLabelText('検索キーワード')).toBeInTheDocument();
+    expect(screen.getByRole('search')).toHaveAttribute('aria-label', ts('ariaLabel'));
+    expect(screen.getByLabelText(ts('keywordAriaLabel'))).toBeInTheDocument();
   });
 });

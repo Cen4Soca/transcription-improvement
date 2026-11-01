@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { MediaPlayer } from './MediaPlayer';
+
+const tm = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(`review:mediaPlayer.${key}`, opts);
+const speedName = (speed: number) => tm('speedAriaLabel', { speed });
 
 // Mock HTMLMediaElement methods
 beforeEach(() => {
@@ -25,51 +30,51 @@ describe('MediaPlayer', () => {
   it('renders media player when mediaUrl is provided', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    expect(screen.getByRole('region', { name: 'メディアプレイヤー' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: tm('playerAriaLabel') })).toBeInTheDocument();
   });
 
   it('shows unavailable message when mediaUrl is null', () => {
     render(<MediaPlayer mediaUrl={null} />);
 
-    expect(screen.queryByRole('region', { name: 'メディアプレイヤー' })).not.toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'メディア利用不可' })).toBeInTheDocument();
-    expect(screen.getByText('メディアファイルが利用できません。テキスト編集のみ可能です。')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: tm('playerAriaLabel') })).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: tm('unavailableAriaLabel') })).toBeInTheDocument();
+    expect(screen.getByText(tm('unavailable'))).toBeInTheDocument();
   });
 
   it('renders play button initially', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    expect(screen.getByRole('button', { name: '再生' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: tm('play') })).toBeInTheDocument();
   });
 
   it('renders all playback speed buttons', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    expect(screen.getByRole('button', { name: '0.5x（再生速度 0.5倍）' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '1x（再生速度 1倍）' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '1.25x（再生速度 1.25倍）' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '1.5x（再生速度 1.5倍）' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '2x（再生速度 2倍）' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: speedName(0.5) })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: speedName(1) })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: speedName(1.25) })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: speedName(1.5) })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: speedName(2) })).toBeInTheDocument();
   });
 
   it('marks 1.0x speed as active by default', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    const activeButton = screen.getByRole('button', { name: '1x（再生速度 1倍）' });
+    const activeButton = screen.getByRole('button', { name: speedName(1) });
     expect(activeButton).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('renders seek slider', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    expect(screen.getByRole('slider', { name: 'シーク' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: tm('seek') })).toBeInTheDocument();
   });
 
   it('calls onPlayStateChange when play is triggered', async () => {
     const onPlayStateChange = vi.fn();
     render(<MediaPlayer {...defaultProps} onPlayStateChange={onPlayStateChange} />);
 
-    const playButton = screen.getByRole('button', { name: '再生' });
+    const playButton = screen.getByRole('button', { name: tm('play') });
     await userEvent.click(playButton);
 
     // Simulate the play event firing
@@ -103,12 +108,12 @@ describe('MediaPlayer', () => {
   it('changes playback speed when speed button is clicked', async () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    const speedButton = screen.getByRole('button', { name: '1.5x（再生速度 1.5倍）' });
+    const speedButton = screen.getByRole('button', { name: speedName(1.5) });
     await userEvent.click(speedButton);
 
     expect(speedButton).toHaveAttribute('aria-pressed', 'true');
     // Previous active button should no longer be pressed
-    const prevButton = screen.getByRole('button', { name: '1x（再生速度 1倍）' });
+    const prevButton = screen.getByRole('button', { name: speedName(1) });
     expect(prevButton).toHaveAttribute('aria-pressed', 'false');
   });
 
@@ -118,7 +123,7 @@ describe('MediaPlayer', () => {
 
     const speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
     for (const speed of speeds) {
-      const speedButton = screen.getByRole('button', { name: `${speed}x（再生速度 ${speed}倍）` });
+      const speedButton = screen.getByRole('button', { name: speedName(speed) });
       await userEvent.click(speedButton);
       expect(audio.playbackRate).toBe(speed);
     }
@@ -132,7 +137,7 @@ describe('MediaPlayer', () => {
     expect(audio).toBeInTheDocument();
 
     // Simulate seek via slider - use fireEvent which directly sets target.value
-    const slider = screen.getByRole('slider', { name: 'シーク' });
+    const slider = screen.getByRole('slider', { name: tm('seek') });
 
     // fireEvent.change triggers React's onChange with the specified target value
     Object.defineProperty(slider, 'value', { value: '45.5', writable: true, configurable: true });
@@ -140,7 +145,7 @@ describe('MediaPlayer', () => {
 
     // The component's handleSeek sets mediaRef.current.currentTime and calls setCurrentTime
     // Verify the time display updated
-    expect(screen.getByLabelText('再生時間')).toHaveTextContent('00:45');
+    expect(screen.getByLabelText(tm('playbackTime'))).toHaveTextContent('00:45');
   });
 
   it('shows error message and calls onError when media fails to load', () => {
@@ -150,11 +155,11 @@ describe('MediaPlayer', () => {
     const audio = document.querySelector('audio')!;
     fireEvent.error(audio);
 
-    expect(onError).toHaveBeenCalledWith('メディアファイルの読み込みに失敗しました');
+    expect(onError).toHaveBeenCalledWith(tm('loadError'));
     // After re-render, the player controls should be replaced by error message
-    expect(screen.queryByRole('region', { name: 'メディアプレイヤー' })).not.toBeInTheDocument();
-    expect(screen.getByRole('alert', { name: 'メディアエラー' })).toBeInTheDocument();
-    expect(screen.getByText('メディアファイルの読み込みに失敗しました')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: tm('playerAriaLabel') })).not.toBeInTheDocument();
+    expect(screen.getByRole('alert', { name: tm('errorAriaLabel') })).toBeInTheDocument();
+    expect(screen.getByText(tm('loadError'))).toBeInTheDocument();
   });
 
   it('seeks to specified time when seekTo prop changes', () => {
@@ -216,17 +221,17 @@ describe('MediaPlayer', () => {
   it('has proper ARIA attributes for accessibility', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    const region = screen.getByRole('region', { name: 'メディアプレイヤー' });
+    const region = screen.getByRole('region', { name: tm('playerAriaLabel') });
     expect(region).toBeInTheDocument();
 
-    const speedGroup = screen.getByRole('group', { name: '再生速度' });
+    const speedGroup = screen.getByRole('group', { name: tm('playbackSpeed') });
     expect(speedGroup).toBeInTheDocument();
   });
 
   it('displays time display element', () => {
     render(<MediaPlayer {...defaultProps} />);
 
-    expect(screen.getByLabelText('再生時間')).toBeInTheDocument();
+    expect(screen.getByLabelText(tm('playbackTime'))).toBeInTheDocument();
   });
 
   // --- 再生速度変更テスト (Requirement 4.7) ---
@@ -236,11 +241,11 @@ describe('MediaPlayer', () => {
       const audio = document.querySelector('audio')!;
 
       // Set speed to 1.5x
-      await userEvent.click(screen.getByRole('button', { name: '1.5x（再生速度 1.5倍）' }));
+      await userEvent.click(screen.getByRole('button', { name: speedName(1.5) }));
       expect(audio.playbackRate).toBe(1.5);
 
       // Seek to a different position
-      const slider = screen.getByRole('slider', { name: 'シーク' });
+      const slider = screen.getByRole('slider', { name: tm('seek') });
       fireEvent.change(slider, { target: { value: '60' } });
 
       // Playback rate should remain 1.5x after seek
@@ -251,27 +256,27 @@ describe('MediaPlayer', () => {
       render(<MediaPlayer {...defaultProps} />);
 
       // Click 2.0x
-      await userEvent.click(screen.getByRole('button', { name: '2x（再生速度 2倍）' }));
+      await userEvent.click(screen.getByRole('button', { name: speedName(2) }));
 
       // Verify only 2.0x is pressed
-      expect(screen.getByRole('button', { name: '0.5x（再生速度 0.5倍）' })).toHaveAttribute('aria-pressed', 'false');
-      expect(screen.getByRole('button', { name: '1x（再生速度 1倍）' })).toHaveAttribute('aria-pressed', 'false');
-      expect(screen.getByRole('button', { name: '1.25x（再生速度 1.25倍）' })).toHaveAttribute('aria-pressed', 'false');
-      expect(screen.getByRole('button', { name: '1.5x（再生速度 1.5倍）' })).toHaveAttribute('aria-pressed', 'false');
-      expect(screen.getByRole('button', { name: '2x（再生速度 2倍）' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: speedName(0.5) })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: speedName(1) })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: speedName(1.25) })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: speedName(1.5) })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: speedName(2) })).toHaveAttribute('aria-pressed', 'true');
     });
 
     it('can switch between speeds rapidly', async () => {
       render(<MediaPlayer {...defaultProps} />);
       const audio = document.querySelector('audio')!;
 
-      await userEvent.click(screen.getByRole('button', { name: '0.5x（再生速度 0.5倍）' }));
+      await userEvent.click(screen.getByRole('button', { name: speedName(0.5) }));
       expect(audio.playbackRate).toBe(0.5);
 
-      await userEvent.click(screen.getByRole('button', { name: '2x（再生速度 2倍）' }));
+      await userEvent.click(screen.getByRole('button', { name: speedName(2) }));
       expect(audio.playbackRate).toBe(2.0);
 
-      await userEvent.click(screen.getByRole('button', { name: '1.25x（再生速度 1.25倍）' }));
+      await userEvent.click(screen.getByRole('button', { name: speedName(1.25) }));
       expect(audio.playbackRate).toBe(1.25);
     });
   });
@@ -313,10 +318,10 @@ describe('MediaPlayer', () => {
       Object.defineProperty(audio, 'duration', { value: 120, writable: true, configurable: true });
       fireEvent.loadedMetadata(audio);
 
-      const slider = screen.getByRole('slider', { name: 'シーク' });
+      const slider = screen.getByRole('slider', { name: tm('seek') });
       fireEvent.change(slider, { target: { value: '90' } });
 
-      expect(screen.getByLabelText('再生時間')).toHaveTextContent('01:30');
+      expect(screen.getByLabelText(tm('playbackTime'))).toHaveTextContent('01:30');
     });
 
     it('calls onTimeUpdate when media time updates after seek', () => {
@@ -360,9 +365,9 @@ describe('MediaPlayer', () => {
       fireEvent.error(audio);
 
       // Player controls should be gone
-      expect(screen.queryByRole('button', { name: '再生' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('slider', { name: 'シーク' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('group', { name: '再生速度' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: tm('play') })).not.toBeInTheDocument();
+      expect(screen.queryByRole('slider', { name: tm('seek') })).not.toBeInTheDocument();
+      expect(screen.queryByRole('group', { name: tm('playbackSpeed') })).not.toBeInTheDocument();
     });
 
     it('shows error alert with descriptive message', () => {
@@ -371,9 +376,9 @@ describe('MediaPlayer', () => {
       const audio = document.querySelector('audio')!;
       fireEvent.error(audio);
 
-      const alert = screen.getByRole('alert', { name: 'メディアエラー' });
+      const alert = screen.getByRole('alert', { name: tm('errorAriaLabel') });
       expect(alert).toBeInTheDocument();
-      expect(alert).toHaveTextContent('メディアファイルの読み込みに失敗しました');
+      expect(alert).toHaveTextContent(tm('loadError'));
     });
 
     it('does not allow play/pause toggle after error', () => {
@@ -383,8 +388,8 @@ describe('MediaPlayer', () => {
       fireEvent.error(audio);
 
       // Play button should not exist
-      expect(screen.queryByRole('button', { name: '再生' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: '一時停止' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: tm('play') })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: tm('pause') })).not.toBeInTheDocument();
     });
 
     it('invokes onError callback with error message', () => {
@@ -395,7 +400,7 @@ describe('MediaPlayer', () => {
       fireEvent.error(audio);
 
       expect(onError).toHaveBeenCalledTimes(1);
-      expect(onError).toHaveBeenCalledWith('メディアファイルの読み込みに失敗しました');
+      expect(onError).toHaveBeenCalledWith(tm('loadError'));
     });
   });
 });

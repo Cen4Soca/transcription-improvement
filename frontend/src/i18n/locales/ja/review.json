@@ -77,6 +77,33 @@
     "emptyConfirmCancelAriaLabel": "空文字列確定をキャンセル",
     "emptyConfirmConfirmAriaLabel": "空文字列として確定"
   },
+  "search": {
+    "ariaLabel": "テキスト検索",
+    "keywordPlaceholder": "検索キーワード...",
+    "keywordAriaLabel": "検索キーワード",
+    "matchCount": "{{count}}件一致",
+    "previous": "前へ",
+    "previousTitle": "前へ (Shift+Enter)",
+    "next": "次へ",
+    "nextTitle": "次へ (Enter)",
+    "clear": "検索クリア",
+    "clearTitle": "検索クリア (Escape)",
+    "uncorrectedOnly": "未修正のみ",
+    "uncorrectedOnlyAriaLabel": "未修正のみ表示"
+  },
+  "mediaPlayer": {
+    "loadError": "メディアファイルの読み込みに失敗しました",
+    "errorAriaLabel": "メディアエラー",
+    "unavailable": "メディアファイルが利用できません。テキスト編集のみ可能です。",
+    "unavailableAriaLabel": "メディア利用不可",
+    "playerAriaLabel": "メディアプレイヤー",
+    "play": "再生",
+    "pause": "一時停止",
+    "playbackTime": "再生時間",
+    "seek": "シーク",
+    "playbackSpeed": "再生速度",
+    "speedAriaLabel": "{{speed}}x（再生速度 {{speed}}倍）"
+  },
   "reopen": {
     "groupAriaLabel": "差し戻しの操作",
     "reopenButton": "進行中に戻す",

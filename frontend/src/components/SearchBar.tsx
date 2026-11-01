@@ -1,4 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * SearchBarHandle - 親から検索入力にフォーカスするための ref ハンドル
@@ -47,6 +48,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
   matchCount,
   currentIndex,
 }: SearchBarProps, ref) {
+  const { t } = useTranslation('review');
   const [keyword, setKeyword] = useState('');
   const [uncorrectedOnly, setUncorrectedOnly] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +98,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
 
   const matchLabel =
     keyword.length > 0
-      ? `${matchCount}件一致`
+      ? t('search.matchCount', { count: matchCount })
       : '';
 
   const positionLabel =
@@ -111,7 +113,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     <div
       className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-lg shadow-sm"
       role="search"
-      aria-label="テキスト検索"
+      aria-label={t('search.ariaLabel')}
     >
       {/* 検索入力 */}
       <div className="relative flex-1 min-w-0">
@@ -121,8 +123,8 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
           value={keyword}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="検索キーワード..."
-          aria-label="検索キーワード"
+          placeholder={t('search.keywordPlaceholder')}
+          aria-label={t('search.keywordAriaLabel')}
           className="w-full text-sm text-gray-900 border border-gray-300 rounded px-3 py-1.5 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors"
         />
         {/* 一致件数・位置表示 */}
@@ -142,8 +144,8 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
         type="button"
         onClick={onPrevious}
         disabled={!hasMatches}
-        aria-label="前へ"
-        title="前へ (Shift+Enter)"
+        aria-label={t('search.previous')}
+        title={t('search.previousTitle')}
         className="p-1.5 text-gray-600 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <svg
@@ -164,8 +166,8 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
         type="button"
         onClick={onNext}
         disabled={!hasMatches}
-        aria-label="次へ"
-        title="次へ (Enter)"
+        aria-label={t('search.next')}
+        title={t('search.nextTitle')}
         className="p-1.5 text-gray-600 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <svg
@@ -188,8 +190,8 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
         type="button"
         onClick={handleClear}
         disabled={!hasKeyword}
-        aria-label="検索クリア"
-        title="検索クリア (Escape)"
+        aria-label={t('search.clear')}
+        title={t('search.clearTitle')}
         className="p-1.5 text-gray-600 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <svg
@@ -214,11 +216,11 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
           type="checkbox"
           checked={uncorrectedOnly}
           onChange={handleToggleUncorrected}
-          aria-label="未修正のみ表示"
+          aria-label={t('search.uncorrectedOnlyAriaLabel')}
           className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-400"
         />
         <span className="text-xs text-gray-600 whitespace-nowrap">
-          未修正のみ
+          {t('search.uncorrectedOnly')}
         </span>
       </label>
     </div>
