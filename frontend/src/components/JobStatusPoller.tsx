@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { TranscriptionApi, TranscriptionJob, TranscriptionJobStatus } from '../services/transcription-api';
+import { translateError } from '../utils/translateError';
 
 export interface JobStatusPollerProps {
   jobId: string;
@@ -83,7 +84,7 @@ export function JobStatusPoller({
         }
       }
     } else {
-      setError(result.error.message);
+      setError(translateError(result.error));
     }
   }, [jobId, transcriptionApi, stopPolling]);
 

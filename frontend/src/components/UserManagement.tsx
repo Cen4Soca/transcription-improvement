@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User, UserRole } from '../types/user';
 import type { AppError } from '../types/api';
+import { translateError } from '../utils/translateError';
 
 export interface UserManagementProps {
   users: User[];
@@ -109,7 +110,7 @@ export function UserManagement({
     setIsEditing(false);
 
     if (error) {
-      setEditError(error.message);
+      setEditError(translateError(error));
     } else {
       cancelEdit();
     }

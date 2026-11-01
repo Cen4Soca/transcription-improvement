@@ -1,4 +1,5 @@
 import type { AppError } from '../types/api';
+import { translateError } from './translateError';
 
 /**
  * language-model-error.ts - カスタム言語モデル API のエラー（英語メッセージ）を
@@ -22,5 +23,6 @@ export function describeLanguageModelError(error: AppError): string {
   if (error.code === 'QUOTA_EXCEEDED') {
     return QUOTA_EXCEEDED_MESSAGE;
   }
-  return error.message || 'エラーが発生しました。しばらくしてからもう一度お試しください。';
+  // errorCode があれば errors namespace で翻訳し、無ければ message にフォールバックする。
+  return translateError(error) || 'エラーが発生しました。しばらくしてからもう一度お試しください。';
 }

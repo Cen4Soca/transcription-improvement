@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MediaApi, MediaFile, MediaFileStatus } from '../services/media-api';
 import type { DeletionApi } from '../services/deletion-api';
+import { translateError } from '../utils/translateError';
 
 export interface MediaFileListProps {
   mediaApi: MediaApi;
@@ -25,14 +27,6 @@ export interface MediaFileListProps {
   /** 削除成功時に呼ばれるコールバック（親で一覧を再取得するなど） */
   onDeleted?: (mediaFileId: string) => void;
 }
-
-const STATUS_LABELS: Record<MediaFileStatus, string> = {
-  UPLOADING: 'アップロード中',
-  UPLOADED: 'アップロード完了',
-  PROCESSING: '処理中',
-  COMPLETED: '完了',
-  FAILED: '失敗',
-};
 
 const STATUS_STYLES: Record<MediaFileStatus, string> = {
   UPLOADING: 'bg-yellow-100 text-yellow-800',
@@ -74,6 +68,8 @@ export function MediaFileList({
   deletionApi,
   onDeleted,
 }: MediaFileListProps) {
+  const { t } = useTranslation('upload');
+  const statusLabel = (status: MediaFileStatus) => t(`fileList.status.${status}`);
   // 削除処理中のファイルIDと削除エラーを保持
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -82,7 +78,7 @@ export function MediaFileList({
     if (!deletionApi) return;
 
     const confirmed = window.confirm(
-      `「${file.filename}」を削除します。この操作は取り消せません。よろしいですか？`
+      t('fileList.deleteConfirm', { filename: file.filename })
     );
     if (!confirmed) return;
 
@@ -105,7 +101,7 @@ export function MediaFileList({
 
     if (isConfirmationRequired) {
       const forceConfirmed = window.confirm(
-        `${result.error.message}\n\n進行中の校閲に影響します。それでも削除しますか？`
+        t('fileList.forceDeleteConfirm', { message: translateError(result.error) })
       );
 
       if (!forceConfirmed) {
@@ -122,7 +118,10 @@ export function MediaFileList({
         onDeleted?.(file.mediaFileId);
       } else {
         setDeleteError(
-          `「${file.filename}」の削除に失敗しました: ${forceResult.error.message}`
+          t('fileList.deleteFailed', {
+            filename: file.filename,
+            message: translateError(forceResult.error),
+          })
         );
       }
       return;
@@ -131,7 +130,10 @@ export function MediaFileList({
     // それ以外のエラー（403 など）はメッセージを表示
     setDeletingId(null);
     setDeleteError(
-      `「${file.filename}」の削除に失敗しました: ${result.error.message}`
+      t('fileList.deleteFailed', {
+        filename: file.filename,
+        message: translateError(result.error),
+      })
     );
   };
   // 外部から一覧が渡された場合は自前取得を行わない（制御モード）
@@ -157,7 +159,7 @@ export function MediaFileList({
       if (result.ok) {
         setFetchedMediaFiles(result.value.data.mediaFiles);
       } else {
-        setFetchedError(result.error.message);
+        setFetchedError(translateError(result.error));
       }
       setFetchedIsLoading(false);
     }
@@ -178,7 +180,7 @@ export function MediaFileList({
       <div
         className="flex items-center justify-center h-48"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('fileList.loadingAriaLabel')}
       >
         <div className="w-6 h-6 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
@@ -196,14 +198,14 @@ export function MediaFileList({
   if (mediaFiles.length === 0) {
     return (
       <p className="text-center text-gray-500 py-8">
-        メディアファイルがありません
+        {t('fileList.emptyState')}
       </p>
     );
   }
 
   return (
-    <div className="space-y-2" aria-label="メディアファイル一覧">
-      <h2 className="text-lg font-semibold text-gray-900">メディアファイル一覧</h2>
+    <div className="space-y-2" aria-label={t('fileList.ariaLabel')}>
+      <h2 className="text-lg font-semibold text-gray-900">{t('fileList.heading')}</h2>
 
       {deleteError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg" role="alert">
@@ -211,7 +213,7 @@ export function MediaFileList({
         </div>
       )}
 
-      <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg bg-white" aria-label="メディアファイルリスト">
+      <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg bg-white" aria-label={t('fileList.listAriaLabel')}>
         {mediaFiles.map((file) => (
           <li
             key={file.mediaFileId}
@@ -225,15 +227,15 @@ export function MediaFileList({
                 {formatFileSize(file.fileSize)} · {formatDate(file.createdAt)}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
-                アップロード者: {file.uploadedByName ?? file.uploadedBy}
+                {t('fileList.uploadedBy', { name: file.uploadedByName ?? file.uploadedBy })}
               </p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <span
                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[file.status]}`}
-                aria-label={`ステータス: ${STATUS_LABELS[file.status]}`}
+                aria-label={t('fileList.statusAriaLabel', { status: statusLabel(file.status) })}
               >
-                {STATUS_LABELS[file.status]}
+                {statusLabel(file.status)}
               </span>
               {deletionApi && (
                 <button
@@ -241,9 +243,9 @@ export function MediaFileList({
                   onClick={() => handleDelete(file)}
                   disabled={deletingId === file.mediaFileId}
                   className="text-sm text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label={`${file.filename} を削除`}
+                  aria-label={t('fileList.deleteAriaLabel', { filename: file.filename })}
                 >
-                  {deletingId === file.mediaFileId ? '削除中...' : '削除'}
+                  {deletingId === file.mediaFileId ? t('fileList.deleting') : t('fileList.delete')}
                 </button>
               )}
             </div>

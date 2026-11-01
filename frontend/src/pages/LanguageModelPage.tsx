@@ -13,6 +13,7 @@ import type { Team } from '../types/team';
 import type { AppError } from '../types/api';
 import { SessionNameEditor } from '../components/SessionNameEditor';
 import { describeLanguageModelError } from '../utils/language-model-error';
+import { translateError } from '../utils/translateError';
 
 /** 選択チームに割り当てられた sessionId 集合で候補を絞る（Req 2.1） */
 export function filterSessionsByAssignment(
@@ -895,7 +896,7 @@ function ModelStatusBanner({
   t,
 }: {
   modelStatus: { modelName: string; modelStatus: string; failureReason?: string };
-  statusError: { message: string } | null;
+  statusError: AppError | null;
   onStopPolling: () => void;
   t: TFunction;
 }) {
@@ -939,7 +940,7 @@ function ModelStatusBanner({
               <p className="text-xs text-red-600 mt-0.5">{modelStatus.failureReason}</p>
             )}
             {statusError && (
-              <p className="text-xs text-red-600 mt-0.5">{t('banner.statusError', { message: statusError.message })}</p>
+              <p className="text-xs text-red-600 mt-0.5">{t('banner.statusError', { message: translateError(statusError) })}</p>
             )}
           </div>
         </div>

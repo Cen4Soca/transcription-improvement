@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppError } from '../types/api';
+import { translateError } from '../utils/translateError';
 
 export interface ProfilePageProps {
   /** 現在の表示名 */
@@ -53,7 +54,7 @@ export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
     setIsSaving(false);
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(translateError(error));
     } else {
       setSuccessMessage(t('updateSuccess'));
     }

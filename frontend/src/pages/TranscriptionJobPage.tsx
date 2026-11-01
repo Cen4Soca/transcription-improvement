@@ -6,6 +6,7 @@ import type { TranscriptionApi } from '../services/transcription-api';
 import type { TranscriptionJob } from '../services/transcription-api';
 import type { LanguageModelApi } from '../services/language-model-api';
 import type { MediaApi, MediaFile } from '../services/media-api';
+import { translateError } from '../utils/translateError';
 
 export interface TranscriptionJobPageProps {
   transcriptionApi: TranscriptionApi;
@@ -50,7 +51,7 @@ export function TranscriptionJobPage({
       if (result.ok) {
         setMediaFiles(result.value.data.mediaFiles);
       } else {
-        setMediaError(result.error.message);
+        setMediaError(translateError(result.error));
       }
 
       setIsLoadingMedia(false);

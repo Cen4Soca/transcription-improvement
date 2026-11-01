@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TranscriptionApi, StartTranscriptionJobRequest } from '../services/transcription-api';
 import type { LanguageModelApi, LanguageModelSummary } from '../services/language-model-api';
 import type { MediaFile } from '../services/media-api';
+import { translateError } from '../utils/translateError';
 
 export interface TranscriptionJobFormProps {
   transcriptionApi: TranscriptionApi;
@@ -138,7 +139,7 @@ export function TranscriptionJobForm({
         setLanguageCode(DEFAULT_LANGUAGE_CODE);
         setLanguageModelName('');
       } else {
-        setErrors({ submit: result.error.message });
+        setErrors({ submit: translateError(result.error) });
       }
 
       setIsSubmitting(false);

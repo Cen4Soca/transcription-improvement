@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TranscriptionApi, TranscriptionJobStatus as JobStatus } from '../services/transcription-api';
 import type { UseTranscriptionJobReturn } from '../hooks/useTranscriptionJob';
 import { useTranscriptionJob } from '../hooks/useTranscriptionJob';
+import { translateError } from '../utils/translateError';
 
 export interface TranscriptionJobStatusProps {
   jobId: string;
@@ -58,7 +59,7 @@ export function TranscriptionJobStatusInner({ jobId, hook }: TranscriptionJobSta
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
         <p className="text-sm text-red-700">
-          {t('status.fetchFailed', { message: error.message })}
+          {t('status.fetchFailed', { message: translateError(error) })}
         </p>
       </div>
     );

@@ -148,6 +148,48 @@ describe('ApiClient', () => {
     }
   });
 
+  test('error response maps errorCode into AppError', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: () =>
+        Promise.resolve({
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Session not found',
+            errorCode: 'SESSION_NOT_FOUND',
+          },
+        }),
+    });
+
+    const result = await client.get('/sessions/1');
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('NOT_FOUND');
+      expect(result.error.errorCode).toBe('SESSION_NOT_FOUND');
+      expect(result.error.message).toBe('Session not found');
+    }
+  });
+
+  test('error response without errorCode leaves it undefined', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: () =>
+        Promise.resolve({
+          error: { code: 'FORBIDDEN', message: 'Forbidden' },
+        }),
+    });
+
+    const result = await client.get('/admin/users');
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.errorCode).toBeUndefined();
+    }
+  });
+
   test('text/plain success response is parsed as text (e.g. SRT download)', async () => {
     const srtContent = '1\n00:00:00,000 --> 00:00:03,500\n[spk_0] テスト\n';
     const headers = new Headers();

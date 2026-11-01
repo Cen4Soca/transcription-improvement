@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MediaApi, UploadUrlResponse } from '../services/media-api';
 import { UploadProgress } from '../components/UploadProgress';
+import { translateError } from '../utils/translateError';
 
 /**
  * サポートされるファイル形式
@@ -181,7 +182,7 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
     });
 
     if (!urlResult.ok) {
-      setError(urlResult.error.message);
+      setError(translateError(urlResult.error));
       setUploadStatus('error');
       return;
     }
@@ -198,7 +199,7 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
     );
 
     if (!uploadResult.ok) {
-      setError(uploadResult.error.message);
+      setError(translateError(uploadResult.error));
       setUploadStatus('error');
       return;
     }

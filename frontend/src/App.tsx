@@ -39,6 +39,7 @@ import type { MediaFile } from './services/media-api';
 import { ProfileApi } from './services/profile-api';
 import type { AuthUser } from './types/auth';
 import type { AppError } from './types/api';
+import { translateError } from './utils/translateError';
 import type { UserRole } from './types/user';
 import type { ReviewSession, ReviewSessionStatus, ForceAggregateResult, ReopenSessionResult } from './types/session';
 import type { Team, TeamMembership } from './types/team';
@@ -136,7 +137,7 @@ export function SessionListPageWrapper({
         setPagination(undefined);
         setError(null);
       } else {
-        setError({ message: result.error.message });
+        setError({ message: translateError(result.error) });
       }
       return;
     }
@@ -147,7 +148,7 @@ export function SessionListPageWrapper({
         setPagination(undefined);
         setError(null);
       } else {
-        setError({ message: result.error.message });
+        setError({ message: translateError(result.error) });
       }
       return;
     }
@@ -161,7 +162,7 @@ export function SessionListPageWrapper({
       setPagination(result.value.pagination);
       setError(null);
     } else {
-      setError({ message: result.error.message });
+      setError({ message: translateError(result.error) });
     }
   }, [sessionApi, scope, selectedStatus, currentPage]);
 
@@ -195,7 +196,7 @@ export function SessionListPageWrapper({
     async (sessionId: string) => {
       const result = await sessionApi.claimSession(sessionId);
       if (!result.ok) {
-        throw new Error(result.error.message);
+        throw new Error(translateError(result.error));
       }
       await loadSessions();
     },
@@ -206,7 +207,7 @@ export function SessionListPageWrapper({
     async (sessionId: string) => {
       const result = await sessionApi.selfAssignSession(sessionId);
       if (!result.ok) {
-        throw new Error(result.error.message);
+        throw new Error(translateError(result.error));
       }
       // 成功後に候補一覧を再取得し、参加済みセッションを候補から外す。
       await loadSessions();
@@ -221,7 +222,7 @@ export function SessionListPageWrapper({
     ) => {
       const result = await sessionApi.assignSession(sessionId, input);
       if (!result.ok) {
-        throw new Error(result.error.message);
+        throw new Error(translateError(result.error));
       }
       await loadSessions();
     },
@@ -360,9 +361,10 @@ function describeMediaUrlError(error: AppError): string {
   if (status === 403 || code === 'FORBIDDEN') {
     return 'メディアファイルを再生できません。マルウェアスキャンが完了していないか、アクセスが許可されていない可能性があります。';
   }
-  // その他（500 等）はサーバー側メッセージがあれば添える
-  return error.message
-    ? `メディアの読み込みに失敗しました: ${error.message}`
+  // その他（500 等）はサーバー側メッセージ（errorCode があれば翻訳）があれば添える
+  const detail = translateError(error);
+  return detail
+    ? `メディアの読み込みに失敗しました: ${detail}`
     : 'メディアの読み込みに失敗しました。';
 }
 
@@ -442,7 +444,7 @@ function ReviewPageWrapper({ getToken, userRole }: { getToken: () => Promise<str
         if (segmentsResult.ok) {
           setBaseSegments(segmentsResult.value.data.segments);
         } else {
-          setError({ message: segmentsResult.error.message });
+          setError({ message: translateError(segmentsResult.error) });
         }
 
         // Req 3.3, 3.4: 保存済み Correction を取得して復元。失敗しても未修正状態で開く。
@@ -681,7 +683,7 @@ function ReviewPageWrapper({ getToken, userRole }: { getToken: () => Promise<str
         setMasterSpeakerLabels(result.value.data.speakerLabels ?? []);
         return null;
       }
-      return result.error.message;
+      return translateError(result.error);
     },
     [apis, sessionId]
   );
@@ -695,7 +697,7 @@ function ReviewPageWrapper({ getToken, userRole }: { getToken: () => Promise<str
         setMasterSpeakerLabels(result.value.data.speakerLabels ?? []);
         return null;
       }
-      return result.error.message;
+      return translateError(result.error);
     },
     [apis, sessionId]
   );
@@ -815,7 +817,7 @@ function RankingPageWrapper({ getToken, userId }: { getToken: () => Promise<stri
       setPagination(result.value.data.pagination);
       setError(null);
     } else {
-      setError({ message: result.error.message });
+      setError({ message: translateError(result.error) });
     }
     setIsLoading(false);
   }, [rankingApi]);
@@ -873,8 +875,9 @@ function describeConsensusResolveError(error: AppError): string {
   if (code === 'NOT_FOUND' || status === 404) {
     return '対象のセッションまたはセグメントが見つかりません。';
   }
-  return error.message
-    ? `Consensus の確定に失敗しました: ${error.message}`
+  const detail = translateError(error);
+  return detail
+    ? `Consensus の確定に失敗しました: ${detail}`
     : 'Consensus の確定に失敗しました。';
 }
 
@@ -1004,7 +1007,7 @@ function MediaUploadPageWrapper({ getToken }: { getToken: () => Promise<string> 
       if (result.ok) {
         setMediaFiles(result.value.data.mediaFiles);
       } else {
-        setMediaError(result.error.message);
+        setMediaError(translateError(result.error));
       }
       setIsLoadingMedia(false);
     }
@@ -1223,6 +1226,22 @@ function AppRoutes() {
     }
   }, [auth]);
 
+  // 言語切替をユーザープロファイル（PATCH /me）へ永続化する。
+  // ログイン済みのときのみ呼ばれる（未ログイン時は localStorage のみ）。
+  const profileApi = useMemo(() => {
+    const client = new ApiClient({ baseUrl: getApiBaseUrl(), getToken: auth.getToken });
+    return new ProfileApi(client);
+  }, [auth.getToken]);
+
+  const handleLanguageChange = useCallback(
+    (lng: 'ja' | 'en') => {
+      if (!auth.user) return;
+      // 保存失敗は致命的でないため握りつぶす（UI 言語切替は既に成立している）。
+      void profileApi.updateProfile({ preferredLanguage: lng });
+    },
+    [auth.user, profileApi]
+  );
+
   // Network status banner (display-only). Shown on every authenticated page.
   const online = useOnlineStatus();
 
@@ -1234,6 +1253,7 @@ function AppRoutes() {
     userRole: auth.user?.role,
     displayName: auth.user?.displayName,
     onLogout: handleLogout,
+    onLanguageChange: handleLanguageChange,
   };
 
   return (

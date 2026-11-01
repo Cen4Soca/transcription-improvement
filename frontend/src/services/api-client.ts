@@ -154,6 +154,7 @@ export class ApiClient {
           message: body.error.message ?? i18n.t('errors:fallback.generic'),
           details: body.error.details,
           statusCode: response.status,
+          errorCode: body.error.errorCode,
         };
       }
       return {
