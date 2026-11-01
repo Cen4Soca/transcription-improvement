@@ -1,0 +1,19 @@
+{
+  "loading": "Loading...",
+  "loadingAriaLabel": "Loading",
+  "pageTitle": "Consensus status",
+  "session": "Session: {{sessionId}}",
+  "emptyState": "No segments",
+  "segmentListAriaLabel": "Segment list",
+  "segmentAriaLabel": "Segment {{segmentId}}",
+  "status": {
+    "undecided": "Undecided",
+    "confirmed": "Confirmed",
+    "conflict": "Awaiting conflict resolution"
+  },
+  "confirmedText": "Confirmed text",
+  "reviewerAnswers": "Reviewer answers",
+  "answerCandidatesAriaLabel": "Answer candidates for segment {{segmentId}}",
+  "answerCount": "{{count}} reviewer(s)",
+  "resolveAction": "Confirm this answer"
+}

@@ -1,0 +1,10 @@
+{
+  "pageTitle": "Transcription job",
+  "pageDescription": "Create a transcription with speaker labels from a media file",
+  "mediaLoadError": "Failed to fetch media files: {{message}}",
+  "mediaLoading": "Loading media files...",
+  "mediaLoadingAriaLabel": "Loading media files",
+  "jobCompleted": "The transcription job has completed",
+  "sessionId": "Session ID: {{sessionId}}",
+  "startNewJob": "Create a new job"
+}

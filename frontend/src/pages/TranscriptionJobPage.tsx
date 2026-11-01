@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TranscriptionJobForm } from '../components/TranscriptionJobForm';
 import { JobStatusPoller } from '../components/JobStatusPoller';
 import type { TranscriptionApi } from '../services/transcription-api';
@@ -27,6 +28,7 @@ export function TranscriptionJobPage({
   languageModelApi,
   mediaApi,
 }: TranscriptionJobPageProps) {
+  const { t } = useTranslation('transcriptionJob');
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isLoadingMedia, setIsLoadingMedia] = useState(true);
   const [mediaError, setMediaError] = useState<string | null>(null);
@@ -76,12 +78,12 @@ export function TranscriptionJobPage({
   }, []);
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label="文字起こしジョブ">
+    <div className="flex flex-col h-full" role="main" aria-label={t('pageTitle')}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 bg-white">
-        <h1 className="text-lg font-semibold text-gray-900">文字起こしジョブ</h1>
+        <h1 className="text-lg font-semibold text-gray-900">{t('pageTitle')}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          メディアファイルから話者情報付きの文字起こしを作成します
+          {t('pageDescription')}
         </p>
       </div>
 
@@ -92,16 +94,16 @@ export function TranscriptionJobPage({
           {mediaError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4" role="alert">
               <p className="text-sm text-red-700">
-                メディアファイルの取得に失敗しました: {mediaError}
+                {t('mediaLoadError', { message: mediaError })}
               </p>
             </div>
           )}
 
           {/* Media loading state */}
           {isLoadingMedia && (
-            <div className="flex items-center justify-center p-6" role="status" aria-label="メディアファイル読み込み中">
+            <div className="flex items-center justify-center p-6" role="status" aria-label={t('mediaLoadingAriaLabel')}>
               <div className="w-5 h-5 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-              <span className="ml-2 text-sm text-gray-500">メディアファイルを読み込み中...</span>
+              <span className="ml-2 text-sm text-gray-500">{t('mediaLoading')}</span>
             </div>
           )}
 
@@ -128,11 +130,11 @@ export function TranscriptionJobPage({
               {completedJob && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4" role="status" aria-live="polite">
                   <p className="text-sm font-medium text-green-700">
-                    文字起こしジョブが完了しました
+                    {t('jobCompleted')}
                   </p>
                   {completedJob.sessionId && (
                     <p className="text-xs text-green-600 mt-1">
-                      セッション ID: {completedJob.sessionId}
+                      {t('sessionId', { sessionId: completedJob.sessionId })}
                     </p>
                   )}
                 </div>
@@ -144,7 +146,7 @@ export function TranscriptionJobPage({
                 onClick={handleStartNewJob}
                 className="w-full px-4 py-2.5 bg-white text-gray-700 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
-                新しいジョブを作成
+                {t('startNewJob')}
               </button>
             </div>
           )}

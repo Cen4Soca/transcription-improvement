@@ -1,0 +1,8 @@
+{
+  "pageTitle": "Edit profile",
+  "ariaLabel": "Edit profile",
+  "displayName": "Display name",
+  "email": "Email address",
+  "emailHint": "If you change your email address, it will be used for future logins.",
+  "updateSuccess": "Your profile has been updated."
+}

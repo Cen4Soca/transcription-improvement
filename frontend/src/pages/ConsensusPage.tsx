@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { ConsensusSegment, ConsensusStatus } from '../types/consensus.js';
 
 export interface ConsensusPageProps {
@@ -10,10 +12,10 @@ export interface ConsensusPageProps {
   onResolve?: (segmentId: string, selectedText: string) => Promise<void>;
 }
 
-const STATUS_LABELS: Record<ConsensusStatus, string> = {
-  UNDECIDED: '未確定',
-  CONFIRMED: '確定',
-  CONFLICT: '競合解決待ち',
+const STATUS_LABEL_KEYS: Record<ConsensusStatus, string> = {
+  UNDECIDED: 'status.undecided',
+  CONFIRMED: 'status.confirmed',
+  CONFLICT: 'status.conflict',
 };
 
 const STATUS_BADGE_CLASSES: Record<ConsensusStatus, string> = {
@@ -37,16 +39,17 @@ export function ConsensusPage({
   resolveError,
   onResolve,
 }: ConsensusPageProps) {
+  const { t } = useTranslation('consensus');
   if (isLoading) {
     return (
       <div
         className="flex items-center justify-center h-64"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('loadingAriaLabel')}
       >
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-          <span className="text-sm text-gray-500">読み込み中...</span>
+          <span className="text-sm text-gray-500">{t('loading')}</span>
         </div>
       </div>
     );
@@ -61,12 +64,12 @@ export function ConsensusPage({
   }
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label="Consensus 状態">
+    <div className="flex flex-col h-full" role="main" aria-label={t('pageTitle')}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 bg-white">
-        <h1 className="text-lg font-semibold text-gray-900">Consensus 状態</h1>
+        <h1 className="text-lg font-semibold text-gray-900">{t('pageTitle')}</h1>
         {sessionId && (
-          <p className="mt-1 text-sm text-gray-500">セッション: {sessionId}</p>
+          <p className="mt-1 text-sm text-gray-500">{t('session', { sessionId })}</p>
         )}
       </div>
 
@@ -81,15 +84,16 @@ export function ConsensusPage({
       <div className="flex-1 overflow-auto px-4 py-3">
         {segments.length === 0 ? (
           <div className="flex items-center justify-center h-48">
-            <p className="text-gray-500">セグメントがありません</p>
+            <p className="text-gray-500">{t('emptyState')}</p>
           </div>
         ) : (
-          <ul className="flex flex-col gap-3" aria-label="セグメント一覧">
+          <ul className="flex flex-col gap-3" aria-label={t('segmentListAriaLabel')}>
             {segments.map((segment) => (
               <ConsensusSegmentRow
                 key={segment.segmentId}
                 segment={segment}
                 onResolve={onResolve}
+                t={t}
               />
             ))}
           </ul>
@@ -102,9 +106,10 @@ export function ConsensusPage({
 interface ConsensusSegmentRowProps {
   segment: ConsensusSegment;
   onResolve?: (segmentId: string, selectedText: string) => Promise<void>;
+  t: TFunction;
 }
 
-function ConsensusSegmentRow({ segment, onResolve }: ConsensusSegmentRowProps) {
+function ConsensusSegmentRow({ segment, onResolve, t }: ConsensusSegmentRowProps) {
   const answers = segment.reviewerAnswers ?? [];
   const [selectedText, setSelectedText] = useState<string | null>(
     answers.length > 0 ? answers[0].text : null
@@ -126,21 +131,21 @@ function ConsensusSegmentRow({ segment, onResolve }: ConsensusSegmentRowProps) {
   return (
     <li
       className="border border-gray-200 rounded-md bg-white p-4"
-      aria-label={`セグメント ${segment.segmentId}`}
+      aria-label={t('segmentAriaLabel', { segmentId: segment.segmentId })}
     >
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm text-gray-700 flex-1">{segment.originalText}</p>
         <span
           className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${STATUS_BADGE_CLASSES[segment.consensusStatus]}`}
         >
-          {STATUS_LABELS[segment.consensusStatus]}
+          {t(STATUS_LABEL_KEYS[segment.consensusStatus])}
         </span>
       </div>
 
       {/* CONFIRMED: show the confirmed consensus text */}
       {segment.consensusStatus === 'CONFIRMED' && segment.consensusText && (
         <div className="mt-3 rounded-md bg-green-50 px-3 py-2">
-          <p className="text-xs font-medium text-green-700">確定テキスト</p>
+          <p className="text-xs font-medium text-green-700">{t('confirmedText')}</p>
           <p className="mt-1 text-sm text-gray-900">{segment.consensusText}</p>
         </div>
       )}
@@ -150,12 +155,12 @@ function ConsensusSegmentRow({ segment, onResolve }: ConsensusSegmentRowProps) {
         <div className="mt-3">
           <fieldset>
             <legend className="text-xs font-medium text-gray-700 mb-2">
-              Reviewer の回答
+              {t('reviewerAnswers')}
             </legend>
             <div
               className="flex flex-col gap-2"
               role="radiogroup"
-              aria-label={`セグメント ${segment.segmentId} の回答候補`}
+              aria-label={t('answerCandidatesAriaLabel', { segmentId: segment.segmentId })}
             >
               {answers.map((answer, index) => {
                 const inputId = `${radioGroupName}-${index}`;
@@ -176,7 +181,7 @@ function ConsensusSegmentRow({ segment, onResolve }: ConsensusSegmentRowProps) {
                     />
                     <span className="flex-1 text-sm text-gray-900">{answer.text}</span>
                     <span className="text-xs text-gray-500 whitespace-nowrap">
-                      {answer.count}名
+                      {t('answerCount', { count: answer.count })}
                     </span>
                   </label>
                 );
@@ -189,7 +194,7 @@ function ConsensusSegmentRow({ segment, onResolve }: ConsensusSegmentRowProps) {
             disabled={isResolving || selectedText === null || !onResolve}
             className="mt-3 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            この回答で確定
+            {t('resolveAction')}
           </button>
         </div>
       )}

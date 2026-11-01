@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { RankingPeriod } from '../types/ranking';
 
 export interface RankingEntry {
@@ -31,12 +33,12 @@ export interface RankingPageProps {
   onPageChange?: (page: number) => void;
 }
 
-const PERIOD_OPTIONS: { value: RankingPeriod; label: string }[] = [
-  { value: 'ALL', label: '全期間' },
-  { value: 'THIS_MONTH', label: '今月' },
-  { value: 'THIS_YEAR', label: '今年' },
-  { value: 'LAST_30_DAYS', label: '直近30日' },
-  { value: 'LAST_90_DAYS', label: '直近90日' },
+const PERIOD_OPTIONS: { value: RankingPeriod; labelKey: string }[] = [
+  { value: 'ALL', labelKey: 'period.all' },
+  { value: 'THIS_MONTH', labelKey: 'period.thisMonth' },
+  { value: 'THIS_YEAR', labelKey: 'period.thisYear' },
+  { value: 'LAST_30_DAYS', labelKey: 'period.last30Days' },
+  { value: 'LAST_90_DAYS', labelKey: 'period.last90Days' },
 ];
 
 /**
@@ -55,6 +57,7 @@ export function RankingPage({
   pagination,
   onPageChange,
 }: RankingPageProps) {
+  const { t } = useTranslation('ranking');
   const [activePeriod, setActivePeriod] = useState<RankingPeriod>(selectedPeriod);
 
   const handlePeriodChange = (period: RankingPeriod) => {
@@ -73,11 +76,11 @@ export function RankingPage({
       <div
         className="flex items-center justify-center h-64"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('loadingAriaLabel')}
       >
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-          <span className="text-sm text-gray-500">読み込み中...</span>
+          <span className="text-sm text-gray-500">{t('loading')}</span>
         </div>
       </div>
     );
@@ -92,17 +95,17 @@ export function RankingPage({
   }
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label="コントリビューターランキング">
+    <div className="flex flex-col h-full" role="main" aria-label={t('pageTitle')}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 bg-white">
-        <h1 className="text-lg font-semibold text-gray-900">コントリビューターランキング</h1>
+        <h1 className="text-lg font-semibold text-gray-900">{t('pageTitle')}</h1>
       </div>
 
       {/* Period filter tabs */}
       <div
         className="flex gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50 flex-wrap"
         role="tablist"
-        aria-label="期間フィルター"
+        aria-label={t('periodFilterAriaLabel')}
       >
         {PERIOD_OPTIONS.map((option) => (
           <button
@@ -117,7 +120,7 @@ export function RankingPage({
                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
             }`}
           >
-            {option.label}
+            {t(option.labelKey)}
           </button>
         ))}
       </div>
@@ -126,13 +129,13 @@ export function RankingPage({
       <div className="flex-1 overflow-auto px-4 py-3" role="tabpanel">
         {rankings.length === 0 ? (
           <div className="flex items-center justify-center h-48">
-            <p className="text-gray-500">まだランキングデータがありません</p>
+            <p className="text-gray-500">{t('emptyState')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table
               className="w-full border-collapse"
-              aria-label="ランキングテーブル"
+              aria-label={t('tableAriaLabel')}
             >
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
@@ -140,31 +143,31 @@ export function RankingPage({
                     scope="col"
                     className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    順位
+                    {t('column.rank')}
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    ユーザー名
+                    {t('column.userName')}
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    回答数
+                    {t('column.answerCount')}
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    正答率
+                    {t('column.accuracyRate')}
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    スコア
+                    {t('column.score')}
                   </th>
                 </tr>
               </thead>
@@ -174,6 +177,7 @@ export function RankingPage({
                     key={entry.userId}
                     entry={entry}
                     isCurrentUser={entry.userId === currentUserId}
+                    t={t}
                   />
                 ))}
                 {/* Show current user at bottom if outside rankings (Req 12.8) */}
@@ -190,6 +194,7 @@ export function RankingPage({
                     <RankingRow
                       entry={currentUser}
                       isCurrentUser={true}
+                      t={t}
                     />
                   </>
                 )}
@@ -204,12 +209,14 @@ export function RankingPage({
         <div
           className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white"
           role="navigation"
-          aria-label="ページネーション"
+          aria-label={t('paginationAriaLabel')}
         >
           <p className="text-sm text-gray-700">
-            {pagination.totalItems}件中{' '}
-            {(pagination.currentPage - 1) * pagination.pageSize + 1}〜
-            {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)}件表示
+            {t('itemRange', {
+              totalItems: pagination.totalItems,
+              start: (pagination.currentPage - 1) * pagination.pageSize + 1,
+              end: Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems),
+            })}
           </p>
           <div className="flex gap-2">
             <button
@@ -217,9 +224,9 @@ export function RankingPage({
               disabled={!pagination.hasPreviousPage}
               onClick={() => onPageChange?.(pagination.currentPage - 1)}
               className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="前へ（前のページ）"
+              aria-label={t('previousAriaLabel')}
             >
-              前へ
+              {t('previous')}
             </button>
             <span className="flex items-center px-3 py-1.5 text-sm text-gray-700">
               {pagination.currentPage} / {pagination.totalPages}
@@ -229,9 +236,9 @@ export function RankingPage({
               disabled={!pagination.hasNextPage}
               onClick={() => onPageChange?.(pagination.currentPage + 1)}
               className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="次へ（次のページ）"
+              aria-label={t('nextAriaLabel')}
             >
-              次へ
+              {t('next')}
             </button>
           </div>
         </div>
@@ -243,9 +250,10 @@ export function RankingPage({
 interface RankingRowProps {
   entry: RankingEntry;
   isCurrentUser: boolean;
+  t: TFunction;
 }
 
-function RankingRow({ entry, isCurrentUser }: RankingRowProps) {
+function RankingRow({ entry, isCurrentUser, t }: RankingRowProps) {
   return (
     <tr
       className={`border-b border-gray-100 ${
@@ -262,7 +270,7 @@ function RankingRow({ entry, isCurrentUser }: RankingRowProps) {
         {entry.displayName}
         {isCurrentUser && (
           <span className="ml-2 inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-            あなた
+            {t('you')}
           </span>
         )}
       </td>

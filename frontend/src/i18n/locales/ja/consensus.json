@@ -1,0 +1,19 @@
+{
+  "loading": "読み込み中...",
+  "loadingAriaLabel": "読み込み中",
+  "pageTitle": "Consensus 状態",
+  "session": "セッション: {{sessionId}}",
+  "emptyState": "セグメントがありません",
+  "segmentListAriaLabel": "セグメント一覧",
+  "segmentAriaLabel": "セグメント {{segmentId}}",
+  "status": {
+    "undecided": "未確定",
+    "confirmed": "確定",
+    "conflict": "競合解決待ち"
+  },
+  "confirmedText": "確定テキスト",
+  "reviewerAnswers": "Reviewer の回答",
+  "answerCandidatesAriaLabel": "セグメント {{segmentId}} の回答候補",
+  "answerCount": "{{count}}名",
+  "resolveAction": "この回答で確定"
+}

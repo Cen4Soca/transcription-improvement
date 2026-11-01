@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { TranscriptionJobPage } from './TranscriptionJobPage';
 import type { TranscriptionApi } from '../services/transcription-api';
+
+const t = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(`transcriptionJob:${key}`, opts);
 import type { LanguageModelApi } from '../services/language-model-api';
 import type { MediaApi } from '../services/media-api';
 
@@ -92,6 +96,7 @@ describe('TranscriptionJobPage', () => {
   let user: ReturnType<typeof userEvent.setup>;
 
   beforeEach(() => {
+    void i18n.changeLanguage('ja');
     vi.useFakeTimers({ shouldAdvanceTime: true });
     mockTranscriptionApi = createMockTranscriptionApi();
     mockLanguageModelApi = createMockLanguageModelApi();
@@ -113,9 +118,9 @@ describe('TranscriptionJobPage', () => {
         />,
       );
 
-      expect(screen.getByRole('main', { name: '文字起こしジョブ' })).toBeInTheDocument();
-      expect(screen.getByText('文字起こしジョブ')).toBeInTheDocument();
-      expect(screen.getByText(/メディアファイルから話者情報付きの文字起こしを作成します/)).toBeInTheDocument();
+      expect(screen.getByRole('main', { name: t('pageTitle') })).toBeInTheDocument();
+      expect(screen.getByText(t('pageTitle'))).toBeInTheDocument();
+      expect(screen.getByText(t('pageDescription'))).toBeInTheDocument();
     });
 
     it('shows loading state while fetching media files', () => {
@@ -131,7 +136,7 @@ describe('TranscriptionJobPage', () => {
         />,
       );
 
-      expect(screen.getByRole('status', { name: 'メディアファイル読み込み中' })).toBeInTheDocument();
+      expect(screen.getByRole('status', { name: t('mediaLoadingAriaLabel') })).toBeInTheDocument();
     });
 
     it('shows the job creation form after media files are loaded', async () => {
@@ -226,7 +231,7 @@ describe('TranscriptionJobPage', () => {
       await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: '新しいジョブを作成' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: t('startNewJob') })).toBeInTheDocument();
       });
     });
 
@@ -251,10 +256,10 @@ describe('TranscriptionJobPage', () => {
       await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: '新しいジョブを作成' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: t('startNewJob') })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: '新しいジョブを作成' }));
+      await user.click(screen.getByRole('button', { name: t('startNewJob') }));
 
       await waitFor(() => {
         expect(screen.getByRole('form', { name: 'Transcription ジョブ作成フォーム' })).toBeInTheDocument();
@@ -300,10 +305,12 @@ describe('TranscriptionJobPage', () => {
       await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
 
       await waitFor(() => {
-        expect(screen.getByText('文字起こしジョブが完了しました')).toBeInTheDocument();
+        expect(screen.getByText(t('jobCompleted'))).toBeInTheDocument();
       });
 
-      expect(screen.getByText(/セッション ID: session-456/)).toBeInTheDocument();
+      expect(
+        screen.getByText(t('sessionId', { sessionId: 'session-456' }))
+      ).toBeInTheDocument();
     });
   });
 });

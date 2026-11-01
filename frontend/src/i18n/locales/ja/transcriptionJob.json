@@ -1,0 +1,10 @@
+{
+  "pageTitle": "文字起こしジョブ",
+  "pageDescription": "メディアファイルから話者情報付きの文字起こしを作成します",
+  "mediaLoadError": "メディアファイルの取得に失敗しました: {{message}}",
+  "mediaLoading": "メディアファイルを読み込み中...",
+  "mediaLoadingAriaLabel": "メディアファイル読み込み中",
+  "jobCompleted": "文字起こしジョブが完了しました",
+  "sessionId": "セッション ID: {{sessionId}}",
+  "startNewJob": "新しいジョブを作成"
+}

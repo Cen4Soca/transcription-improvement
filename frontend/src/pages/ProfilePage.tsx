@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AppError } from '../types/api';
 
 export interface ProfilePageProps {
@@ -21,6 +22,8 @@ export interface ProfilePageProps {
  * - 保存成功・失敗をユーザーに通知する
  */
 export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
+  const { t } = useTranslation('profile');
+  const { t: tCommon } = useTranslation('common');
   const [nameInput, setNameInput] = useState(displayName);
   const [emailInput, setEmailInput] = useState(email);
   const [isSaving, setIsSaving] = useState(false);
@@ -52,13 +55,13 @@ export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
     if (error) {
       setErrorMessage(error.message);
     } else {
-      setSuccessMessage('プロファイルを更新しました。');
+      setSuccessMessage(t('updateSuccess'));
     }
   };
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8" aria-label="プロファイル編集">
-      <h1 className="text-xl font-semibold text-gray-900 mb-6">プロファイル編集</h1>
+    <main className="max-w-2xl mx-auto px-4 py-8" aria-label={t('ariaLabel')}>
+      <h1 className="text-xl font-semibold text-gray-900 mb-6">{t('pageTitle')}</h1>
 
       {successMessage && (
         <div
@@ -81,7 +84,7 @@ export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label htmlFor="profile-display-name" className="block text-sm font-medium text-gray-700 mb-1">
-            表示名
+            {t('displayName')}
           </label>
           <input
             id="profile-display-name"
@@ -96,7 +99,7 @@ export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
 
         <div>
           <label htmlFor="profile-email" className="block text-sm font-medium text-gray-700 mb-1">
-            メールアドレス
+            {t('email')}
           </label>
           <input
             id="profile-email"
@@ -107,7 +110,7 @@ export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="mt-1 text-xs text-gray-500">
-            メールアドレスを変更すると、次回以降のログインに使用するアドレスが変わります。
+            {t('emailHint')}
           </p>
         </div>
 
@@ -117,7 +120,7 @@ export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
             disabled={!isDirty || !isValid || isSaving}
             className="px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {isSaving ? '保存中...' : '保存'}
+            {isSaving ? tCommon('saving') : tCommon('save')}
           </button>
         </div>
       </form>

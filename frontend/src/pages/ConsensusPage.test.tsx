@@ -2,8 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { ConsensusPage } from './ConsensusPage';
 import type { ConsensusSegment } from '../types/consensus';
+
+const t = (key: string, opts?: Record<string, unknown>) => i18n.t(`consensus:${key}`, opts);
 
 /**
  * Unit tests for ConsensusPage (bugfix:
@@ -54,25 +57,25 @@ describe('ConsensusPage', () => {
   it('renders Japanese status badges for each segment', () => {
     render(<ConsensusPage sessionId="session-1" segments={allSegments} />);
 
-    expect(screen.getByText('確定')).toBeInTheDocument();
-    expect(screen.getByText('未確定')).toBeInTheDocument();
-    expect(screen.getByText('競合解決待ち')).toBeInTheDocument();
+    expect(screen.getByText(t('status.confirmed'))).toBeInTheDocument();
+    expect(screen.getByText(t('status.undecided'))).toBeInTheDocument();
+    expect(screen.getByText(t('status.conflict'))).toBeInTheDocument();
   });
 
   it('renders the confirmed consensus text for CONFIRMED segments', () => {
     render(<ConsensusPage sessionId="session-1" segments={[confirmedSegment]} />);
 
-    expect(screen.getByText('確定テキスト')).toBeInTheDocument();
+    expect(screen.getByText(t('confirmedText'))).toBeInTheDocument();
     expect(screen.getByText('おはようございます（確定）')).toBeInTheDocument();
   });
 
   it('renders CONFLICT reviewer answers with per-answer counts', () => {
     render(<ConsensusPage sessionId="session-1" segments={[conflictSegment]} />);
 
-    expect(screen.getByText('Reviewer の回答')).toBeInTheDocument();
-    expect(screen.getByText('2名')).toBeInTheDocument();
-    expect(screen.getByText('1名')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'この回答で確定' })).toBeInTheDocument();
+    expect(screen.getByText(t('reviewerAnswers'))).toBeInTheDocument();
+    expect(screen.getByText(t('answerCount', { count: 2 }))).toBeInTheDocument();
+    expect(screen.getByText(t('answerCount', { count: 1 }))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: t('resolveAction') })).toBeInTheDocument();
   });
 
   it('calls onResolve with the selected answer for a CONFLICT segment', async () => {
@@ -85,14 +88,14 @@ describe('ConsensusPage', () => {
     // Default selection is the first answer; pick the second explicitly.
     const radios = screen.getAllByRole('radio');
     await user.click(radios[1]);
-    await user.click(screen.getByRole('button', { name: 'この回答で確定' }));
+    await user.click(screen.getByRole('button', { name: t('resolveAction') }));
 
     expect(onResolve).toHaveBeenCalledWith('seg-conflict', 'さよなら');
   });
 
   it('shows the loading state', () => {
     render(<ConsensusPage sessionId="session-1" segments={[]} isLoading />);
-    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: t('loadingAriaLabel') })).toBeInTheDocument();
   });
 
   it('shows a Japanese error message', () => {
@@ -125,7 +128,7 @@ describe('ConsensusPage', () => {
 
   it('shows an empty state when there are no segments', () => {
     render(<ConsensusPage sessionId="session-1" segments={[]} />);
-    expect(screen.getByText('セグメントがありません')).toBeInTheDocument();
+    expect(screen.getByText(t('emptyState'))).toBeInTheDocument();
   });
 
   it('has no accessibility violations', async () => {

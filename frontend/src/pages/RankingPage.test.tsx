@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { RankingPage, type RankingEntry, type PaginationInfo } from './RankingPage';
+
+const t = (key: string, opts?: Record<string, unknown>) => i18n.t(`ranking:${key}`, opts);
 
 function createRankingEntry(overrides: Partial<RankingEntry> = {}): RankingEntry {
   return {
@@ -32,8 +35,8 @@ describe('RankingPage', () => {
       />
     );
 
-    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
-    expect(screen.getByText('読み込み中...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: t('loadingAriaLabel') })).toBeInTheDocument();
+    expect(screen.getByText(t('loading'))).toBeInTheDocument();
   });
 
   it('renders error state with message', () => {
@@ -59,7 +62,7 @@ describe('RankingPage', () => {
       />
     );
 
-    expect(screen.getByText('まだランキングデータがありません')).toBeInTheDocument();
+    expect(screen.getByText(t('emptyState'))).toBeInTheDocument();
   });
 
   it('renders ranking table with rank, displayName, answerCount, accuracyRate, score', () => {
@@ -89,7 +92,7 @@ describe('RankingPage', () => {
     );
 
     // The current user's row should have aria-current and the "あなた" badge
-    const currentRow = screen.getByText('あなた').closest('tr');
+    const currentRow = screen.getByText(t('you')).closest('tr');
     expect(currentRow).toHaveAttribute('aria-current', 'true');
     expect(currentRow).toHaveClass('bg-blue-50');
   });
@@ -114,7 +117,7 @@ describe('RankingPage', () => {
 
     // Xavier should appear in the table
     expect(screen.getByText('Xavier')).toBeInTheDocument();
-    expect(screen.getByText('あなた')).toBeInTheDocument();
+    expect(screen.getByText(t('you'))).toBeInTheDocument();
 
     // The separator should be visible
     expect(screen.getByText('···')).toBeInTheDocument();
@@ -146,11 +149,11 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByRole('tab', { name: '全期間' })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: '今月' })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: '今年' })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: '直近30日' })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: '直近90日' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: t('period.all') })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: t('period.thisMonth') })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: t('period.thisYear') })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: t('period.last30Days') })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: t('period.last90Days') })).toBeInTheDocument();
     });
 
     it('defaults to 全期間 (ALL) selected', () => {
@@ -162,7 +165,7 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByRole('tab', { name: '全期間' })).toHaveAttribute(
+      expect(screen.getByRole('tab', { name: t('period.all') })).toHaveAttribute(
         'aria-selected',
         'true'
       );
@@ -181,7 +184,7 @@ describe('RankingPage', () => {
         />
       );
 
-      await user.click(screen.getByRole('tab', { name: '今月' }));
+      await user.click(screen.getByRole('tab', { name: t('period.thisMonth') }));
 
       expect(onPeriodChange).toHaveBeenCalledWith('THIS_MONTH');
     });
@@ -197,13 +200,13 @@ describe('RankingPage', () => {
         />
       );
 
-      await user.click(screen.getByRole('tab', { name: '直近30日' }));
+      await user.click(screen.getByRole('tab', { name: t('period.last30Days') }));
 
-      expect(screen.getByRole('tab', { name: '直近30日' })).toHaveAttribute(
+      expect(screen.getByRole('tab', { name: t('period.last30Days') })).toHaveAttribute(
         'aria-selected',
         'true'
       );
-      expect(screen.getByRole('tab', { name: '全期間' })).toHaveAttribute(
+      expect(screen.getByRole('tab', { name: t('period.all') })).toHaveAttribute(
         'aria-selected',
         'false'
       );
@@ -230,9 +233,9 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByRole('navigation', { name: 'ページネーション' })).toBeInTheDocument();
-      expect(screen.getByLabelText('前へ（前のページ）')).toBeInTheDocument();
-      expect(screen.getByLabelText('次へ（次のページ）')).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: t('paginationAriaLabel') })).toBeInTheDocument();
+      expect(screen.getByLabelText(t('previousAriaLabel'))).toBeInTheDocument();
+      expect(screen.getByLabelText(t('nextAriaLabel'))).toBeInTheDocument();
       expect(screen.getByText('2 / 3')).toBeInTheDocument();
     });
 
@@ -255,7 +258,7 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.queryByRole('navigation', { name: 'ページネーション' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('navigation', { name: t('paginationAriaLabel') })).not.toBeInTheDocument();
     });
 
     it('disables previous button on first page', () => {
@@ -277,8 +280,8 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByLabelText('前へ（前のページ）')).toBeDisabled();
-      expect(screen.getByLabelText('次へ（次のページ）')).not.toBeDisabled();
+      expect(screen.getByLabelText(t('previousAriaLabel'))).toBeDisabled();
+      expect(screen.getByLabelText(t('nextAriaLabel'))).not.toBeDisabled();
     });
 
     it('disables next button on last page', () => {
@@ -300,8 +303,8 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByLabelText('前へ（前のページ）')).not.toBeDisabled();
-      expect(screen.getByLabelText('次へ（次のページ）')).toBeDisabled();
+      expect(screen.getByLabelText(t('previousAriaLabel'))).not.toBeDisabled();
+      expect(screen.getByLabelText(t('nextAriaLabel'))).toBeDisabled();
     });
 
     it('calls onPageChange with correct page number', async () => {
@@ -318,10 +321,10 @@ describe('RankingPage', () => {
         />
       );
 
-      await user.click(screen.getByLabelText('次へ（次のページ）'));
+      await user.click(screen.getByLabelText(t('nextAriaLabel')));
       expect(onPageChange).toHaveBeenCalledWith(3);
 
-      await user.click(screen.getByLabelText('前へ（前のページ）'));
+      await user.click(screen.getByLabelText(t('previousAriaLabel')));
       expect(onPageChange).toHaveBeenCalledWith(1);
     });
 
@@ -335,8 +338,9 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByText(/120件中/)).toBeInTheDocument();
-      expect(screen.getByText(/51〜100件表示/)).toBeInTheDocument();
+      expect(
+        screen.getByText(t('itemRange', { totalItems: 120, start: 51, end: 100 }))
+      ).toBeInTheDocument();
     });
   });
 
@@ -351,13 +355,13 @@ describe('RankingPage', () => {
       );
 
       expect(
-        screen.getByRole('main', { name: 'コントリビューターランキング' })
+        screen.getByRole('main', { name: t('pageTitle') })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole('tablist', { name: '期間フィルター' })
+        screen.getByRole('tablist', { name: t('periodFilterAriaLabel') })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole('table', { name: 'ランキングテーブル' })
+        screen.getByRole('table', { name: t('tableAriaLabel') })
       ).toBeInTheDocument();
     });
 
@@ -370,11 +374,11 @@ describe('RankingPage', () => {
         />
       );
 
-      expect(screen.getByRole('columnheader', { name: '順位' })).toBeInTheDocument();
-      expect(screen.getByRole('columnheader', { name: 'ユーザー名' })).toBeInTheDocument();
-      expect(screen.getByRole('columnheader', { name: '回答数' })).toBeInTheDocument();
-      expect(screen.getByRole('columnheader', { name: '正答率' })).toBeInTheDocument();
-      expect(screen.getByRole('columnheader', { name: 'スコア' })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: t('column.rank') })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: t('column.userName') })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: t('column.answerCount') })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: t('column.accuracyRate') })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: t('column.score') })).toBeInTheDocument();
     });
   });
 });

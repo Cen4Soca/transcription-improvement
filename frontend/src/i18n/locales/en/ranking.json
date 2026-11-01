@@ -1,0 +1,29 @@
+{
+  "loading": "Loading...",
+  "loadingAriaLabel": "Loading",
+  "pageTitle": "Contributor ranking",
+  "periodFilterAriaLabel": "Period filter",
+  "period": {
+    "all": "All time",
+    "thisMonth": "This month",
+    "thisYear": "This year",
+    "last30Days": "Last 30 days",
+    "last90Days": "Last 90 days"
+  },
+  "emptyState": "No ranking data yet",
+  "tableAriaLabel": "Ranking table",
+  "column": {
+    "rank": "Rank",
+    "userName": "User name",
+    "answerCount": "Answers",
+    "accuracyRate": "Accuracy",
+    "score": "Score"
+  },
+  "you": "You",
+  "paginationAriaLabel": "Pagination",
+  "itemRange": "Showing {{start}}–{{end}} of {{totalItems}}",
+  "previous": "Previous",
+  "previousAriaLabel": "Previous (previous page)",
+  "next": "Next",
+  "nextAriaLabel": "Next (next page)"
+}
