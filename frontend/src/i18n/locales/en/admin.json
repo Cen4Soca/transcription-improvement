@@ -1,0 +1,10 @@
+{
+  "pageTitle": "Admin",
+  "tabsAriaLabel": "Admin tabs",
+  "tab": {
+    "users": "User management",
+    "teams": "Team management",
+    "ipAllowlist": "IP address restriction",
+    "auditLogs": "Audit logs"
+  }
+}

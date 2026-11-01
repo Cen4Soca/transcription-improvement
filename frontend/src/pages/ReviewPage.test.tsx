@@ -1,7 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import { MemoryRouter } from 'react-router-dom';
+import i18n from '../i18n';
 import { ReviewPage } from './ReviewPage';
+
+const t = (key: string) => i18n.t(`review:${key}`);
 import type { DeletionApi } from '../services/deletion-api';
 import type { Segment } from '../types/segment';
 
@@ -149,7 +152,7 @@ describe('ReviewPage - 完了セッションの読み取り専用化 (Req 2.18, 
     renderCompleted();
 
     expect(
-      screen.queryByRole('button', { name: '話者ラベル管理を開く' }),
+      screen.queryByRole('button', { name: t('page.openSpeakerManagerAriaLabel') }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: '修正候補を表示' }),
@@ -163,7 +166,7 @@ describe('ReviewPage - 完了セッションの読み取り専用化 (Req 2.18, 
     renderCompleted();
 
     expect(
-      screen.getByText('完了したセッションのため編集できません。'),
+      screen.getByText(t('page.readOnlyNotice')),
     ).toBeInTheDocument();
   });
 
@@ -179,7 +182,7 @@ describe('ReviewPage - 完了セッションの読み取り専用化 (Req 2.18, 
     renderCompleted({ sessionStatus: 'IN_PROGRESS' });
 
     expect(
-      screen.getByRole('button', { name: '話者ラベル管理を開く' }),
+      screen.getByRole('button', { name: t('page.openSpeakerManagerAriaLabel') }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: '修正候補を表示' }),
@@ -188,7 +191,7 @@ describe('ReviewPage - 完了セッションの読み取り専用化 (Req 2.18, 
       screen.getByRole('button', { name: '修正前に戻す' }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText('完了したセッションのため編集できません。'),
+      screen.queryByText(t('page.readOnlyNotice')),
     ).not.toBeInTheDocument();
   });
 
@@ -215,7 +218,7 @@ describe('ReviewPage - Transcription 削除', () => {
     renderReviewPage({ deletionApi, onTranscriptionDeleted });
 
     // ツールバーの削除ボタンでダイアログを開く
-    fireEvent.click(screen.getByRole('button', { name: 'Transcription 削除（このセッションの文字起こしを削除）' }));
+    fireEvent.click(screen.getByRole('button', { name: t('page.deleteTranscriptionAriaLabel') }));
 
     // ダイアログ内の「削除する」で確定
     fireEvent.click(screen.getByRole('button', { name: '削除する' }));
@@ -237,7 +240,7 @@ describe('ReviewPage - Transcription 削除', () => {
 
     renderReviewPage({ deletionApi, onTranscriptionDeleted });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Transcription 削除（このセッションの文字起こしを削除）' }));
+    fireEvent.click(screen.getByRole('button', { name: t('page.deleteTranscriptionAriaLabel') }));
     fireEvent.click(screen.getByRole('button', { name: '削除する' }));
 
     await waitFor(() => {

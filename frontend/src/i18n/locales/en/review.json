@@ -25,5 +25,33 @@
     "previousAriaLabel": "Previous (previous page)",
     "next": "Next",
     "nextAriaLabel": "Next (next page)"
+  },
+  "page": {
+    "ariaLabel": "Review screen",
+    "title": "Review",
+    "viewConsensus": "View consensus",
+    "viewConsensusAriaLabel": "View consensus",
+    "pressButtonToShowSuggestions": "Show suggestions on button press",
+    "openSpeakerManagerAriaLabel": "Open speaker label management",
+    "speakerManager": "Speaker labels",
+    "deleteMedia": "Delete media",
+    "deleteMediaAriaLabel": "Delete media (delete the media file)",
+    "deleteTranscription": "Delete transcription",
+    "deleteTranscriptionAriaLabel": "Delete transcription (delete this session's transcription)",
+    "switchToVerticalLayoutAriaLabel": "Switch to vertical split layout",
+    "switchToHorizontalLayoutAriaLabel": "Switch to horizontal split layout",
+    "verticalLayout": "Vertical split",
+    "horizontalLayout": "Horizontal split",
+    "mediaPanelAriaLabel": "Media panel",
+    "transcriptionPanelAriaLabel": "Transcription panel",
+    "readOnlyNotice": "This session is completed and can no longer be edited.",
+    "mediaDeletedNotice": "The media file has been deleted. Playback is unavailable.",
+    "saveCorrectionError": "Failed to save your correction. Please try again.",
+    "deleteMediaDialogTitle": "Delete media file",
+    "mediaFileFallbackName": "Media file",
+    "deleteMediaWarning": "This action cannot be undone. Once the media file is deleted, playback will no longer be available.",
+    "deleteTranscriptionDialogTitle": "Delete transcription",
+    "transcriptionFallbackName": "Transcription",
+    "deleteTranscriptionWarning": "This action cannot be undone. All related data (segments, corrections, consensus results) will be deleted."
   }
 }

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MediaPlayer } from '../components/MediaPlayer';
 import { SessionNameEditor } from '../components/SessionNameEditor';
 import { TranscriptionEditor } from '../components/TranscriptionEditor';
@@ -133,6 +134,7 @@ export function ReviewPage({
   onAddSpeakerLabel,
   onDeleteSpeakerLabel,
 }: ReviewPageProps) {
+  const { t } = useTranslation('review');
   const [layout, setLayout] = useState<LayoutMode>('horizontal');
   const [mediaError, setMediaError] = useState<string | null>(null);
   // ローカル削除の一方向ラッチ。isMediaDeleted prop は詳細取得後に非同期で true に
@@ -191,15 +193,15 @@ export function ReviewPage({
       try {
         const ok = await onSaveCorrection(input);
         if (!ok) {
-          setSaveError('修正内容の保存に失敗しました。もう一度お試しください。');
+          setSaveError(t('page.saveCorrectionError'));
         }
         return ok;
       } catch {
-        setSaveError('修正内容の保存に失敗しました。もう一度お試しください。');
+        setSaveError(t('page.saveCorrectionError'));
         return false;
       }
     },
-    [onSaveCorrection]
+    [onSaveCorrection, t]
   );
 
   // --- テキスト編集確定 (Req 2.3, 3.1) ---
@@ -269,13 +271,13 @@ export function ReviewPage({
       try {
         const ok = await onRevertCorrection(segmentId);
         if (!ok) {
-          setSaveError('修正内容の保存に失敗しました。もう一度お試しください。');
+          setSaveError(t('page.saveCorrectionError'));
         }
       } catch {
-        setSaveError('修正内容の保存に失敗しました。もう一度お試しください。');
+        setSaveError(t('page.saveCorrectionError'));
       }
     },
-    [onRevertCorrection]
+    [onRevertCorrection, t]
   );
 
   const suggestionPopup = useSuggestionPopup({
@@ -444,11 +446,11 @@ export function ReviewPage({
     search.keyword || search.showUncorrectedOnly ? search.results : segments;
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label="校閲画面">
+    <div className="flex flex-col h-full" role="main" aria-label={t('page.ariaLabel')}>
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3 min-w-0">
-          <h1 className="text-lg font-semibold text-gray-900">校閲</h1>
+          <h1 className="text-lg font-semibold text-gray-900">{t('page.title')}</h1>
           {sessionName &&
             (onRenameSession ? (
               <SessionNameEditor
@@ -466,9 +468,9 @@ export function ReviewPage({
             <Link
               to={`/consensus/${sessionId}`}
               className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors whitespace-nowrap"
-              aria-label="Consensus を確認"
+              aria-label={t('page.viewConsensusAriaLabel')}
             >
-              Consensus を確認
+              {t('page.viewConsensus')}
             </Link>
           )}
         </div>
@@ -480,11 +482,11 @@ export function ReviewPage({
                 type="checkbox"
                 checked={disableHoverSuggestion}
                 onChange={(e) => setDisableHoverSuggestion(e.target.checked)}
-                aria-label="ボタンを押して候補を表示"
+                aria-label={t('page.pressButtonToShowSuggestions')}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-400"
               />
               <span className="text-xs text-gray-600 whitespace-nowrap">
-                ボタンを押して候補を表示
+                {t('page.pressButtonToShowSuggestions')}
               </span>
             </label>
           )}
@@ -494,10 +496,10 @@ export function ReviewPage({
             <button
               type="button"
               onClick={() => setSpeakerManagerOpen((v) => !v)}
-              aria-label="話者ラベル管理を開く"
+              aria-label={t('page.openSpeakerManagerAriaLabel')}
               className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
             >
-              話者ラベル管理
+              {t('page.speakerManager')}
             </button>
           )}
 
@@ -509,7 +511,7 @@ export function ReviewPage({
                   type="button"
                   onClick={() => setDeleteMediaDialogOpen(true)}
                   className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-                  aria-label="メディア削除（メディアファイルを削除）"
+                  aria-label={t('page.deleteMediaAriaLabel')}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -524,7 +526,7 @@ export function ReviewPage({
                       clipRule="evenodd"
                     />
                   </svg>
-                  メディア削除
+                  {t('page.deleteMedia')}
                 </button>
               )}
               {sessionId && (
@@ -532,7 +534,7 @@ export function ReviewPage({
                   type="button"
                   onClick={() => setDeleteTranscriptionDialogOpen(true)}
                   className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-                  aria-label="Transcription 削除（このセッションの文字起こしを削除）"
+                  aria-label={t('page.deleteTranscriptionAriaLabel')}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -547,7 +549,7 @@ export function ReviewPage({
                       clipRule="evenodd"
                     />
                   </svg>
-                  Transcription 削除
+                  {t('page.deleteTranscription')}
                 </button>
               )}
             </>
@@ -558,8 +560,8 @@ export function ReviewPage({
             onClick={toggleLayout}
             aria-label={
               layout === 'horizontal'
-                ? 'レイアウトを上下分割に切り替え'
-                : 'レイアウトを左右分割に切り替え'
+                ? t('page.switchToVerticalLayoutAriaLabel')
+                : t('page.switchToHorizontalLayoutAriaLabel')
             }
             className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
@@ -574,7 +576,7 @@ export function ReviewPage({
                 >
                   <path d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 10.5a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Z" />
                 </svg>
-                <span>上下分割</span>
+                <span>{t('page.verticalLayout')}</span>
               </>
             ) : (
               <>
@@ -587,7 +589,7 @@ export function ReviewPage({
                 >
                   <path d="M10 2a.75.75 0 0 1 .75.75v14.5a.75.75 0 0 1-1.5 0V2.75A.75.75 0 0 1 10 2Z" />
                 </svg>
-                <span>左右分割</span>
+                <span>{t('page.horizontalLayout')}</span>
               </>
             )}
           </button>
@@ -614,7 +616,7 @@ export function ReviewPage({
           role="status"
           className="px-4 py-2 bg-blue-50 border-b border-blue-200 text-sm text-blue-700"
         >
-          完了したセッションのため編集できません。
+          {t('page.readOnlyNotice')}
         </div>
       )}
 
@@ -649,7 +651,7 @@ export function ReviewPage({
           role="status"
           className="px-4 py-2 bg-gray-100 border-b border-gray-200 text-sm text-gray-600"
         >
-          メディアファイルは削除されました。再生機能は利用できません。
+          {t('page.mediaDeletedNotice')}
         </div>
       )}
 
@@ -680,7 +682,7 @@ export function ReviewPage({
                 ? 'w-1/2 border-r border-gray-200 overflow-auto'
                 : 'h-auto border-b border-gray-200 sticky top-0 z-10 bg-white'
             } p-4`}
-            aria-label="メディアパネル"
+            aria-label={t('page.mediaPanelAriaLabel')}
           >
             <div
               className={layout === 'horizontal' ? 'sticky top-0' : undefined}
@@ -706,7 +708,7 @@ export function ReviewPage({
               : 'w-full'
           } overflow-hidden flex flex-col`}
           data-scroll-container
-          aria-label="文字起こしパネル"
+          aria-label={t('page.transcriptionPanelAriaLabel')}
         >
           <div className="flex-1 overflow-auto relative">
             <TranscriptionEditor
@@ -771,9 +773,9 @@ export function ReviewPage({
       {/* Delete Media Confirm Dialog */}
       <DeleteConfirmDialog
         isOpen={deleteMediaDialogOpen}
-        title="メディアファイルの削除"
-        resourceName={mediaFileName || 'メディアファイル'}
-        warningMessage="この操作は取り消せません。メディアファイルが削除されると、再生機能が利用できなくなります。"
+        title={t('page.deleteMediaDialogTitle')}
+        resourceName={mediaFileName || t('page.mediaFileFallbackName')}
+        warningMessage={t('page.deleteMediaWarning')}
         onConfirm={handleDeleteMedia}
         onCancel={() => setDeleteMediaDialogOpen(false)}
       />
@@ -781,9 +783,9 @@ export function ReviewPage({
       {/* Delete Transcription Confirm Dialog */}
       <DeleteConfirmDialog
         isOpen={deleteTranscriptionDialogOpen}
-        title="Transcription の削除"
-        resourceName={sessionName || 'Transcription'}
-        warningMessage="この操作は取り消せません。関連するすべてのデータ（Segment・Correction・ConsensusResult）が削除されます。"
+        title={t('page.deleteTranscriptionDialogTitle')}
+        resourceName={sessionName || t('page.transcriptionFallbackName')}
+        warningMessage={t('page.deleteTranscriptionWarning')}
         onConfirm={handleDeleteTranscription}
         onCancel={() => setDeleteTranscriptionDialogOpen(false)}
       />

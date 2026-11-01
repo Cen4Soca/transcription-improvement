@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { AdminPage } from './AdminPage';
+
+const t = (key: string) => i18n.t(`admin:${key}`);
 import type { User } from '../types/user';
 import type { Team, TeamAssignment } from '../types/team';
 import type { ReviewSession } from '../types/session';
@@ -42,15 +45,15 @@ describe('AdminPage', () => {
   it('renders with tab navigation', () => {
     render(<AdminPage {...defaultProps} />);
 
-    expect(screen.getByText('管理画面')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'ユーザー管理' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'チーム管理' })).toBeInTheDocument();
+    expect(screen.getByText(t('pageTitle'))).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: t('tab.users') })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: t('tab.teams') })).toBeInTheDocument();
   });
 
   it('shows user management tab by default', () => {
     render(<AdminPage {...defaultProps} />);
 
-    expect(screen.getByRole('tab', { name: 'ユーザー管理' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: t('tab.users') })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('ユーザー一覧')).toBeInTheDocument();
   });
 
@@ -58,9 +61,9 @@ describe('AdminPage', () => {
     const user = userEvent.setup();
     render(<AdminPage {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: 'チーム管理' }));
+    await user.click(screen.getByRole('tab', { name: t('tab.teams') }));
 
-    expect(screen.getByRole('tab', { name: 'チーム管理' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: t('tab.teams') })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('チーム一覧')).toBeInTheDocument();
   });
 
@@ -75,7 +78,7 @@ describe('AdminPage', () => {
     const user = userEvent.setup();
     render(<AdminPage {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: 'チーム管理' }));
+    await user.click(screen.getByRole('tab', { name: t('tab.teams') }));
 
     expect(screen.getByText('テストチーム')).toBeInTheDocument();
     expect(screen.getByText('1名')).toBeInTheDocument();
@@ -84,8 +87,8 @@ describe('AdminPage', () => {
   it('has proper ARIA attributes for accessibility', () => {
     render(<AdminPage {...defaultProps} />);
 
-    expect(screen.getByRole('main', { name: '管理画面' })).toBeInTheDocument();
-    expect(screen.getByRole('tablist', { name: '管理画面タブ' })).toBeInTheDocument();
+    expect(screen.getByRole('main', { name: t('pageTitle') })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: t('tabsAriaLabel') })).toBeInTheDocument();
     expect(screen.getByRole('tabpanel')).toBeInTheDocument();
   });
 
@@ -93,9 +96,9 @@ describe('AdminPage', () => {
     const user = userEvent.setup();
     render(<AdminPage {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: 'IPアドレス制限' }));
+    await user.click(screen.getByRole('tab', { name: t('tab.ipAllowlist') }));
 
-    expect(screen.getByRole('tab', { name: 'IPアドレス制限' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: t('tab.ipAllowlist') })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('IPアドレス許可リスト')).toBeInTheDocument();
   });
 
@@ -103,9 +106,9 @@ describe('AdminPage', () => {
     const user = userEvent.setup();
     render(<AdminPage {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: '監査ログ' }));
+    await user.click(screen.getByRole('tab', { name: t('tab.auditLogs') }));
 
-    expect(screen.getByRole('tab', { name: '監査ログ' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: t('tab.auditLogs') })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByLabelText('監査ログ管理')).toBeInTheDocument();
   });
 });

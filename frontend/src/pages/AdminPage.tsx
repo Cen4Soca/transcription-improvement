@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { UserManagement } from '../components/UserManagement';
 import { TeamManagement } from '../components/TeamManagement';
 import { IPAllowlistSettings } from '../components/IPAllowlistSettings';
@@ -45,11 +46,11 @@ export interface AdminPageProps {
 
 type AdminTab = 'users' | 'teams' | 'ip-allowlist' | 'audit-logs';
 
-const TABS: { id: AdminTab; label: string }[] = [
-  { id: 'users', label: 'ユーザー管理' },
-  { id: 'teams', label: 'チーム管理' },
-  { id: 'ip-allowlist', label: 'IPアドレス制限' },
-  { id: 'audit-logs', label: '監査ログ' },
+const TABS: { id: AdminTab; labelKey: string }[] = [
+  { id: 'users', labelKey: 'tab.users' },
+  { id: 'teams', labelKey: 'tab.teams' },
+  { id: 'ip-allowlist', labelKey: 'tab.ipAllowlist' },
+  { id: 'audit-logs', labelKey: 'tab.auditLogs' },
 ];
 
 /**
@@ -86,6 +87,7 @@ export function AdminPage({
   onAuditLogPageChange,
   onDeleteAuditLogs,
 }: AdminPageProps) {
+  const { t } = useTranslation('admin');
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
 
   // 実行者ID→表示名のマップ。監査ログテーブルで名前を表示するために使う。
@@ -99,17 +101,17 @@ export function AdminPage({
   );
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label="管理画面">
+    <div className="flex flex-col h-full" role="main" aria-label={t('pageTitle')}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 bg-white">
-        <h1 className="text-lg font-semibold text-gray-900">管理画面</h1>
+        <h1 className="text-lg font-semibold text-gray-900">{t('pageTitle')}</h1>
       </div>
 
       {/* Tab navigation */}
       <div
         className="flex border-b border-gray-200 bg-white px-4 overflow-x-auto"
         role="tablist"
-        aria-label="管理画面タブ"
+        aria-label={t('tabsAriaLabel')}
       >
         {TABS.map((tab) => (
           <button
@@ -126,7 +128,7 @@ export function AdminPage({
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            {tab.label}
+            {t(tab.labelKey)}
           </button>
         ))}
       </div>

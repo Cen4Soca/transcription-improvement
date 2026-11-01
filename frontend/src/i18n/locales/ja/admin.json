@@ -1,0 +1,10 @@
+{
+  "pageTitle": "管理画面",
+  "tabsAriaLabel": "管理画面タブ",
+  "tab": {
+    "users": "ユーザー管理",
+    "teams": "チーム管理",
+    "ipAllowlist": "IPアドレス制限",
+    "auditLogs": "監査ログ"
+  }
+}

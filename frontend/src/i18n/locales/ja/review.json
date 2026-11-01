@@ -25,5 +25,33 @@
     "previousAriaLabel": "前へ（前のページ）",
     "next": "次へ",
     "nextAriaLabel": "次へ（次のページ）"
+  },
+  "page": {
+    "ariaLabel": "校閲画面",
+    "title": "校閲",
+    "viewConsensus": "Consensus を確認",
+    "viewConsensusAriaLabel": "Consensus を確認",
+    "pressButtonToShowSuggestions": "ボタンを押して候補を表示",
+    "openSpeakerManagerAriaLabel": "話者ラベル管理を開く",
+    "speakerManager": "話者ラベル管理",
+    "deleteMedia": "メディア削除",
+    "deleteMediaAriaLabel": "メディア削除（メディアファイルを削除）",
+    "deleteTranscription": "Transcription 削除",
+    "deleteTranscriptionAriaLabel": "Transcription 削除（このセッションの文字起こしを削除）",
+    "switchToVerticalLayoutAriaLabel": "レイアウトを上下分割に切り替え",
+    "switchToHorizontalLayoutAriaLabel": "レイアウトを左右分割に切り替え",
+    "verticalLayout": "上下分割",
+    "horizontalLayout": "左右分割",
+    "mediaPanelAriaLabel": "メディアパネル",
+    "transcriptionPanelAriaLabel": "文字起こしパネル",
+    "readOnlyNotice": "完了したセッションのため編集できません。",
+    "mediaDeletedNotice": "メディアファイルは削除されました。再生機能は利用できません。",
+    "saveCorrectionError": "修正内容の保存に失敗しました。もう一度お試しください。",
+    "deleteMediaDialogTitle": "メディアファイルの削除",
+    "mediaFileFallbackName": "メディアファイル",
+    "deleteMediaWarning": "この操作は取り消せません。メディアファイルが削除されると、再生機能が利用できなくなります。",
+    "deleteTranscriptionDialogTitle": "Transcription の削除",
+    "transcriptionFallbackName": "Transcription",
+    "deleteTranscriptionWarning": "この操作は取り消せません。関連するすべてのデータ（Segment・Correction・ConsensusResult）が削除されます。"
   }
 }
