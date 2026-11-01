@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -248,7 +248,7 @@ describe('GET /consensus/{sessionId}/segments handler', () => {
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('INTERNAL_ERROR');
-    expect(body.error.message).toBe('Consensus 状態の取得に失敗しました。');
+    expect(body.error.message).toBe('Failed to retrieve the consensus status.');
   });
 
   it('deduplicates corrections by userId keeping latest', async () => {

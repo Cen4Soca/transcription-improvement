@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { checkSessionAccess } from '../services/access-control-service.js';
 import { getMediaUrl } from '../services/media-service.js';
 
@@ -27,7 +28,11 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータが必要です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     await checkSessionAccess(user, sessionId);

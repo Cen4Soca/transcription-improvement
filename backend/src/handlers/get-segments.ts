@@ -6,6 +6,7 @@ import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { checkSessionAccess } from '../services/access-control-service.js';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 
@@ -36,7 +37,11 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パラメータが必要です。');
+      throw validationError(
+        'The sessionId parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     // Verify user has access to this session
@@ -70,8 +75,9 @@ export async function handler(
       return successResponse({ data: { segments } });
     } catch (queryError: unknown) {
       throw internalError(
-        'セグメントの取得に失敗しました。',
-        queryError instanceof Error ? queryError.message : undefined
+        'Failed to retrieve the segments.',
+        queryError instanceof Error ? queryError.message : undefined,
+        ERROR_CODES.SEGMENTS_FETCH_FAILED
       );
     }
   } catch (error: unknown) {

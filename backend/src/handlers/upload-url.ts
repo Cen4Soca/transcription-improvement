@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { AppError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   validateUpload,
   generatePresignedUrl,
@@ -41,16 +42,16 @@ export async function handler(
     if (!validation.valid) {
       const errorBody: Record<string, unknown> = {
         code: validation.errorCode ?? 'VALIDATION_ERROR',
-        message: validation.error ?? 'バリデーションエラーが発生しました。',
+        message: validation.error ?? 'A validation error occurred.',
       };
 
       if (validation.supportedFormats) {
-        errorBody.details = `サポートされる形式: ${validation.supportedFormats.join(', ')}`;
+        errorBody.details = `Supported formats: ${validation.supportedFormats.join(', ')}`;
         errorBody.supportedFormats = validation.supportedFormats;
       }
 
       if (validation.maxFileSize) {
-        errorBody.details = `最大ファイルサイズ: ${validation.maxFileSize}`;
+        errorBody.details = `Maximum file size: ${validation.maxFileSize}`;
         errorBody.maxFileSize = validation.maxFileSize;
       }
 
@@ -110,8 +111,9 @@ function parseRequestBody(rawBody: string | undefined): UploadUrlRequestBody {
   if (!rawBody) {
     throw new AppError({
       code: 'VALIDATION_ERROR',
-      message: 'リクエストボディが必要です。',
+      message: 'A request body is required.',
       statusCode: 400,
+      errorCode: ERROR_CODES.REQUEST_BODY_REQUIRED,
     });
   }
 
@@ -121,8 +123,9 @@ function parseRequestBody(rawBody: string | undefined): UploadUrlRequestBody {
   } catch {
     throw new AppError({
       code: 'VALIDATION_ERROR',
-      message: 'リクエストボディのJSON形式が不正です。',
+      message: 'The request body is not valid JSON.',
       statusCode: 400,
+      errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
     });
   }
 
@@ -131,24 +134,27 @@ function parseRequestBody(rawBody: string | undefined): UploadUrlRequestBody {
   if (!body.filename || typeof body.filename !== 'string') {
     throw new AppError({
       code: 'VALIDATION_ERROR',
-      message: 'filename は必須です。',
+      message: 'filename is required.',
       statusCode: 400,
+      errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
     });
   }
 
   if (!body.contentType || typeof body.contentType !== 'string') {
     throw new AppError({
       code: 'VALIDATION_ERROR',
-      message: 'contentType は必須です。',
+      message: 'contentType is required.',
       statusCode: 400,
+      errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
     });
   }
 
   if (body.fileSize === undefined || typeof body.fileSize !== 'number') {
     throw new AppError({
       code: 'VALIDATION_ERROR',
-      message: 'fileSize は必須です。',
+      message: 'fileSize is required.',
       statusCode: 400,
+      errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
     });
   }
 

@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { checkSessionAccess } from '../services/access-control-service.js';
 import { suggestSessionName } from '../services/session-name-suggestion-service.js';
 
@@ -30,7 +31,11 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータが必要です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     await checkSessionAccess(user, sessionId);
@@ -40,8 +45,9 @@ export async function handler(
       return successResponse(result);
     } catch (error: unknown) {
       throw internalError(
-        'セッション名候補の取得に失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to retrieve a session name suggestion.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.SESSION_NAME_SUGGESTION_FAILED
       );
     }
   } catch (error: unknown) {

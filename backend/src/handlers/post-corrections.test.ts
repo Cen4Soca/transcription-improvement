@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -196,7 +196,7 @@ describe('POST /sessions/{sessionId}/corrections handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('sessionId パスパラメータが必要です。');
+    expect(body.error.message).toBe('The sessionId path parameter is required.');
   });
 
   it('returns 403 when JWT sub claim is missing', async () => {
@@ -214,7 +214,7 @@ describe('POST /sessions/{sessionId}/corrections handler', () => {
     mockedCheckSessionAccess.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'リソースが見つかりません。',
+        message: 'Resource not found',
         statusCode: 404,
       })
     );
@@ -232,7 +232,7 @@ describe('POST /sessions/{sessionId}/corrections handler', () => {
     mockedValidateCorrectionInput.mockImplementation(() => {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'correctionId は必須です。',
+        message: 'correctionId is required.',
         statusCode: 400,
       });
     });
@@ -243,7 +243,7 @@ describe('POST /sessions/{sessionId}/corrections handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('correctionId は必須です。');
+    expect(body.error.message).toBe('correctionId is required.');
   });
 
   it('returns 500 when correction save fails', async () => {
@@ -251,7 +251,7 @@ describe('POST /sessions/{sessionId}/corrections handler', () => {
     mockedCreateCorrection.mockRejectedValue(
       new AppError({
         code: 'INTERNAL_ERROR',
-        message: '修正内容の保存に失敗しました。',
+        message: 'Failed to save the correction.',
         statusCode: 500,
         details: 'DynamoDB timeout',
       })
@@ -263,7 +263,7 @@ describe('POST /sessions/{sessionId}/corrections handler', () => {
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('INTERNAL_ERROR');
-    expect(body.error.message).toBe('修正内容の保存に失敗しました。');
+    expect(body.error.message).toBe('Failed to save the correction.');
   });
 
   it('calls checkSessionAccess with correct user and sessionId', async () => {
@@ -324,7 +324,7 @@ describe('POST /sessions/{sessionId}/corrections handler', () => {
     mockedCheckSessionAccess.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'リソースが見つかりません。',
+        message: 'Resource not found',
         statusCode: 404,
       })
     );
@@ -340,7 +340,7 @@ describe('POST /sessions/{sessionId}/corrections handler', () => {
     mockedValidateCorrectionInput.mockImplementation(() => {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'リクエストボディが不正です。',
+        message: 'Request body is invalid.',
         statusCode: 400,
       });
     });

@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { assignSession } from '../services/session-service.js';
 import { recordAuditLog } from '../services/audit-service.js';
 
@@ -31,21 +32,35 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータが必要です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     const body = event.body ? JSON.parse(event.body) : null;
     if (!body || (!body.assignedUserId && !body.assignedTeamId)) {
       throw validationError(
-        'リクエストボディに assignedUserId または assignedTeamId が必要です。'
+        'The request body must include assignedUserId or assignedTeamId.',
+        undefined,
+        ERROR_CODES.SESSION_ASSIGN_TARGET_REQUIRED
       );
     }
 
     if (body.assignedUserId !== undefined && typeof body.assignedUserId !== 'string') {
-      throw validationError('assignedUserId は文字列で指定してください。');
+      throw validationError(
+        'assignedUserId must be a string.',
+        undefined,
+        ERROR_CODES.SESSION_ASSIGNED_USER_ID_INVALID
+      );
     }
     if (body.assignedTeamId !== undefined && typeof body.assignedTeamId !== 'string') {
-      throw validationError('assignedTeamId は文字列で指定してください。');
+      throw validationError(
+        'assignedTeamId must be a string.',
+        undefined,
+        ERROR_CODES.SESSION_ASSIGNED_TEAM_ID_INVALID
+      );
     }
 
     try {
@@ -72,8 +87,9 @@ export async function handler(
         throw error;
       }
       throw internalError(
-        'セッションの割り当てに失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to assign the session.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.SESSION_ASSIGNMENT_FAILED
       );
     }
   } catch (error: unknown) {

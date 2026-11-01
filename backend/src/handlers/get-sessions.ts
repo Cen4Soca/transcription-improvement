@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { getAccessibleSessionIds } from '../services/access-control-service.js';
 import {
   getAllSessions,
@@ -45,7 +46,9 @@ export async function handler(
     const statusParam = event.queryStringParameters?.status;
     if (statusParam && !isValidStatus(statusParam)) {
       throw validationError(
-        'status パラメータが不正です。PENDING, IN_PROGRESS, COMPLETED のいずれかを指定してください。'
+        'The status parameter is invalid. Specify one of PENDING, IN_PROGRESS, or COMPLETED.',
+        undefined,
+        ERROR_CODES.SESSION_STATUS_INVALID
       );
     }
 
@@ -55,7 +58,11 @@ export async function handler(
     if (pageParam) {
       page = parseInt(pageParam, 10);
       if (isNaN(page) || page < 1) {
-        throw validationError('page パラメータは1以上の整数で指定してください。');
+        throw validationError(
+          'The page parameter must be an integer of at least 1.',
+          undefined,
+          ERROR_CODES.PAGE_NUMBER_INVALID
+        );
       }
     }
 
@@ -105,8 +112,9 @@ export async function handler(
       return successResponse(response);
     } catch (queryError: unknown) {
       throw internalError(
-        'セッション一覧の取得に失敗しました。',
-        queryError instanceof Error ? queryError.message : undefined
+        'Failed to retrieve the session list.',
+        queryError instanceof Error ? queryError.message : undefined,
+        ERROR_CODES.SESSIONS_FETCH_FAILED
       );
     }
   } catch (error: unknown) {

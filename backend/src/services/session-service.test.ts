@@ -198,7 +198,7 @@ describe('session-service', () => {
       ).rejects.toMatchObject({
         statusCode: 400,
         code: 'VALIDATION_ERROR',
-        message: expect.stringContaining('見つかりません'),
+        message: expect.stringContaining('not found'),
       });
     });
 
@@ -213,7 +213,7 @@ describe('session-service', () => {
       ).rejects.toMatchObject({
         statusCode: 400,
         code: 'VALIDATION_ERROR',
-        message: expect.stringContaining('変更はできません'),
+        message: expect.stringContaining('Cannot change status'),
       });
 
       expect(mockedUpdateSessionStatus).not.toHaveBeenCalled();
@@ -230,7 +230,7 @@ describe('session-service', () => {
       ).rejects.toMatchObject({
         statusCode: 400,
         code: 'VALIDATION_ERROR',
-        message: expect.stringContaining('変更はできません'),
+        message: expect.stringContaining('Cannot change status'),
       });
     });
   });

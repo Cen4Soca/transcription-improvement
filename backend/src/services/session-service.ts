@@ -4,6 +4,7 @@ import {
   notFoundError,
   forbiddenError,
 } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { isAdmin, requireRole, type AuthUser } from '../utils/auth-middleware.js';
 import { assertSessionEditable } from '../utils/session-guard.js';
 import {
@@ -56,19 +57,27 @@ export async function changeSessionStatus(
 ): Promise<SessionRecord> {
   if (!isValidStatus(newStatus)) {
     throw validationError(
-      'status は PENDING, IN_PROGRESS, COMPLETED のいずれかを指定してください。'
+      'status must be one of PENDING, IN_PROGRESS, or COMPLETED.',
+      undefined,
+      ERROR_CODES.SESSION_STATUS_INVALID
     );
   }
 
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw validationError('指定されたセッションが見つかりません。');
+    throw validationError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
 
   const allowedTransitions = VALID_STATUS_TRANSITIONS[session.status] ?? [];
   if (!allowedTransitions.includes(newStatus)) {
     throw validationError(
-      `現在のステータス「${session.status}」から「${newStatus}」への変更はできません。`
+      `Cannot change status from "${session.status}" to "${newStatus}".`,
+      undefined,
+      ERROR_CODES.SESSION_STATUS_TRANSITION_INVALID
     );
   }
 
@@ -99,7 +108,11 @@ export async function renameSession(
 
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw validationError('指定されたセッションが見つかりません。');
+    throw validationError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
 
   return updateSessionName(sessionId, name);
@@ -142,7 +155,11 @@ export async function addSpeakerLabel(
 
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定されたセッションが見つかりません。');
+    throw notFoundError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
   assertSessionEditable(session);
 
@@ -173,7 +190,11 @@ export async function deleteSpeakerLabel(
 ): Promise<SessionRecord> {
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定されたセッションが見つかりません。');
+    throw notFoundError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
   assertSessionEditable(session);
 
@@ -184,7 +205,11 @@ export async function deleteSpeakerLabel(
 
   const masterLabels = session.speakerLabels ?? [];
   if (!masterLabels.includes(label)) {
-    throw notFoundError('指定された話者ラベルが見つかりません。');
+    throw notFoundError(
+      'Speaker label not found',
+      undefined,
+      ERROR_CODES.SPEAKER_LABEL_NOT_FOUND
+    );
   }
 
   const remaining = masterLabels.filter((l) => l !== label);
@@ -260,24 +285,38 @@ export async function assignSession(
 
   if (!input.assignedUserId && !input.assignedTeamId) {
     throw validationError(
-      'assignedUserId または assignedTeamId のいずれかを指定してください。'
+      'Either assignedUserId or assignedTeamId must be provided.',
+      undefined,
+      ERROR_CODES.SESSION_ASSIGN_TARGET_REQUIRED
     );
   }
 
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定されたセッションが見つかりません。');
+    throw notFoundError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
 
   // TEAM_LEADER is limited to their own team's scope; ADMIN has no scope limit.
   if (!isAdmin(user)) {
     const leaderTeamIds = new Set(await getUserTeamIds(user.userId));
     if (leaderTeamIds.size === 0) {
-      throw forbiddenError('所属チームがないため割り当てできません。');
+      throw forbiddenError(
+        'You cannot assign because you do not belong to any team.',
+        undefined,
+        ERROR_CODES.SESSION_ASSIGN_NO_TEAM
+      );
     }
 
     if (input.assignedTeamId && !leaderTeamIds.has(input.assignedTeamId)) {
-      throw forbiddenError('自分のチームにのみ割り当てできます。');
+      throw forbiddenError(
+        'You can only assign to your own team.',
+        undefined,
+        ERROR_CODES.SESSION_ASSIGN_TEAM_FORBIDDEN
+      );
     }
 
     if (input.assignedUserId) {
@@ -287,14 +326,20 @@ export async function assignSession(
       );
       if (!targetInLeaderTeam) {
         throw forbiddenError(
-          '自分のチームのメンバーにのみ割り当てできます。'
+          'You can only assign to members of your own team.',
+          undefined,
+          ERROR_CODES.SESSION_ASSIGN_MEMBER_FORBIDDEN
         );
       }
     }
 
     // The session itself must belong to the leader's team scope.
     if (session.assignedTeamId && !leaderTeamIds.has(session.assignedTeamId)) {
-      throw forbiddenError('このセッションを割り当てる権限がありません。');
+      throw forbiddenError(
+        'You do not have permission to assign this session.',
+        undefined,
+        ERROR_CODES.SESSION_ASSIGN_FORBIDDEN
+      );
     }
   }
 
@@ -324,17 +369,29 @@ export async function joinSession(
 ): Promise<SessionRecord> {
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定されたセッションが見つかりません。');
+    throw notFoundError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
 
   // ADMIN may join anything; others must be a member of the session's team.
   if (!isAdmin(user)) {
     if (!session.assignedTeamId) {
-      throw forbiddenError('このセッションはチームに割り当てられていません。');
+      throw forbiddenError(
+        'This session is not assigned to a team.',
+        undefined,
+        ERROR_CODES.SESSION_NOT_TEAM_ASSIGNED
+      );
     }
     const member = await isTeamMember(user.userId, session.assignedTeamId);
     if (!member) {
-      throw forbiddenError('自チームに割り当てられたセッションのみ参加できます。');
+      throw forbiddenError(
+        'You can only join sessions assigned to your own team.',
+        undefined,
+        ERROR_CODES.SESSION_TEAM_ACCESS_DENIED
+      );
     }
   }
 
@@ -423,17 +480,29 @@ export async function selfAssignSession(
 ): Promise<SessionRecord> {
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定されたセッションが見つかりません。');
+    throw notFoundError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
 
   // ADMIN may join anything; others must be a member of the session's team.
   if (!isAdmin(user)) {
     if (!session.assignedTeamId) {
-      throw forbiddenError('このセッションはチームに割り当てられていません。');
+      throw forbiddenError(
+        'This session is not assigned to a team.',
+        undefined,
+        ERROR_CODES.SESSION_NOT_TEAM_ASSIGNED
+      );
     }
     const member = await isTeamMember(user.userId, session.assignedTeamId);
     if (!member) {
-      throw forbiddenError('自チームに割り当てられたセッションのみ参加できます。');
+      throw forbiddenError(
+        'You can only join sessions assigned to your own team.',
+        undefined,
+        ERROR_CODES.SESSION_TEAM_ACCESS_DENIED
+      );
     }
   }
 
@@ -472,22 +541,38 @@ export async function reopenSession(
 
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定されたセッションが見つかりません。');
+    throw notFoundError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
 
   // TEAM_LEADER is limited to their own team's sessions; ADMIN has no limit.
   if (!isAdmin(user)) {
     if (!session.assignedTeamId) {
-      throw forbiddenError('このセッションを操作する権限がありません。');
+      throw forbiddenError(
+        'You do not have permission to operate on this session.',
+        undefined,
+        ERROR_CODES.SESSION_OPERATION_FORBIDDEN
+      );
     }
     const member = await isTeamMember(user.userId, session.assignedTeamId);
     if (!member) {
-      throw forbiddenError('自チームのセッションのみ操作できます。');
+      throw forbiddenError(
+        'You can only operate on sessions in your own team.',
+        undefined,
+        ERROR_CODES.SESSION_OPERATION_FORBIDDEN
+      );
     }
   }
 
   if (session.status !== 'COMPLETED') {
-    throw validationError('完了していないセッションは差し戻しできません。');
+    throw validationError(
+      'A session that is not completed cannot be reopened.',
+      undefined,
+      ERROR_CODES.SESSION_NOT_COMPLETED
+    );
   }
 
   // Policy A: only the session status is updated; consensus/segment data stays.

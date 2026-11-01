@@ -32,6 +32,7 @@ import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import { getRankingSettings } from './admin-ranking-settings.js';
 import type { ScorePeriod } from '../services/score-service.js';
@@ -65,7 +66,9 @@ export async function handler(
     const periodParam = event.queryStringParameters?.period ?? 'ALL';
     if (!isValidPeriod(periodParam)) {
       throw validationError(
-        'period パラメータが不正です。ALL, THIS_MONTH, THIS_YEAR, LAST_30_DAYS, LAST_90_DAYS のいずれかを指定してください。'
+        'The period parameter is invalid. Specify one of ALL, THIS_MONTH, THIS_YEAR, LAST_30_DAYS, or LAST_90_DAYS.',
+        undefined,
+        ERROR_CODES.RANKING_PERIOD_INVALID
       );
     }
 
@@ -75,7 +78,11 @@ export async function handler(
     if (pageParam) {
       page = parseInt(pageParam, 10);
       if (isNaN(page) || page < 1) {
-        throw validationError('page パラメータは1以上の整数で指定してください。');
+        throw validationError(
+          'The page parameter must be an integer of at least 1.',
+          undefined,
+          ERROR_CODES.PAGE_NUMBER_INVALID
+        );
       }
     }
 
@@ -155,8 +162,9 @@ export async function handler(
       });
     } catch (queryError: unknown) {
       throw internalError(
-        'ランキングの取得に失敗しました。',
-        queryError instanceof Error ? queryError.message : undefined
+        'Failed to retrieve the ranking.',
+        queryError instanceof Error ? queryError.message : undefined,
+        ERROR_CODES.RANKING_FETCH_FAILED
       );
     }
   } catch (error: unknown) {

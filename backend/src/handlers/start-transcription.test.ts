@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -182,7 +182,7 @@ describe('POST /transcription-jobs handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('リクエストボディが必要です。');
+    expect(body.error.message).toBe('A request body is required.');
   });
 
   it('returns 400 when request body is invalid JSON', async () => {
@@ -192,7 +192,7 @@ describe('POST /transcription-jobs handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('リクエストボディのJSON形式が不正です。');
+    expect(body.error.message).toBe('The request body is not valid JSON.');
   });
 
   it('returns 400 when mediaFileId is missing', async () => {
@@ -204,7 +204,7 @@ describe('POST /transcription-jobs handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('mediaFileId は必須です。');
+    expect(body.error.message).toBe('mediaFileId is required.');
   });
 
   it('returns 400 when maxSpeakerLabels is not a number', async () => {
@@ -216,7 +216,7 @@ describe('POST /transcription-jobs handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('maxSpeakerLabels は数値で指定してください。');
+    expect(body.error.message).toBe('maxSpeakerLabels must be a number.');
   });
 
   it('returns 400 when languageCode is not a string', async () => {
@@ -228,7 +228,7 @@ describe('POST /transcription-jobs handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('languageCode は文字列で指定してください。');
+    expect(body.error.message).toBe('languageCode must be a string.');
   });
 
   it('returns 400 when languageModelName is not a string', async () => {
@@ -240,7 +240,7 @@ describe('POST /transcription-jobs handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('languageModelName は文字列で指定してください。');
+    expect(body.error.message).toBe('languageModelName must be a string.');
   });
 
   it('returns 403 when JWT sub claim is missing', async () => {
@@ -257,7 +257,7 @@ describe('POST /transcription-jobs handler', () => {
     mockedStartJob.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'MaxSpeakerLabels は 2〜10 の範囲で指定してください。',
+        message: 'MaxSpeakerLabels must be between 2 and 10.',
         statusCode: 400,
       })
     );
@@ -277,7 +277,7 @@ describe('POST /transcription-jobs handler', () => {
     mockedStartJob.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: '指定されたメディアファイルが見つかりません。',
+        message: 'Media file not found',
         statusCode: 404,
       })
     );

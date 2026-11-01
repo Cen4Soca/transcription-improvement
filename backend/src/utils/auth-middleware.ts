@@ -1,5 +1,6 @@
 import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
 import { forbiddenError, notFoundError } from './error-handler.js';
+import { ERROR_CODES } from './error-codes.js';
 import { getUserByEmail } from '../repositories/user-repository.js';
 import { provisionUserOnFirstLogin } from '../services/user-service.js';
 
@@ -10,6 +11,8 @@ export interface AuthUser {
   email: string;
   displayName: string;
   role: UserRole;
+  /** Preferred UI language ('ja' | 'en'). Undefined means not yet set. */
+  preferredLanguage?: 'ja' | 'en';
 }
 
 const ROLE_HIERARCHY: Record<UserRole, number> = {
@@ -47,12 +50,20 @@ export async function extractUser(
   const jwtRole = (claims['custom:role'] as string) ?? '';
 
   if (!sub) {
-    throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+    throw forbiddenError(
+      'Authentication information is invalid.',
+      'Missing sub claim in JWT',
+      ERROR_CODES.AUTH_INVALID
+    );
   }
 
   // Email is required to resolve the canonical DynamoDB user record.
   if (!email) {
-    throw forbiddenError('認証情報が不正です。', 'Missing email claim in JWT');
+    throw forbiddenError(
+      'Authentication information is invalid.',
+      'Missing email claim in JWT',
+      ERROR_CODES.AUTH_INVALID
+    );
   }
 
   const claimDisplayName = (claims['custom:displayName'] as string) ?? '';
@@ -73,8 +84,9 @@ export async function extractUser(
 
   if (!userRecord.isActive) {
     throw forbiddenError(
-      'アカウントが無効化されています。',
-      `User deactivated: ${userRecord.userId}`
+      'This account has been deactivated.',
+      `User deactivated: ${userRecord.userId}`,
+      ERROR_CODES.ACCOUNT_DEACTIVATED
     );
   }
 
@@ -87,6 +99,9 @@ export async function extractUser(
     email: userRecord.email,
     displayName: userRecord.displayName || claimDisplayName,
     role,
+    ...(userRecord.preferredLanguage
+      ? { preferredLanguage: userRecord.preferredLanguage }
+      : {}),
   };
 }
 
@@ -112,8 +127,9 @@ export function hasMinimumRole(userRole: UserRole, requiredRole: UserRole): bool
 export function requireRole(user: AuthUser, requiredRole: UserRole): void {
   if (!hasMinimumRole(user.role, requiredRole)) {
     throw forbiddenError(
-      'この操作を実行する権限がありません。',
-      `Required role: ${requiredRole}, current role: ${user.role}`
+      'You do not have permission to perform this operation.',
+      `Required role: ${requiredRole}, current role: ${user.role}`,
+      ERROR_CODES.INSUFFICIENT_ROLE
     );
   }
 }
@@ -123,7 +139,11 @@ export function requireRole(user: AuthUser, requiredRole: UserRole): void {
  * Returns 404 to hide the existence of the resource.
  */
 export function denyResourceAccess(): never {
-  throw notFoundError('リソースが見つかりません。');
+  throw notFoundError(
+    'Resource not found',
+    undefined,
+    ERROR_CODES.RESOURCE_NOT_FOUND
+  );
 }
 
 /**
@@ -153,15 +173,17 @@ export async function checkUserActive(user: AuthUser): Promise<void> {
 
   if (!userRecord) {
     throw forbiddenError(
-      'ユーザーアカウントが見つかりません。',
-      `User not found: ${user.email}`
+      'The user account was not found.',
+      `User not found: ${user.email}`,
+      ERROR_CODES.USER_NOT_FOUND
     );
   }
 
   if (!userRecord.isActive) {
     throw forbiddenError(
-      'アカウントが無効化されています。',
-      `User deactivated: ${userRecord.userId}`
+      'This account has been deactivated.',
+      `User deactivated: ${userRecord.userId}`,
+      ERROR_CODES.ACCOUNT_DEACTIVATED
     );
   }
 }

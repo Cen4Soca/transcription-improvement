@@ -79,6 +79,27 @@ describe('validateProfileFields', () => {
   it('throws on invalid email format', () => {
     expect(() => validateProfileFields({ email: 'not-an-email' })).toThrow();
   });
+
+  it('accepts a valid preferredLanguage (ja/en)', () => {
+    expect(validateProfileFields({ preferredLanguage: 'ja' })).toEqual({
+      preferredLanguage: 'ja',
+    });
+    expect(validateProfileFields({ preferredLanguage: 'en' })).toEqual({
+      preferredLanguage: 'en',
+    });
+  });
+
+  it('throws on unsupported preferredLanguage', () => {
+    expect(() =>
+      validateProfileFields({ preferredLanguage: 'fr' as unknown as 'ja' | 'en' })
+    ).toThrow();
+  });
+
+  it('allows preferredLanguage alone (without displayName/email)', () => {
+    expect(validateProfileFields({ preferredLanguage: 'en' })).toEqual({
+      preferredLanguage: 'en',
+    });
+  });
 });
 
 describe('updateUserProfile', () => {
@@ -173,6 +194,52 @@ describe('updateUserProfile', () => {
         fields: { displayName: 'X' },
       })
     ).rejects.toThrow();
+  });
+
+  it('persists preferredLanguage to DynamoDB WITHOUT touching Cognito', async () => {
+    const result = await updateUserProfile({
+      actor,
+      targetUserId: 'user-001',
+      fields: { preferredLanguage: 'en' },
+    });
+
+    // preferredLanguage is app-only: Cognito must NOT be updated.
+    expect(mockedUpdateCognito).not.toHaveBeenCalled();
+    expect(mockedUpdateUser).toHaveBeenCalledWith('user-001', {
+      preferredLanguage: 'en',
+    });
+    expect(mockedRecordAuditLog).toHaveBeenCalledTimes(1);
+    expect(result.preferredLanguage).toBe('en');
+  });
+
+  it('updates displayName and preferredLanguage together (Cognito only for displayName)', async () => {
+    await updateUserProfile({
+      actor,
+      targetUserId: 'user-001',
+      fields: { displayName: 'New Name', preferredLanguage: 'en' },
+    });
+
+    expect(mockedUpdateCognito).toHaveBeenCalledWith('old@example.com', {
+      displayName: 'New Name',
+    });
+    expect(mockedUpdateUser).toHaveBeenCalledWith('user-001', {
+      displayName: 'New Name',
+      preferredLanguage: 'en',
+    });
+  });
+
+  it('no-ops when preferredLanguage matches the existing value', async () => {
+    mockedGetUserById.mockResolvedValue({ ...existingUser, preferredLanguage: 'en' });
+
+    const result = await updateUserProfile({
+      actor,
+      targetUserId: 'user-001',
+      fields: { preferredLanguage: 'en' },
+    });
+
+    expect(mockedUpdateUser).not.toHaveBeenCalled();
+    expect(mockedRecordAuditLog).not.toHaveBeenCalled();
+    expect(result.preferredLanguage).toBe('en');
   });
 });
 

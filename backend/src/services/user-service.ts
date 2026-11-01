@@ -21,6 +21,7 @@ import {
   notFoundError,
   internalError,
 } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import type { UserRole } from '../utils/auth-middleware.js';
 
 // Basic RFC-5322-ish email shape check. Full validation is delegated to Cognito.
@@ -30,7 +31,11 @@ const DISPLAY_NAME_MAX_LENGTH = 100;
 export interface ProfileUpdateFields {
   displayName?: string;
   email?: string;
+  preferredLanguage?: 'ja' | 'en';
 }
+
+/** Supported UI languages for the preferredLanguage profile field. */
+const SUPPORTED_LANGUAGES = ['ja', 'en'] as const;
 
 export interface UpdateUserProfileParams {
   /** The user performing the update (for the audit log). */
@@ -51,31 +56,73 @@ export function validateProfileFields(fields: ProfileUpdateFields): ProfileUpdat
 
   if (fields.displayName !== undefined) {
     if (typeof fields.displayName !== 'string') {
-      throw validationError('表示名は文字列で指定してください。');
+      throw validationError(
+        'Display name must be a string.',
+        undefined,
+        ERROR_CODES.DISPLAY_NAME_INVALID
+      );
     }
     const trimmed = fields.displayName.trim();
     if (trimmed.length === 0) {
-      throw validationError('表示名を入力してください。');
+      throw validationError(
+        'Display name is required.',
+        undefined,
+        ERROR_CODES.DISPLAY_NAME_REQUIRED
+      );
     }
     if (trimmed.length > DISPLAY_NAME_MAX_LENGTH) {
-      throw validationError('表示名は100文字以内で入力してください。');
+      throw validationError(
+        'Display name must be 100 characters or fewer.',
+        undefined,
+        ERROR_CODES.DISPLAY_NAME_TOO_LONG
+      );
     }
     normalized.displayName = trimmed;
   }
 
   if (fields.email !== undefined) {
     if (typeof fields.email !== 'string') {
-      throw validationError('メールアドレスは文字列で指定してください。');
+      throw validationError(
+        'Email must be a string.',
+        undefined,
+        ERROR_CODES.EMAIL_INVALID
+      );
     }
     const trimmed = fields.email.trim().toLowerCase();
     if (!EMAIL_PATTERN.test(trimmed)) {
-      throw validationError('メールアドレスの形式が正しくありません。');
+      throw validationError(
+        'Email format is invalid.',
+        undefined,
+        ERROR_CODES.EMAIL_INVALID
+      );
     }
     normalized.email = trimmed;
   }
 
-  if (normalized.displayName === undefined && normalized.email === undefined) {
-    throw validationError('更新するフィールド（displayName または email）を指定してください。');
+  if (fields.preferredLanguage !== undefined) {
+    if (
+      typeof fields.preferredLanguage !== 'string' ||
+      !(SUPPORTED_LANGUAGES as readonly string[]).includes(fields.preferredLanguage)
+    ) {
+      throw validationError(
+        'preferredLanguage must be either "ja" or "en".',
+        undefined,
+        ERROR_CODES.PREFERRED_LANGUAGE_INVALID
+      );
+    }
+    normalized.preferredLanguage = fields.preferredLanguage;
+  }
+
+  if (
+    normalized.displayName === undefined &&
+    normalized.email === undefined &&
+    normalized.preferredLanguage === undefined
+  ) {
+    throw validationError(
+      'Specify at least one field to update (displayName, email, or preferredLanguage).',
+      undefined,
+      ERROR_CODES.NO_UPDATE_FIELDS
+    );
   }
 
   return normalized;
@@ -104,7 +151,11 @@ export async function updateUserProfile(
 
   const existingUser = await getUserById(targetUserId);
   if (!existingUser) {
-    throw notFoundError('指定されたユーザーが見つかりません。');
+    throw notFoundError(
+      'User not found',
+      undefined,
+      ERROR_CODES.USER_NOT_FOUND
+    );
   }
 
   const emailChanged =
@@ -114,7 +165,11 @@ export async function updateUserProfile(
   if (emailChanged) {
     const userWithEmail = await getUserByEmail(normalized.email as string);
     if (userWithEmail && userWithEmail.userId !== existingUser.userId) {
-      throw validationError('このメールアドレスは既に使用されています。');
+      throw validationError(
+        'This email is already in use.',
+        undefined,
+        ERROR_CODES.EMAIL_ALREADY_USED
+      );
     }
   }
 
@@ -122,22 +177,31 @@ export async function updateUserProfile(
     normalized.displayName !== undefined &&
     normalized.displayName !== existingUser.displayName;
 
+  const preferredLanguageChanged =
+    normalized.preferredLanguage !== undefined &&
+    normalized.preferredLanguage !== existingUser.preferredLanguage;
+
   // Nothing actually changed — return the existing record without side effects.
-  if (!emailChanged && !displayNameChanged) {
+  if (!emailChanged && !displayNameChanged && !preferredLanguageChanged) {
     return existingUser;
   }
 
   // Sync Cognito first. The current email is the Cognito Username.
-  try {
-    await updateCognitoUserAttributes(existingUser.email, {
-      ...(displayNameChanged ? { displayName: normalized.displayName } : {}),
-      ...(emailChanged ? { email: normalized.email } : {}),
-    });
-  } catch (cognitoError: unknown) {
-    throw internalError(
-      'プロファイルの更新に失敗しました。',
-      cognitoError instanceof Error ? cognitoError.message : undefined
-    );
+  // preferredLanguage is an app-only setting and is NOT stored in Cognito, so
+  // skip the Cognito call entirely when only the language changed.
+  if (displayNameChanged || emailChanged) {
+    try {
+      await updateCognitoUserAttributes(existingUser.email, {
+        ...(displayNameChanged ? { displayName: normalized.displayName } : {}),
+        ...(emailChanged ? { email: normalized.email } : {}),
+      });
+    } catch (cognitoError: unknown) {
+      throw internalError(
+        'Failed to update the profile.',
+        cognitoError instanceof Error ? cognitoError.message : undefined,
+        ERROR_CODES.PROFILE_UPDATE_FAILED
+      );
+    }
   }
 
   // Persist to DynamoDB.
@@ -146,11 +210,15 @@ export async function updateUserProfile(
     updatedUser = await updateUser(targetUserId, {
       ...(displayNameChanged ? { displayName: normalized.displayName } : {}),
       ...(emailChanged ? { email: normalized.email } : {}),
+      ...(preferredLanguageChanged
+        ? { preferredLanguage: normalized.preferredLanguage }
+        : {}),
     });
   } catch (dbError: unknown) {
     throw internalError(
-      'プロファイルの更新に失敗しました。',
-      dbError instanceof Error ? dbError.message : undefined
+      'Failed to update the profile.',
+      dbError instanceof Error ? dbError.message : undefined,
+      ERROR_CODES.PROFILE_UPDATE_FAILED
     );
   }
 
@@ -171,6 +239,10 @@ export async function updateUserProfile(
       ...(emailChanged && {
         previousEmail: existingUser.email,
         newEmail: normalized.email as string,
+      }),
+      ...(preferredLanguageChanged && {
+        previousLanguage: existingUser.preferredLanguage ?? '',
+        newLanguage: normalized.preferredLanguage as string,
       }),
     },
   });
@@ -252,7 +324,11 @@ export async function provisionUserOnFirstLogin(
       return raced;
     }
     // No record and create failed for another reason — surface as 500.
-    throw internalError('ユーザーの自動登録に失敗しました。');
+    throw internalError(
+      'Failed to auto-register the user.',
+      undefined,
+      ERROR_CODES.USER_AUTO_REGISTRATION_FAILED
+    );
   }
 
   // Audit the auto-provision. Never let an audit failure block login.

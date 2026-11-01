@@ -5,6 +5,7 @@ import type {
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { getModelStatus } from '../services/language-model-service.js';
 import { checkLanguageModelAccess } from '../services/access-control-service.js';
 
@@ -33,7 +34,11 @@ export async function handler(
     // Extract modelName from path parameters
     const modelName = event.pathParameters?.modelName;
     if (!modelName) {
-      throw validationError('modelName パスパラメータは必須です。');
+      throw validationError(
+        'The modelName path parameter is required.',
+        undefined,
+        ERROR_CODES.MODEL_NAME_REQUIRED_PARAM
+      );
     }
 
     // Team isolation: ADMIN any team; others own-team only.

@@ -161,7 +161,7 @@ describe('Feature: language-model-team-isolation, Property 1: session ownership 
           mockedCheckSessionAccess.mockImplementation(async (_user, sessionId) => {
             if (sessionId === inaccessibleId) {
               // denyResourceAccess() returns a 404 AppError; throw it to deny access
-              throw notFoundError('リソースが見つかりません。');
+              throw notFoundError('Resource not found');
             }
             return undefined;
           });
@@ -908,7 +908,7 @@ describe('Feature: language-model-source-session-team-match, Property 1: TeamAss
    */
 
   const EXPECTED_MESSAGE =
-    '選択した校閲セッションの中に、指定チームに割り当てられていないものがあります。チームに割り当てられた校閲セッションのみを選択してください。';
+    'Some of the selected review sessions are not assigned to the specified team. Select only review sessions assigned to the team.';
   const TEAM_ID = 'team-001';
 
   const propertyInputArb = sessionIdsArb.chain((sessionIds) =>

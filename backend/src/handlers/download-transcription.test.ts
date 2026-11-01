@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -220,7 +220,7 @@ describe('GET /sessions/{sessionId}/download handler', () => {
     mockedGenerateJson.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: '指定された ReviewSession が見つかりません。',
+        message: 'ReviewSession not found',
         statusCode: 404,
       })
     );

@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -126,7 +126,7 @@ describe('GET /sessions/{sessionId}/name-suggestion handler', () => {
     const { checkSessionAccess } = await import('../services/access-control-service.js');
     const { AppError } = await import('../utils/error-handler.js');
     vi.mocked(checkSessionAccess).mockRejectedValue(
-      new AppError({ code: 'NOT_FOUND', message: 'リソースが見つかりません。', statusCode: 404 })
+      new AppError({ code: 'NOT_FOUND', message: 'Resource not found', statusCode: 404 })
     );
 
     const event = createEvent();
@@ -149,6 +149,6 @@ describe('GET /sessions/{sessionId}/name-suggestion handler', () => {
     expect(response.statusCode).toBe(500);
     const body = JSON.parse(response.body as string);
     expect(body.error.code).toBe('INTERNAL_ERROR');
-    expect(body.error.message).toContain('セッション名候補の取得に失敗しました');
+    expect(body.error.message).toContain('Failed to retrieve a session name suggestion');
   });
 });

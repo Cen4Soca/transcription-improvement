@@ -204,7 +204,7 @@ describe('Team Service - createNewTeam', () => {
   it('throws validation error for empty name', async () => {
     await expect(createNewTeam(adminUser, { name: '' })).rejects.toMatchObject({
       statusCode: 400,
-      message: 'チーム名は必須です。',
+      message: 'Team name is required.',
     });
   });
 
@@ -246,14 +246,14 @@ describe('Team Service - updateExistingTeam', () => {
     mockedGetTeamById.mockResolvedValue(null);
     await expect(updateExistingTeam(adminUser, 'nonexistent', { name: 'X' })).rejects.toMatchObject({
       statusCode: 404,
-      message: 'チームが見つかりません。',
+      message: 'Team not found',
     });
   });
 
   it('enforces team access for TEAM_LEADER (Req 13.9)', async () => {
     mockedGetTeamById.mockResolvedValue(sampleTeam);
     mockedRequireTeamAccess.mockRejectedValue(
-      new AppError({ code: 'NOT_FOUND', message: 'リソースが見つかりません。', statusCode: 404 })
+      new AppError({ code: 'NOT_FOUND', message: 'Resource not found', statusCode: 404 })
     );
 
     await expect(updateExistingTeam(leaderUser, 'team-001', { name: 'X' })).rejects.toMatchObject({
@@ -307,7 +307,7 @@ describe('Team Service - deleteExistingTeam', () => {
   it('throws forbidden for TEAM_LEADER', async () => {
     await expect(deleteExistingTeam(leaderUser, 'team-001')).rejects.toMatchObject({
       statusCode: 403,
-      message: 'チームの削除はAdmin権限が必要です。',
+      message: 'Deleting a team requires Admin privileges.',
     });
   });
 
@@ -365,7 +365,7 @@ describe('Team Service - removeMemberFromTeam (Req 13.8 membership loss)', () =>
 
   it('enforces team access for TEAM_LEADER (Req 13.9)', async () => {
     mockedRequireTeamAccess.mockRejectedValue(
-      new AppError({ code: 'NOT_FOUND', message: 'リソースが見つかりません。', statusCode: 404 })
+      new AppError({ code: 'NOT_FOUND', message: 'Resource not found', statusCode: 404 })
     );
 
     await expect(removeMemberFromTeam(leaderUser, 'team-001', 'user-001')).rejects.toMatchObject({
@@ -394,13 +394,13 @@ describe('Team Service - createAssignment', () => {
     mockedRequireTeamAccess.mockResolvedValue(undefined);
     await expect(createAssignment(adminUser, 'team-001', '')).rejects.toMatchObject({
       statusCode: 400,
-      message: 'セッションIDは必須です。',
+      message: 'Session ID is required.',
     });
   });
 
   it('enforces team access for TEAM_LEADER creating assignment (Req 13.9)', async () => {
     mockedRequireTeamAccess.mockRejectedValue(
-      new AppError({ code: 'NOT_FOUND', message: 'リソースが見つかりません。', statusCode: 404 })
+      new AppError({ code: 'NOT_FOUND', message: 'Resource not found', statusCode: 404 })
     );
 
     await expect(createAssignment(leaderUser, 'other-team', 'session-001')).rejects.toMatchObject({
@@ -422,7 +422,7 @@ describe('Team Service - deleteAssignment', () => {
 
   it('enforces team access for TEAM_LEADER deleting assignment (Req 13.9)', async () => {
     mockedRequireTeamAccess.mockRejectedValue(
-      new AppError({ code: 'NOT_FOUND', message: 'リソースが見つかりません。', statusCode: 404 })
+      new AppError({ code: 'NOT_FOUND', message: 'Resource not found', statusCode: 404 })
     );
 
     await expect(deleteAssignment(leaderUser, 'other-team', 'session-001')).rejects.toMatchObject({
@@ -506,7 +506,7 @@ describe('Team Service - createUserReviewAssignment', () => {
       createUserReviewAssignment(adminUser, 'team-001', 'user-999', 'session-001')
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: '対象ユーザーはこのチームのメンバーではありません。',
+      message: 'The target user is not a member of this team.',
     });
   });
 
@@ -515,7 +515,7 @@ describe('Team Service - createUserReviewAssignment', () => {
       createUserReviewAssignment(adminUser, 'team-001', '', 'session-001')
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'ユーザーIDは必須です。',
+      message: 'User ID is required.',
     });
   });
 
@@ -524,7 +524,7 @@ describe('Team Service - createUserReviewAssignment', () => {
       createUserReviewAssignment(adminUser, 'team-001', 'user-001', '')
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: 'セッションIDは必須です。',
+      message: 'Session ID is required.',
     });
   });
 });

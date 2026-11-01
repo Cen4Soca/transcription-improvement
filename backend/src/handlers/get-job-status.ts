@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { AppError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { getJobStatusFromTranscribe } from '../services/transcription-job-service.js';
 
 /**
@@ -28,8 +29,9 @@ export async function handler(
     if (!jobId) {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'jobId パスパラメータは必須です。',
+        message: 'The jobId path parameter is required.',
         statusCode: 400,
+        errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
       });
     }
 

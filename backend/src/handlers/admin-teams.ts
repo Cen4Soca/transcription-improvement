@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   listTeams,
   createNewTeam,
@@ -92,7 +93,11 @@ export async function updateTeamHandler(
     const teamId = event.pathParameters?.teamId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
 
     const body = parseBody(event.body);
@@ -133,7 +138,11 @@ export async function deleteTeamHandler(
     const teamId = event.pathParameters?.teamId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
 
     await deleteExistingTeam(user, teamId);
@@ -170,7 +179,11 @@ export async function listTeamMembersHandler(
     const teamId = event.pathParameters?.teamId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
 
     const members = await listTeamMembers(user, teamId);
@@ -199,7 +212,11 @@ export async function addTeamMemberHandler(
     const teamId = event.pathParameters?.teamId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
 
     const body = parseBody(event.body);
@@ -244,10 +261,18 @@ export async function removeTeamMemberHandler(
     const userId = event.pathParameters?.userId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
     if (!userId) {
-      throw validationError('ユーザーIDは必須です。');
+      throw validationError(
+        'User ID is required.',
+        undefined,
+        ERROR_CODES.USER_ID_REQUIRED
+      );
     }
 
     await removeMemberFromTeam(user, teamId, userId);

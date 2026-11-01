@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -159,7 +159,7 @@ describe('GET /language-models/{modelName} handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('modelName パスパラメータは必須です。');
+    expect(body.error.message).toBe('The modelName path parameter is required.');
   });
 
   it('returns 404 when model is not found', async () => {
@@ -167,7 +167,7 @@ describe('GET /language-models/{modelName} handler', () => {
     mockedGetModelStatus.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: '指定されたカスタム言語モデルが見つかりません。',
+        message: 'The specified custom language model was not found.',
         statusCode: 404,
       })
     );
@@ -178,7 +178,7 @@ describe('GET /language-models/{modelName} handler', () => {
     expect(result.statusCode).toBe(404);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('NOT_FOUND');
-    expect(body.error.message).toBe('指定されたカスタム言語モデルが見つかりません。');
+    expect(body.error.message).toBe('The specified custom language model was not found.');
   });
 
   it('returns 403 when JWT sub claim is missing', async () => {
@@ -217,7 +217,7 @@ describe('GET /language-models/{modelName} handler', () => {
     mockedCheckLanguageModelAccess.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'リソースが見つかりません。',
+        message: 'Resource not found',
         statusCode: 404,
       })
     );

@@ -19,7 +19,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -260,7 +260,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('CIDRブロックは必須');
+    expect(body.error.message).toContain('The CIDR block is required');
   });
 
   it('returns 400 when body is invalid JSON', async () => {
@@ -272,7 +272,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('JSON形式が不正');
+    expect(body.error.message).toContain('not valid JSON');
   });
 
   it('returns 400 when description is not a string', async () => {
@@ -284,7 +284,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('説明は文字列');
+    expect(body.error.message).toContain('Description must be a string');
   });
 
   it('propagates validation error from service (invalid CIDR)', async () => {
@@ -292,7 +292,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
     mockedAddEntry.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'CIDR形式が無効です。',
+        message: 'Invalid CIDR format. Enter an IPv4 (e.g. 192.168.1.0/24) or IPv6 (e.g. 2001:db8::/32) value.',
         statusCode: 400,
       })
     );
@@ -305,7 +305,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('CIDR形式が無効');
+    expect(body.error.message).toContain('Invalid CIDR format');
   });
 });
 
@@ -357,7 +357,7 @@ describe('DELETE /admin/ip-allowlist/{entryId} - deleteIPAllowlistHandler', () =
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('エントリIDは必須');
+    expect(body.error.message).toContain('The entry ID is required');
   });
 
   it('propagates error when entry not found', async () => {
@@ -365,7 +365,7 @@ describe('DELETE /admin/ip-allowlist/{entryId} - deleteIPAllowlistHandler', () =
     mockedDeleteEntry.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: '指定されたIPアドレスエントリが見つかりません。',
+        message: 'The specified IP address entry was not found.',
         statusCode: 400,
       })
     );
@@ -379,6 +379,6 @@ describe('DELETE /admin/ip-allowlist/{entryId} - deleteIPAllowlistHandler', () =
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('見つかりません');
+    expect(body.error.message).toContain('not found');
   });
 });

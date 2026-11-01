@@ -69,3 +69,33 @@ describe('error factory functions', () => {
     expect(error.details).toBe('quota limit reached');
   });
 });
+
+describe('detailed errorCode support', () => {
+  it('AppError carries an optional errorCode', () => {
+    const error = new AppError({
+      code: 'NOT_FOUND',
+      message: 'Session not found',
+      statusCode: 404,
+      errorCode: 'SESSION_NOT_FOUND',
+    });
+    expect(error.errorCode).toBe('SESSION_NOT_FOUND');
+  });
+
+  it('errorCode is undefined when not provided', () => {
+    const error = notFoundError('Not found');
+    expect(error.errorCode).toBeUndefined();
+  });
+
+  it('factories accept a detailed errorCode as the 3rd argument', () => {
+    const error = validationError('Invalid language', undefined, 'PREFERRED_LANGUAGE_INVALID');
+    expect(error.code).toBe('VALIDATION_ERROR');
+    expect(error.details).toBeUndefined();
+    expect(error.errorCode).toBe('PREFERRED_LANGUAGE_INVALID');
+  });
+
+  it('factories keep details as the 2nd argument alongside errorCode', () => {
+    const error = forbiddenError('Denied', 'actor lacks role', 'INSUFFICIENT_ROLE');
+    expect(error.details).toBe('actor lacks role');
+    expect(error.errorCode).toBe('INSUFFICIENT_ROLE');
+  });
+});

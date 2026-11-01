@@ -105,6 +105,8 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   createdAt: string;
+  /** Preferred UI language ('ja' | 'en'). Undefined means not yet set. */
+  preferredLanguage?: 'ja' | 'en';
 }
 
 export type UserRole = 'REVIEWER' | 'TEAM_LEADER' | 'ADMIN';
@@ -319,6 +321,8 @@ export interface ErrorResponse {
     code: string;
     message: string;
     details?: string;
+    /** Detailed, semantic error code for precise frontend translation. */
+    errorCode?: string;
   };
 }
 
@@ -330,4 +334,9 @@ export interface AppErrorOptions {
   message: string;
   statusCode: number;
   details?: string;
+  /**
+   * Detailed, semantic error code (e.g. SESSION_NOT_FOUND). Layered on top of
+   * the HTTP-category `code`. Used by the frontend for precise translation.
+   */
+  errorCode?: string;
 }

@@ -17,6 +17,7 @@ import type {
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   getAllEntries,
   addEntry,
@@ -68,11 +69,19 @@ export async function addIPAllowlistHandler(
     const body = parseBody(event.body);
 
     if (!body.cidr || typeof body.cidr !== 'string') {
-      throw validationError('CIDRブロックは必須です。');
+      throw validationError(
+        'The CIDR block is required.',
+        undefined,
+        ERROR_CODES.CIDR_REQUIRED
+      );
     }
 
     if (body.description !== undefined && typeof body.description !== 'string') {
-      throw validationError('説明は文字列で指定してください。');
+      throw validationError(
+        'Description must be a string.',
+        undefined,
+        ERROR_CODES.IP_ALLOWLIST_DESCRIPTION_INVALID
+      );
     }
 
     const entry = await addEntry({
@@ -106,7 +115,11 @@ export async function deleteIPAllowlistHandler(
 
     const entryId = event.pathParameters?.entryId;
     if (!entryId) {
-      throw validationError('エントリIDは必須です。');
+      throw validationError(
+        'The entry ID is required.',
+        undefined,
+        ERROR_CODES.IP_ENTRY_ID_REQUIRED
+      );
     }
 
     await deleteEntry(entryId, user);
@@ -127,6 +140,10 @@ function parseBody(body: string | undefined): Record<string, unknown> {
   try {
     return JSON.parse(body) as Record<string, unknown>;
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 }

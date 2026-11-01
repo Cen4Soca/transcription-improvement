@@ -24,7 +24,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -114,7 +114,7 @@ describe('Feature: get-media-url, Property 39: マルウェアスキャン結果
           mockedGetMediaUrl.mockRejectedValue(
             new AppError({
               code: 'FORBIDDEN',
-              message: 'マルウェアスキャン完了前のファイルにはアクセスできません',
+              message: 'This file cannot be accessed until the malware scan is complete.',
               statusCode: 403,
             })
           );
@@ -176,7 +176,7 @@ describe('Feature: get-media-url, Property 39: マルウェアスキャン結果
           mockedGetMediaUrl.mockRejectedValue(
             new AppError({
               code: 'FORBIDDEN',
-              message: 'マルウェアが検出されたファイルにはアクセスできません',
+              message: 'This file cannot be accessed because malware was detected.',
               statusCode: 403,
             })
           );

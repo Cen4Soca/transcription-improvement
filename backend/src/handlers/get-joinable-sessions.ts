@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { listJoinableSessions } from '../services/session-service.js';
 
 /**
@@ -35,8 +36,9 @@ export async function handler(
         throw queryError;
       }
       throw internalError(
-        '参加可能なセッションの取得に失敗しました。',
-        queryError instanceof Error ? queryError.message : undefined
+        'Failed to retrieve joinable sessions.',
+        queryError instanceof Error ? queryError.message : undefined,
+        ERROR_CODES.JOINABLE_SESSIONS_FETCH_FAILED
       );
     }
   } catch (error: unknown) {

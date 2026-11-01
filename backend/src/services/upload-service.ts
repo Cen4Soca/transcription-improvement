@@ -2,6 +2,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import { AppError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 
 // --- Constants ---
 
@@ -87,7 +88,7 @@ export function validateUpload(params: ValidateUploadParams): ValidateUploadResu
   if (!ext || !(ALLOWED_EXTENSIONS as readonly string[]).includes(ext)) {
     return {
       valid: false,
-      error: 'サポートされていないファイル形式です。サポートされる形式: mp3, wav, flac, ogg, m4a, amr, webm, mp4, mkv, avi, mov',
+      error: 'Unsupported file format. Supported formats: mp3, wav, flac, ogg, m4a, amr, webm, mp4, mkv, avi, mov',
       errorCode: 'UNSUPPORTED_FILE_FORMAT',
       supportedFormats: [...ALLOWED_EXTENSIONS],
     };
@@ -97,7 +98,7 @@ export function validateUpload(params: ValidateUploadParams): ValidateUploadResu
   if (fileSize > MAX_FILE_SIZE) {
     return {
       valid: false,
-      error: 'ファイルサイズが上限を超えています。最大ファイルサイズ: 2GB',
+      error: 'File size exceeds the limit. Maximum file size: 2GB',
       errorCode: 'FILE_SIZE_EXCEEDED',
       maxFileSize: '2GB',
     };
@@ -106,7 +107,7 @@ export function validateUpload(params: ValidateUploadParams): ValidateUploadResu
   if (fileSize <= 0) {
     return {
       valid: false,
-      error: 'ファイルサイズが無効です。',
+      error: 'File size is invalid.',
       errorCode: 'INVALID_FILE_SIZE',
     };
   }
@@ -142,9 +143,10 @@ export async function generatePresignedUrl(params: GenerateUrlParams): Promise<P
   if (!MEDIA_BUCKET_NAME) {
     throw new AppError({
       code: 'CONFIGURATION_ERROR',
-      message: 'メディアバケットの設定が不足しています。',
+      message: 'Media bucket configuration is missing.',
       statusCode: 500,
       details: 'MEDIA_BUCKET_NAME environment variable is not set',
+      errorCode: ERROR_CODES.MEDIA_CONFIG_MISSING,
     });
   }
 

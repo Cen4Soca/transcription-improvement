@@ -22,7 +22,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -155,7 +155,7 @@ describe('GET /admin/teams - listTeamsHandler', () => {
     mockedListTeams.mockRejectedValue(
       new AppError({
         code: 'FORBIDDEN',
-        message: 'この操作を実行する権限がありません。',
+        message: 'You do not have permission to perform this operation.',
         statusCode: 403,
       })
     );
@@ -197,7 +197,7 @@ describe('POST /admin/teams - createTeamHandler', () => {
     mockedCreateNewTeam.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'チーム名は必須です。',
+        message: 'Team name is required.',
         statusCode: 400,
       })
     );
@@ -212,14 +212,14 @@ describe('POST /admin/teams - createTeamHandler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('チーム名は必須です。');
+    expect(body.error.message).toBe('Team name is required.');
   });
 
   it('returns 403 for REVIEWER', async () => {
     mockedCreateNewTeam.mockRejectedValue(
       new AppError({
         code: 'FORBIDDEN',
-        message: 'この操作を実行する権限がありません。',
+        message: 'You do not have permission to perform this operation.',
         statusCode: 403,
       })
     );
@@ -276,7 +276,7 @@ describe('PATCH /admin/teams/{teamId} - updateTeamHandler', () => {
     mockedUpdateExistingTeam.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'リソースが見つかりません。',
+        message: 'Resource not found',
         statusCode: 404,
       })
     );
@@ -297,7 +297,7 @@ describe('PATCH /admin/teams/{teamId} - updateTeamHandler', () => {
     mockedUpdateExistingTeam.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'チームが見つかりません。',
+        message: 'Team not found',
         statusCode: 404,
       })
     );
@@ -312,7 +312,7 @@ describe('PATCH /admin/teams/{teamId} - updateTeamHandler', () => {
 
     expect(result.statusCode).toBe(404);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toBe('チームが見つかりません。');
+    expect(body.error.message).toBe('Team not found');
   });
 });
 
@@ -344,7 +344,7 @@ describe('DELETE /admin/teams/{teamId} - deleteTeamHandler', () => {
     mockedDeleteExistingTeam.mockRejectedValue(
       new AppError({
         code: 'FORBIDDEN',
-        message: 'チームの削除はAdmin権限が必要です。',
+        message: 'Deleting a team requires Admin privileges.',
         statusCode: 403,
       })
     );
@@ -358,14 +358,14 @@ describe('DELETE /admin/teams/{teamId} - deleteTeamHandler', () => {
 
     expect(result.statusCode).toBe(403);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toBe('チームの削除はAdmin権限が必要です。');
+    expect(body.error.message).toBe('Deleting a team requires Admin privileges.');
   });
 
   it('returns 404 when team does not exist', async () => {
     mockedDeleteExistingTeam.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'チームが見つかりません。',
+        message: 'Team not found',
         statusCode: 404,
       })
     );
@@ -433,7 +433,7 @@ describe('POST /admin/teams/{teamId}/members - addTeamMemberHandler', () => {
     mockedAddMemberToTeam.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'リソースが見つかりません。',
+        message: 'Resource not found',
         statusCode: 404,
       })
     );

@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -105,7 +105,7 @@ describe('DELETE /media-files/{mediaFileId} handler', () => {
 
     expect(result.statusCode).toBe(200);
     const body = JSON.parse(result.body as string);
-    expect(body.message).toBe('メディアファイルを削除しました。');
+    expect(body.message).toBe('The media file was deleted.');
     expect(mockedDeleteMediaFile).toHaveBeenCalledWith({
       mediaFileId: 'media-001',
       user: expect.objectContaining({
@@ -169,7 +169,7 @@ describe('DELETE /media-files/{mediaFileId} handler', () => {
     mockedDeleteMediaFile.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: '指定されたメディアファイルが見つかりません。',
+        message: 'Media file not found',
         statusCode: 404,
       })
     );

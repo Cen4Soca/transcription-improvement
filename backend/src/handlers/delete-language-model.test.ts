@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -147,7 +147,7 @@ describe('DELETE /language-models/{modelName} handler', () => {
       mockedDeleteModel.mockRejectedValue(
         new AppError({
           code: 'VALIDATION_ERROR',
-          message: 'モデルの学習が進行中のため削除できません。学習の完了後に再度お試しください。',
+          message: 'The model cannot be deleted while training is in progress. Try again after training completes.',
           statusCode: 400,
         })
       );
@@ -166,7 +166,7 @@ describe('DELETE /language-models/{modelName} handler', () => {
         new AppError({
           code: 'VALIDATION_ERROR',
           message:
-            '実行中の文字起こしジョブがこのモデルを使用しているため削除できません。ジョブの完了後に再度お試しください。',
+            'The model cannot be deleted because a running transcription job is using it. Try again after the job completes.',
           statusCode: 400,
         })
       );
@@ -186,7 +186,7 @@ describe('DELETE /language-models/{modelName} handler', () => {
       mockedDeleteModel.mockRejectedValue(
         new AppError({
           code: 'FORBIDDEN',
-          message: 'この操作を実行する権限がありません。',
+          message: 'You do not have permission to perform this operation.',
           statusCode: 403,
         })
       );
@@ -204,7 +204,7 @@ describe('DELETE /language-models/{modelName} handler', () => {
       mockedDeleteModel.mockRejectedValue(
         new AppError({
           code: 'NOT_FOUND',
-          message: 'リソースが見つかりません。',
+          message: 'Resource not found',
           statusCode: 404,
         })
       );
@@ -228,7 +228,7 @@ describe('DELETE /language-models/{modelName} handler', () => {
       expect(result.statusCode).toBe(500);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('INTERNAL_ERROR');
-      expect(body.error.message).toBe('モデルの削除に失敗しました。');
+      expect(body.error.message).toBe('Failed to delete the model.');
       expect(body.error.details).toBe('DynamoDB delete failed');
     });
   });

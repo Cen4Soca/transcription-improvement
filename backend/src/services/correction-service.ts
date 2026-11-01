@@ -1,5 +1,6 @@
 import { type AuthUser } from '../utils/auth-middleware.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   saveCorrection,
   updateSessionStatusToInProgress,
@@ -32,20 +33,32 @@ const VALID_CORRECTION_TYPES = ['TEXT', 'SPEAKER', 'SPEAKER_RENAME'] as const;
  */
 export function validateCorrectionInput(body: unknown): CreateCorrectionInput {
   if (!body || typeof body !== 'object') {
-    throw validationError('リクエストボディが不正です。');
+    throw validationError(
+      'Request body is invalid.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 
   const input = body as Record<string, unknown>;
 
   if (!input.correctionId || typeof input.correctionId !== 'string') {
-    throw validationError('correctionId は必須です。');
+    throw validationError(
+      'correctionId is required.',
+      undefined,
+      ERROR_CODES.CORRECTION_ID_REQUIRED
+    );
   }
 
   // segmentId must be a string, but an empty string is valid: SPEAKER_RENAME is a
   // bulk operation not tied to a specific segment and sends segmentId: ''.
   // Using `!input.segmentId` here dropped those requests (empty string is falsy).
   if (typeof input.segmentId !== 'string') {
-    throw validationError('segmentId は必須です。');
+    throw validationError(
+      'segmentId is required.',
+      undefined,
+      ERROR_CODES.SEGMENT_ID_REQUIRED
+    );
   }
 
   if (
@@ -53,16 +66,26 @@ export function validateCorrectionInput(body: unknown): CreateCorrectionInput {
     !VALID_CORRECTION_TYPES.includes(input.correctionType as typeof VALID_CORRECTION_TYPES[number])
   ) {
     throw validationError(
-      'correctionType は TEXT, SPEAKER, SPEAKER_RENAME のいずれかである必要があります。'
+      'correctionType must be one of TEXT, SPEAKER, or SPEAKER_RENAME.',
+      undefined,
+      ERROR_CODES.CORRECTION_TYPE_INVALID
     );
   }
 
   if (typeof input.beforeText !== 'string') {
-    throw validationError('beforeText は必須です。');
+    throw validationError(
+      'beforeText is required.',
+      undefined,
+      ERROR_CODES.BEFORE_TEXT_REQUIRED
+    );
   }
 
   if (typeof input.afterText !== 'string') {
-    throw validationError('afterText は必須です。');
+    throw validationError(
+      'afterText is required.',
+      undefined,
+      ERROR_CODES.AFTER_TEXT_REQUIRED
+    );
   }
 
   return {
@@ -93,7 +116,11 @@ export async function createCorrection(
 ): Promise<CreateCorrectionResult> {
   const session = await getSessionById(sessionId);
   if (!session) {
-    throw validationError('指定されたセッションが見つかりません。');
+    throw validationError(
+      'Session not found',
+      undefined,
+      ERROR_CODES.SESSION_NOT_FOUND
+    );
   }
   assertSessionEditable(session);
 
@@ -135,8 +162,9 @@ export async function createCorrection(
       throw error;
     }
     throw internalError(
-      '修正内容の保存に失敗しました。',
-      error instanceof Error ? error.message : undefined
+      'Failed to save the correction.',
+      error instanceof Error ? error.message : undefined,
+      ERROR_CODES.CORRECTION_SAVE_FAILED
     );
   }
 }

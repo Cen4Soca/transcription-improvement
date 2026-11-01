@@ -39,7 +39,7 @@ describe('media-service', () => {
       await expect(getMediaFileForSession('session-123')).rejects.toMatchObject({
         statusCode: 404,
         code: 'NOT_FOUND',
-        message: 'メディアファイルが見つかりません。',
+        message: 'Media file not found',
       });
     });
 
@@ -61,7 +61,7 @@ describe('media-service', () => {
       await expect(getMediaFileForSession('session-123')).rejects.toMatchObject({
         statusCode: 403,
         code: 'FORBIDDEN',
-        message: 'マルウェアスキャン完了前のファイルにはアクセスできません',
+        message: 'This file cannot be accessed until the malware scan is complete.',
       });
     });
 
@@ -83,7 +83,7 @@ describe('media-service', () => {
       await expect(getMediaFileForSession('session-123')).rejects.toMatchObject({
         statusCode: 403,
         code: 'FORBIDDEN',
-        message: 'マルウェアスキャン完了前のファイルにはアクセスできません',
+        message: 'This file cannot be accessed until the malware scan is complete.',
       });
     });
 
@@ -105,7 +105,7 @@ describe('media-service', () => {
       await expect(getMediaFileForSession('session-123')).rejects.toMatchObject({
         statusCode: 403,
         code: 'FORBIDDEN',
-        message: 'マルウェアが検出されたファイルにはアクセスできません',
+        message: 'This file cannot be accessed because malware was detected.',
       });
     });
 

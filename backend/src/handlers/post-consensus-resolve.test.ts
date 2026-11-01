@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -153,7 +153,7 @@ describe('POST /consensus/{sessionId}/resolve handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('リクエストボディが必要です');
+      expect(body.error.message).toContain('A request body is required');
     });
 
     it('returns 400 when body is invalid JSON', async () => {
@@ -163,7 +163,7 @@ describe('POST /consensus/{sessionId}/resolve handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('JSON形式が不正');
+      expect(body.error.message).toContain('not valid JSON');
     });
 
     it('returns 400 when segmentId is missing', async () => {
@@ -231,7 +231,7 @@ describe('POST /consensus/{sessionId}/resolve handler', () => {
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
       expect(body.error.message).toBe(
-        'このセッションは既に完了しているため編集できません。'
+        'This session is already completed and cannot be edited.'
       );
       // The segment query must not run once the session is rejected.
       expect(mockSend).not.toHaveBeenCalled();
@@ -266,7 +266,7 @@ describe('POST /consensus/{sessionId}/resolve handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('競合解決待ち');
+      expect(body.error.message).toContain('awaiting conflict resolution');
     });
 
     it('returns 400 when segment is UNDECIDED', async () => {
@@ -287,7 +287,7 @@ describe('POST /consensus/{sessionId}/resolve handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('競合解決待ち');
+      expect(body.error.message).toContain('awaiting conflict resolution');
     });
 
     it('allows empty string as selectedText', async () => {
@@ -335,7 +335,7 @@ describe('POST /consensus/{sessionId}/resolve handler', () => {
       expect(result.statusCode).toBe(500);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('INTERNAL_ERROR');
-      expect(body.error.message).toBe('競合解決の保存に失敗しました。');
+      expect(body.error.message).toBe('Failed to save the conflict resolution.');
     });
   });
 });

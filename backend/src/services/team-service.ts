@@ -44,6 +44,7 @@ import {
   notFoundError,
   forbiddenError,
 } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 
 // ============================================================
 // Team CRUD
@@ -57,7 +58,11 @@ import {
  */
 export async function listTeams(user: AuthUser): Promise<TeamRecord[]> {
   if (!isAdmin(user) && user.role !== 'TEAM_LEADER') {
-    throw forbiddenError('この操作を実行する権限がありません。');
+    throw forbiddenError(
+      'You do not have permission to perform this operation.',
+      undefined,
+      ERROR_CODES.OPERATION_FORBIDDEN
+    );
   }
 
   return isAdmin(user)
@@ -75,11 +80,19 @@ export async function createNewTeam(
   input: { name: string; members?: string[] }
 ): Promise<TeamRecord> {
   if (!isAdmin(user) && user.role !== 'TEAM_LEADER') {
-    throw forbiddenError('この操作を実行する権限がありません。');
+    throw forbiddenError(
+      'You do not have permission to perform this operation.',
+      undefined,
+      ERROR_CODES.OPERATION_FORBIDDEN
+    );
   }
 
   if (!input.name || input.name.trim() === '') {
-    throw validationError('チーム名は必須です。');
+    throw validationError(
+      'Team name is required.',
+      undefined,
+      ERROR_CODES.TEAM_NAME_REQUIRED
+    );
   }
 
   const teamId = uuidv4();
@@ -118,14 +131,22 @@ export async function updateExistingTeam(
 ): Promise<TeamRecord> {
   const existingTeam = await getTeamById(teamId);
   if (!existingTeam) {
-    throw notFoundError('チームが見つかりません。');
+    throw notFoundError(
+      'Team not found',
+      undefined,
+      ERROR_CODES.TEAM_NOT_FOUND
+    );
   }
 
   // TEAM_LEADER can only manage their own team (Req 13.9)
   await requireTeamAccess(user, teamId);
 
   if (!input.name || input.name.trim() === '') {
-    throw validationError('チーム名は必須です。');
+    throw validationError(
+      'Team name is required.',
+      undefined,
+      ERROR_CODES.TEAM_NAME_REQUIRED
+    );
   }
 
   return await updateTeam(teamId, { name: input.name.trim() });
@@ -146,12 +167,20 @@ export async function deleteExistingTeam(
   teamId: string
 ): Promise<void> {
   if (!isAdmin(user)) {
-    throw forbiddenError('チームの削除はAdmin権限が必要です。');
+    throw forbiddenError(
+      'Deleting a team requires Admin privileges.',
+      undefined,
+      ERROR_CODES.TEAM_ADMIN_REQUIRED
+    );
   }
 
   const existingTeam = await getTeamById(teamId);
   if (!existingTeam) {
-    throw notFoundError('チームが見つかりません。');
+    throw notFoundError(
+      'Team not found',
+      undefined,
+      ERROR_CODES.TEAM_NOT_FOUND
+    );
   }
 
   // Get members before deletion (needed for membership loss check)
@@ -223,7 +252,11 @@ export async function addMemberToTeam(
   userId: string
 ): Promise<TeamMembershipRecord> {
   if (!userId || typeof userId !== 'string') {
-    throw validationError('ユーザーIDは必須です。');
+    throw validationError(
+      'User ID is required.',
+      undefined,
+      ERROR_CODES.USER_ID_REQUIRED
+    );
   }
 
   await requireTeamAccess(user, teamId);
@@ -244,7 +277,11 @@ export async function removeMemberFromTeam(
   userId: string
 ): Promise<void> {
   if (!userId || typeof userId !== 'string') {
-    throw validationError('ユーザーIDは必須です。');
+    throw validationError(
+      'User ID is required.',
+      undefined,
+      ERROR_CODES.USER_ID_REQUIRED
+    );
   }
 
   await requireTeamAccess(user, teamId);
@@ -284,7 +321,11 @@ export async function createAssignment(
   sessionId: string
 ): Promise<TeamAssignmentRecord> {
   if (!sessionId || typeof sessionId !== 'string') {
-    throw validationError('セッションIDは必須です。');
+    throw validationError(
+      'Session ID is required.',
+      undefined,
+      ERROR_CODES.SESSION_ID_REQUIRED
+    );
   }
 
   await requireTeamAccess(user, teamId);
@@ -308,7 +349,11 @@ export async function deleteAssignment(
   sessionId: string
 ): Promise<void> {
   if (!sessionId || typeof sessionId !== 'string') {
-    throw validationError('セッションIDは必須です。');
+    throw validationError(
+      'Session ID is required.',
+      undefined,
+      ERROR_CODES.SESSION_ID_REQUIRED
+    );
   }
 
   await requireTeamAccess(user, teamId);
@@ -333,10 +378,18 @@ export async function createUserReviewAssignment(
   sessionId: string
 ): Promise<ReviewAssignmentRecord> {
   if (!targetUserId || typeof targetUserId !== 'string') {
-    throw validationError('ユーザーIDは必須です。');
+    throw validationError(
+      'User ID is required.',
+      undefined,
+      ERROR_CODES.USER_ID_REQUIRED
+    );
   }
   if (!sessionId || typeof sessionId !== 'string') {
-    throw validationError('セッションIDは必須です。');
+    throw validationError(
+      'Session ID is required.',
+      undefined,
+      ERROR_CODES.SESSION_ID_REQUIRED
+    );
   }
 
   // TEAM_LEADER can only manage their own team (Req 13.9)
@@ -346,7 +399,9 @@ export async function createUserReviewAssignment(
   const memberOfTeam = await isTeamMember(targetUserId, teamId);
   if (!memberOfTeam) {
     throw forbiddenError(
-      '対象ユーザーはこのチームのメンバーではありません。'
+      'The target user is not a member of this team.',
+      undefined,
+      ERROR_CODES.USER_NOT_TEAM_MEMBER
     );
   }
 

@@ -364,7 +364,7 @@ describe('auth-middleware', () => {
       } catch (e) {
         expect(e).toBeInstanceOf(AppError);
         expect((e as AppError).statusCode).toBe(403);
-        expect((e as AppError).message).toBe('アカウントが無効化されています。');
+        expect((e as AppError).message).toBe('This account has been deactivated.');
       }
     });
   });
@@ -416,7 +416,7 @@ describe('auth-middleware', () => {
         requireRole(reviewer, 'ADMIN');
       } catch (e) {
         expect((e as AppError).statusCode).toBe(403);
-        expect((e as AppError).message).toBe('この操作を実行する権限がありません。');
+        expect((e as AppError).message).toBe('You do not have permission to perform this operation.');
       }
     });
   });
@@ -428,7 +428,7 @@ describe('auth-middleware', () => {
         denyResourceAccess();
       } catch (e) {
         expect((e as AppError).statusCode).toBe(404);
-        expect((e as AppError).message).toBe('リソースが見つかりません。');
+        expect((e as AppError).message).toBe('Resource not found');
       }
     });
   });
@@ -491,7 +491,7 @@ describe('auth-middleware', () => {
       } catch (e) {
         expect(e).toBeInstanceOf(AppError);
         expect((e as AppError).statusCode).toBe(403);
-        expect((e as AppError).message).toBe('アカウントが無効化されています。');
+        expect((e as AppError).message).toBe('This account has been deactivated.');
       }
     });
 
@@ -506,7 +506,7 @@ describe('auth-middleware', () => {
       } catch (e) {
         expect(e).toBeInstanceOf(AppError);
         expect((e as AppError).statusCode).toBe(403);
-        expect((e as AppError).message).toBe('ユーザーアカウントが見つかりません。');
+        expect((e as AppError).message).toBe('The user account was not found.');
       }
     });
   });

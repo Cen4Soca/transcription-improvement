@@ -17,6 +17,7 @@ import { UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 
 interface ConsensusSettingsBody {
@@ -55,25 +56,39 @@ export async function handler(
  */
 function parseBody(rawBody: string | undefined): ConsensusSettingsBody {
   if (!rawBody) {
-    throw validationError('リクエストボディが必要です。');
+    throw validationError(
+      'A request body is required.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_REQUIRED
+    );
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawBody);
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 
   if (typeof parsed !== 'object' || parsed === null) {
-    throw validationError('リクエストボディはオブジェクトである必要があります。');
+    throw validationError(
+      'The request body must be an object.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_NOT_OBJECT
+    );
   }
 
   const obj = parsed as Record<string, unknown>;
 
   if (typeof obj['partialAggregationEnabled'] !== 'boolean') {
     throw validationError(
-      'partialAggregationEnabled は boolean 型で指定してください。'
+      'partialAggregationEnabled must be a boolean.',
+      undefined,
+      ERROR_CODES.CONSENSUS_SETTINGS_INVALID
     );
   }
 
@@ -112,8 +127,9 @@ async function updateConsensusSettings(
     );
   } catch (error: unknown) {
     throw internalError(
-      'Consensus 設定の更新に失敗しました。',
-      error instanceof Error ? error.message : undefined
+      'Failed to update the consensus settings.',
+      error instanceof Error ? error.message : undefined,
+      ERROR_CODES.CONSENSUS_SETTINGS_UPDATE_FAILED
     );
   }
 }

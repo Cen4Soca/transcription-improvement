@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -206,7 +206,7 @@ describe('GET /admin/audit-logs - listAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('無効な操作種別');
+    expect(body.error.message).toContain('Invalid operation type');
   });
 
   it('returns 400 for invalid page number', async () => {
@@ -217,7 +217,7 @@ describe('GET /admin/audit-logs - listAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ページ番号は1以上');
+    expect(body.error.message).toContain('The page number must be an integer of at least 1');
   });
 
   it('returns 400 for non-numeric page', async () => {
@@ -228,7 +228,7 @@ describe('GET /admin/audit-logs - listAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ページ番号は1以上');
+    expect(body.error.message).toContain('The page number must be an integer of at least 1');
   });
 
   it('returns 400 for invalid startDate format', async () => {
@@ -239,7 +239,7 @@ describe('GET /admin/audit-logs - listAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('開始日はISO 8601形式');
+    expect(body.error.message).toContain('startDate must be in ISO 8601 format');
   });
 
   it('returns 400 for invalid endDate format', async () => {
@@ -250,7 +250,7 @@ describe('GET /admin/audit-logs - listAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('終了日はISO 8601形式');
+    expect(body.error.message).toContain('endDate must be in ISO 8601 format');
   });
 
   it('defaults to page 1 when page is not provided', async () => {
@@ -464,7 +464,7 @@ describe('DELETE /admin/audit-logs - deleteAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('削除条件を少なくとも1つ指定');
+    expect(body.error.message).toContain('at least one deletion criterion');
   });
 
   it('returns 400 when body is empty', async () => {
@@ -476,7 +476,7 @@ describe('DELETE /admin/audit-logs - deleteAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('削除条件を少なくとも1つ指定');
+    expect(body.error.message).toContain('at least one deletion criterion');
   });
 
   it('returns 400 for invalid operationType', async () => {
@@ -488,7 +488,7 @@ describe('DELETE /admin/audit-logs - deleteAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('無効な操作種別');
+    expect(body.error.message).toContain('Invalid operation type');
   });
 
   it('accepts the new language-model operation types in the body', async () => {
@@ -526,7 +526,7 @@ describe('DELETE /admin/audit-logs - deleteAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('JSON形式が不正');
+    expect(body.error.message).toContain('not valid JSON');
   });
 
   it('returns 400 for invalid startDate format', async () => {
@@ -538,7 +538,7 @@ describe('DELETE /admin/audit-logs - deleteAuditLogsHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('開始日はISO 8601形式');
+    expect(body.error.message).toContain('startDate must be in ISO 8601 format');
   });
 
   it('deletes with combined filters (date range + actorUserId + operationType)', async () => {

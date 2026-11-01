@@ -1,5 +1,6 @@
 import type { APIGatewayProxyResultV2 } from 'aws-lambda';
 import { AppError } from './error-handler.js';
+import { ERROR_CODES } from './error-codes.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN ?? '*',
@@ -31,6 +32,7 @@ export function errorResponse(error: unknown): APIGatewayProxyResultV2 {
           code: error.code,
           message: error.message,
           ...(error.details ? { details: error.details } : {}),
+          ...(error.errorCode ? { errorCode: error.errorCode } : {}),
         },
       }),
     };
@@ -40,7 +42,7 @@ export function errorResponse(error: unknown): APIGatewayProxyResultV2 {
     error instanceof Error ? error.message : 'An unexpected error occurred';
 
   // Unexpected (non-AppError) failures surface to the client only as a generic
-  // "予期しないエラーが発生しました。" message, so log the real error server-side
+  // "An unexpected error occurred." message, so log the real error server-side
   // (CloudWatch) to make the root cause diagnosable.
   console.error('Unhandled error in Lambda handler:', error);
 
@@ -53,8 +55,9 @@ export function errorResponse(error: unknown): APIGatewayProxyResultV2 {
     body: JSON.stringify({
       error: {
         code: 'INTERNAL_ERROR',
-        message: '予期しないエラーが発生しました。',
+        message: 'An unexpected error occurred.',
         details: message,
+        errorCode: ERROR_CODES.INTERNAL_ERROR,
       },
     }),
   };

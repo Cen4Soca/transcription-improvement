@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -137,7 +137,7 @@ describe('GET /transcription-jobs/{jobId} handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('jobId パスパラメータは必須です。');
+    expect(body.error.message).toBe('The jobId path parameter is required.');
   });
 
   it('returns 403 when JWT sub claim is missing', async () => {
@@ -154,7 +154,7 @@ describe('GET /transcription-jobs/{jobId} handler', () => {
     mockedGetJobStatusFromTranscribe.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: '指定された Transcription ジョブが見つかりません。',
+        message: 'Transcription job not found',
         statusCode: 404,
       })
     );
@@ -165,7 +165,7 @@ describe('GET /transcription-jobs/{jobId} handler', () => {
     expect(result.statusCode).toBe(404);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('NOT_FOUND');
-    expect(body.error.message).toBe('指定された Transcription ジョブが見つかりません。');
+    expect(body.error.message).toBe('Transcription job not found');
   });
 
   it('returns COMPLETED status when job is completed', async () => {

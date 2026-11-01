@@ -1,6 +1,7 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import { notFoundError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import * as sessionRepository from '../repositories/session-repository.js';
 import { getCorrections } from '../repositories/correction-repository.js';
 
@@ -279,7 +280,11 @@ export async function generateJson(
 ): Promise<TranscriptionJson> {
   const session = await sessionRepository.getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定された ReviewSession が見つかりません。');
+    throw notFoundError(
+      'ReviewSession not found',
+      undefined,
+      ERROR_CODES.REVIEW_SESSION_NOT_FOUND
+    );
   }
 
   // Include ALL segments, not just CONFIRMED ones. getSessionSegments already
@@ -312,7 +317,11 @@ export async function generateSrt(
 ): Promise<string> {
   const session = await sessionRepository.getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定された ReviewSession が見つかりません。');
+    throw notFoundError(
+      'ReviewSession not found',
+      undefined,
+      ERROR_CODES.REVIEW_SESSION_NOT_FOUND
+    );
   }
 
   // Include ALL segments, not just CONFIRMED ones (see generateJson).

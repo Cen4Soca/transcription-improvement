@@ -28,7 +28,7 @@ describe('Feature: transcription-workflow-enhancements, Property 4: MaxSpeakerLa
       fc.property(fc.integer({ min: -100, max: 1 }), (value) => {
         const result = validateMaxSpeakers(value);
         expect(result.valid).toBe(false);
-        expect(result.error).toContain('2〜10');
+        expect(result.error).toContain('between 2 and 10');
       }),
       { numRuns: 100 }
     );
@@ -39,7 +39,7 @@ describe('Feature: transcription-workflow-enhancements, Property 4: MaxSpeakerLa
       fc.property(fc.integer({ min: 11, max: 200 }), (value) => {
         const result = validateMaxSpeakers(value);
         expect(result.valid).toBe(false);
-        expect(result.error).toContain('2〜10');
+        expect(result.error).toContain('between 2 and 10');
       }),
       { numRuns: 100 }
     );
@@ -52,7 +52,7 @@ describe('Feature: transcription-workflow-enhancements, Property 4: MaxSpeakerLa
         (value) => {
           const result = validateMaxSpeakers(value);
           expect(result.valid).toBe(false);
-          expect(result.error).toContain('整数');
+          expect(result.error).toContain('must be an integer');
         }
       ),
       { numRuns: 100 }

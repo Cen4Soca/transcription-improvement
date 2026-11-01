@@ -19,6 +19,7 @@ import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import type { RankingDisplayScope, RankingSettings } from '../types/index.js';
 
@@ -40,8 +41,9 @@ export async function getHandler(
       return successResponse({ data: settings });
     } catch (queryError: unknown) {
       throw internalError(
-        'ランキング設定の取得に失敗しました。',
-        queryError instanceof Error ? queryError.message : undefined
+        'Failed to retrieve the ranking settings.',
+        queryError instanceof Error ? queryError.message : undefined,
+        ERROR_CODES.RANKING_SETTINGS_FETCH_FAILED
       );
     }
   } catch (error: unknown) {
@@ -94,8 +96,9 @@ export async function patchHandler(
       return successResponse({ data: settings });
     } catch (updateError: unknown) {
       throw internalError(
-        'ランキング設定の更新に失敗しました。',
-        updateError instanceof Error ? updateError.message : undefined
+        'Failed to update the ranking settings.',
+        updateError instanceof Error ? updateError.message : undefined,
+        ERROR_CODES.RANKING_SETTINGS_UPDATE_FAILED
       );
     }
   } catch (error: unknown) {
@@ -140,18 +143,30 @@ export async function getRankingSettings(): Promise<RankingSettings> {
  */
 function parseBody(rawBody: string | undefined): { displayScope: RankingDisplayScope; topN?: number } {
   if (!rawBody) {
-    throw validationError('リクエストボディが必要です。');
+    throw validationError(
+      'A request body is required.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_REQUIRED
+    );
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawBody);
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 
   if (typeof parsed !== 'object' || parsed === null) {
-    throw validationError('リクエストボディはオブジェクトである必要があります。');
+    throw validationError(
+      'The request body must be an object.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_NOT_OBJECT
+    );
   }
 
   const obj = parsed as Record<string, unknown>;
@@ -159,7 +174,9 @@ function parseBody(rawBody: string | undefined): { displayScope: RankingDisplayS
   const displayScope = obj['displayScope'];
   if (typeof displayScope !== 'string' || !isValidDisplayScope(displayScope)) {
     throw validationError(
-      'displayScope は ALL_USERS, TEAM_ONLY, TOP_N のいずれかを指定してください。'
+      'displayScope must be one of ALL_USERS, TEAM_ONLY, or TOP_N.',
+      undefined,
+      ERROR_CODES.RANKING_DISPLAY_SCOPE_INVALID
     );
   }
 
@@ -167,7 +184,9 @@ function parseBody(rawBody: string | undefined): { displayScope: RankingDisplayS
   if (displayScope === 'TOP_N') {
     if (typeof obj['topN'] !== 'number' || obj['topN'] < 1 || !Number.isInteger(obj['topN'])) {
       throw validationError(
-        'displayScope が TOP_N の場合、topN は1以上の整数で指定してください。'
+        'When displayScope is TOP_N, topN must be an integer of at least 1.',
+        undefined,
+        ERROR_CODES.RANKING_TOP_N_INVALID
       );
     }
     topN = obj['topN'] as number;

@@ -19,7 +19,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -248,7 +248,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toContain('CIDRブロックは必須');
+    expect(body.error.message).toContain('The CIDR block is required');
   });
 
   it('returns 400 when cidr is not a string', async () => {
@@ -272,7 +272,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('JSON形式が不正');
+    expect(body.error.message).toContain('not valid JSON');
   });
 
   it('returns 400 when CIDR format is invalid (delegated to service)', async () => {
@@ -280,7 +280,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
     mockedAddEntry.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'CIDR形式が無効です。IPv4（例: 192.168.1.0/24）またはIPv6（例: 2001:db8::/32）の形式で入力してください。',
+        message: 'Invalid CIDR format. Enter an IPv4 (e.g. 192.168.1.0/24) or IPv6 (e.g. 2001:db8::/32) value.',
         statusCode: 400,
       })
     );
@@ -294,7 +294,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toContain('CIDR形式が無効');
+    expect(body.error.message).toContain('Invalid CIDR format');
   });
 
   it('returns 400 when max entries limit reached (delegated to service)', async () => {
@@ -302,7 +302,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
     mockedAddEntry.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'IPアドレス許可リストの最大件数（1000件）に達しています。',
+        message: 'The IP allowlist has reached its maximum of 1000 entries. Delete an existing entry before adding a new one.',
         statusCode: 400,
       })
     );
@@ -315,7 +315,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('最大件数');
+    expect(body.error.message).toContain('maximum of');
   });
 
   it('returns 500 when WAF update fails (fail-closed)', async () => {
@@ -323,7 +323,7 @@ describe('POST /admin/ip-allowlist - addIPAllowlistHandler', () => {
     mockedAddEntry.mockRejectedValue(
       new AppError({
         code: 'INTERNAL_ERROR',
-        message: 'WAF IPセットの更新に失敗しました。',
+        message: 'Failed to update the WAF IP set.',
         statusCode: 500,
       })
     );
@@ -379,7 +379,7 @@ describe('DELETE /admin/ip-allowlist/{entryId} - deleteIPAllowlistHandler', () =
 
     expect(result.statusCode).toBe(200);
     const body = JSON.parse(result.body as string);
-    expect(body.data.message).toContain('削除しました');
+    expect(body.data.message).toContain('was deleted');
     expect(mockedDeleteEntry).toHaveBeenCalledWith(
       'entry-001',
       { userId: 'admin-001', email: 'admin@example.com', displayName: 'Admin User', role: 'ADMIN' }
@@ -396,7 +396,7 @@ describe('DELETE /admin/ip-allowlist/{entryId} - deleteIPAllowlistHandler', () =
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('エントリIDは必須');
+    expect(body.error.message).toContain('The entry ID is required');
   });
 
   it('returns 400 when entry does not exist (delegated to service)', async () => {
@@ -404,7 +404,7 @@ describe('DELETE /admin/ip-allowlist/{entryId} - deleteIPAllowlistHandler', () =
     mockedDeleteEntry.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: '指定されたIPアドレスエントリが見つかりません。',
+        message: 'The specified IP address entry was not found.',
         statusCode: 400,
       })
     );
@@ -418,7 +418,7 @@ describe('DELETE /admin/ip-allowlist/{entryId} - deleteIPAllowlistHandler', () =
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('見つかりません');
+    expect(body.error.message).toContain('not found');
   });
 
   it('returns 500 when WAF update fails on delete (fail-closed)', async () => {
@@ -426,7 +426,7 @@ describe('DELETE /admin/ip-allowlist/{entryId} - deleteIPAllowlistHandler', () =
     mockedDeleteEntry.mockRejectedValue(
       new AppError({
         code: 'INTERNAL_ERROR',
-        message: 'WAF IPセットの更新に失敗しました。',
+        message: 'Failed to update the WAF IP set.',
         statusCode: 500,
       })
     );

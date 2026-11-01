@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   listAssignments,
   createAssignment,
@@ -30,7 +31,11 @@ export async function listTeamAssignmentsHandler(
     const teamId = event.pathParameters?.teamId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
 
     const assignments = await listAssignments(user, teamId);
@@ -60,7 +65,11 @@ export async function createTeamAssignmentHandler(
     const teamId = event.pathParameters?.teamId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
 
     const body = parseBody(event.body);
@@ -105,10 +114,18 @@ export async function deleteTeamAssignmentHandler(
     const sessionId = event.pathParameters?.sessionId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
     if (!sessionId) {
-      throw validationError('セッションIDは必須です。');
+      throw validationError(
+        'Session ID is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     await deleteAssignment(user, teamId, sessionId);
@@ -147,7 +164,11 @@ export async function createReviewAssignmentHandler(
     const teamId = event.pathParameters?.teamId;
 
     if (!teamId) {
-      throw validationError('チームIDは必須です。');
+      throw validationError(
+        'Team ID is required.',
+        undefined,
+        ERROR_CODES.TEAM_ID_REQUIRED
+      );
     }
 
     const body = parseBody(event.body);

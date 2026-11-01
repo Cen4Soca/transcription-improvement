@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { checkSessionAccess } from '../services/access-control-service.js';
 import { renameSession } from '../services/session-service.js';
 import { recordAuditLog } from '../services/audit-service.js';
@@ -32,14 +33,22 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータが必要です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     await checkSessionAccess(user, sessionId);
 
     const body = event.body ? JSON.parse(event.body) : null;
     if (!body || !body.name || typeof body.name !== 'string') {
-      throw validationError('リクエストボディに name フィールドが必要です。');
+      throw validationError(
+        'The request body must include a name field.',
+        undefined,
+        ERROR_CODES.SESSION_NAME_FIELD_REQUIRED
+      );
     }
 
     try {
@@ -60,8 +69,9 @@ export async function handler(
         throw error;
       }
       throw internalError(
-        'セッション名の更新に失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to update the session name.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.SESSION_NAME_UPDATE_FAILED
       );
     }
   } catch (error: unknown) {

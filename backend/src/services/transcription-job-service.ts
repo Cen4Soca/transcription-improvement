@@ -8,6 +8,7 @@ import { TranscriptionJob, TranscriptionJobStatus } from '../types/transcription
 import * as transcriptionJobRepository from '../repositories/transcription-job-repository.js';
 import * as mediaFileRepository from '../repositories/media-file-repository.js';
 import { AppError, notFoundError, validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { createSessionForJob } from './session-service.js';
 import { isAdmin, type AuthUser } from '../utils/auth-middleware.js';
 import {
@@ -65,13 +66,13 @@ export function validateMaxSpeakers(value: number): { valid: boolean; error?: st
   if (!Number.isInteger(value)) {
     return {
       valid: false,
-      error: 'MaxSpeakerLabels は整数で指定してください。',
+      error: 'MaxSpeakerLabels must be an integer.',
     };
   }
   if (value < 2 || value > 10) {
     return {
       valid: false,
-      error: 'MaxSpeakerLabels は 2〜10 の範囲で指定してください。',
+      error: 'MaxSpeakerLabels must be between 2 and 10.',
     };
   }
   return { valid: true };
@@ -124,16 +125,21 @@ export async function startJob(params: StartJobParams): Promise<TranscriptionJob
   if (!mediaBucket || !dataBucket) {
     throw new AppError({
       code: 'CONFIGURATION_ERROR',
-      message: 'バケットの設定が不足しています。',
+      message: 'Bucket configuration is missing.',
       statusCode: 500,
       details: 'MEDIA_BUCKET_NAME or DATA_BUCKET_NAME environment variable is not set',
+      errorCode: ERROR_CODES.BUCKET_CONFIG_MISSING,
     });
   }
 
   // Get MediaFile to obtain S3 key
   const mediaFile = await mediaFileRepository.getById(mediaFileId);
   if (!mediaFile) {
-    throw notFoundError('指定されたメディアファイルが見つかりません。');
+    throw notFoundError(
+      'Media file not found',
+      undefined,
+      ERROR_CODES.MEDIA_FILE_NOT_FOUND
+    );
   }
 
   // Generate unique job identifiers
@@ -253,7 +259,11 @@ export async function startJob(params: StartJobParams): Promise<TranscriptionJob
 export async function getJobStatus(jobId: string): Promise<TranscriptionJob> {
   const job = await transcriptionJobRepository.getById(jobId);
   if (!job) {
-    throw notFoundError('指定された Transcription ジョブが見つかりません。');
+    throw notFoundError(
+      'Transcription job not found',
+      undefined,
+      ERROR_CODES.TRANSCRIPTION_JOB_NOT_FOUND
+    );
   }
   return job;
 }
@@ -266,7 +276,11 @@ export async function getJobStatus(jobId: string): Promise<TranscriptionJob> {
 export async function getJobStatusFromTranscribe(jobId: string): Promise<TranscriptionJob> {
   const job = await transcriptionJobRepository.getById(jobId);
   if (!job) {
-    throw notFoundError('指定された Transcription ジョブが見つかりません。');
+    throw notFoundError(
+      'Transcription job not found',
+      undefined,
+      ERROR_CODES.TRANSCRIPTION_JOB_NOT_FOUND
+    );
   }
 
   // If job is already in a terminal state, no need to poll Transcribe

@@ -14,7 +14,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -132,7 +132,7 @@ describe('POST /sessions/{sessionId}/reopen handler', () => {
 
   it('surfaces a 403 service error via errorResponse', async () => {
     mockedReopenSession.mockRejectedValue(
-      forbiddenError('自チームのセッションのみ操作できます。')
+      forbiddenError('You can only operate on sessions in your own team.')
     );
 
     const result = await handler(
@@ -145,7 +145,7 @@ describe('POST /sessions/{sessionId}/reopen handler', () => {
 
   it('surfaces a 404 service error via errorResponse', async () => {
     mockedReopenSession.mockRejectedValue(
-      notFoundError('指定されたセッションが見つかりません。')
+      notFoundError('Session not found')
     );
 
     const result = await handler(createEvent());
@@ -156,7 +156,7 @@ describe('POST /sessions/{sessionId}/reopen handler', () => {
 
   it('surfaces a 400 service error via errorResponse', async () => {
     mockedReopenSession.mockRejectedValue(
-      validationError('完了していないセッションは差し戻しできません。')
+      validationError('A session that is not completed cannot be reopened.')
     );
 
     const result = await handler(createEvent());

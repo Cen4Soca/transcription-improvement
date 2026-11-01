@@ -5,6 +5,7 @@ import type {
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { deleteTranscription } from '../services/deletion-service.js';
 
 /**
@@ -30,7 +31,11 @@ export async function handler(
     // Extract sessionId from path parameters
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータは必須です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     // Extract teamId from JWT claims (optional)
@@ -44,7 +49,7 @@ export async function handler(
       userTeamId: teamId || undefined,
     });
 
-    return successResponse({ message: 'Transcription を削除しました。' });
+    return successResponse({ message: 'The transcription was deleted.' });
   } catch (error: unknown) {
     return errorResponse(error);
   }

@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -194,7 +194,7 @@ describe('GET /admin/users - listUsersHandler', () => {
     expect(result.statusCode).toBe(403);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('FORBIDDEN');
-    expect(body.error.message).toContain('権限がありません');
+    expect(body.error.message).toContain('do not have permission');
   });
 
   it('returns 403 for TEAM_LEADER', async () => {
@@ -341,7 +341,7 @@ describe('POST /admin/users - createUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('メールアドレスは必須');
+    expect(body.error.message).toContain('Email is required');
   });
 
   it('returns 400 when displayName is missing', async () => {
@@ -356,7 +356,7 @@ describe('POST /admin/users - createUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('表示名は必須');
+    expect(body.error.message).toContain('Display name is required');
   });
 
   it('returns 400 when role is invalid', async () => {
@@ -372,7 +372,7 @@ describe('POST /admin/users - createUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ロールは REVIEWER, TEAM_LEADER, ADMIN');
+    expect(body.error.message).toContain('Role must be one of REVIEWER, TEAM_LEADER, or ADMIN');
   });
 
   it('returns 400 when email already exists', async () => {
@@ -390,7 +390,7 @@ describe('POST /admin/users - createUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('既に登録されています');
+    expect(body.error.message).toContain('already registered');
   });
 
   it('returns 400 when body is invalid JSON', async () => {
@@ -402,7 +402,7 @@ describe('POST /admin/users - createUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('JSON形式が不正');
+    expect(body.error.message).toContain('not valid JSON');
   });
 
   it('returns 500 when Cognito user creation fails', async () => {
@@ -421,7 +421,7 @@ describe('POST /admin/users - createUserHandler', () => {
 
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('Cognito へのユーザー登録に失敗');
+    expect(body.error.message).toContain('Failed to register the user in Cognito');
   });
 
   it('returns 500 when DynamoDB user creation fails', async () => {
@@ -441,7 +441,7 @@ describe('POST /admin/users - createUserHandler', () => {
 
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ユーザーの登録に失敗');
+    expect(body.error.message).toContain('Failed to register the user');
   });
 });
 
@@ -555,7 +555,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ユーザーIDは必須');
+    expect(body.error.message).toContain('User ID is required');
   });
 
   it('returns 400 when role is invalid', async () => {
@@ -569,7 +569,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ロールは REVIEWER, TEAM_LEADER, ADMIN');
+    expect(body.error.message).toContain('Role must be one of REVIEWER, TEAM_LEADER, or ADMIN');
   });
 
   it('returns 400 when isActive is not boolean', async () => {
@@ -583,7 +583,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('isActive は真偽値');
+    expect(body.error.message).toContain('isActive must be a boolean');
   });
 
   it('returns 400 when no update fields are provided', async () => {
@@ -597,7 +597,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('更新するフィールド');
+    expect(body.error.message).toContain('at least one field to update');
   });
 
   it('returns 404 when user does not exist', async () => {
@@ -613,7 +613,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
     expect(result.statusCode).toBe(404);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ユーザーが見つかりません');
+    expect(body.error.message).toContain('User not found');
   });
 
   it('returns 500 when Cognito disable fails', async () => {
@@ -630,7 +630,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('無効化処理に失敗');
+    expect(body.error.message).toContain('Failed to deactivate the user');
   });
 
   it('returns 500 when DynamoDB update fails', async () => {
@@ -647,7 +647,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ユーザー情報の更新に失敗');
+    expect(body.error.message).toContain('Failed to update the user information');
   });
 
   it('returns 500 when Cognito role update fails', async () => {
@@ -664,7 +664,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
-    expect(body.error.message).toContain('ロールの変更に失敗');
+    expect(body.error.message).toContain('Failed to change the role');
   });
 
   it('does not call updateCognitoUserRole when role is unchanged', async () => {

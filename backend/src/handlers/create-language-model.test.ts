@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -172,7 +172,7 @@ describe('POST /language-models handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('displayName は必須です。');
+    expect(body.error.message).toBe('displayName is required.');
   });
 
   it('returns 400 when teamId is missing', async () => {
@@ -189,7 +189,7 @@ describe('POST /language-models handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('teamId は必須です。');
+    expect(body.error.message).toBe('teamId is required.');
   });
 
   it('returns 403 when user role is REVIEWER', async () => {
@@ -208,7 +208,7 @@ describe('POST /language-models handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('リクエストボディが必要です。');
+    expect(body.error.message).toBe('A request body is required.');
   });
 
   it('returns 400 when request body is invalid JSON', async () => {
@@ -218,7 +218,7 @@ describe('POST /language-models handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('リクエストボディのJSON形式が不正です。');
+    expect(body.error.message).toBe('The request body is not valid JSON.');
   });
 
   it('returns 400 when modelName is missing', async () => {
@@ -230,7 +230,7 @@ describe('POST /language-models handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('modelName は必須です。');
+    expect(body.error.message).toBe('modelName is required.');
   });
 
   it('returns 400 when baseModelName is invalid', async () => {
@@ -261,7 +261,7 @@ describe('POST /language-models handler', () => {
     mockedCreateModel.mockRejectedValue(
       new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'モデル名が重複しています。別のモデル名を指定してください。',
+        message: 'The model name is already in use. Specify a different model name.',
         statusCode: 400,
       })
     );
@@ -272,7 +272,7 @@ describe('POST /language-models handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toContain('モデル名が重複');
+    expect(body.error.message).toContain('The model name is already in use');
   });
 
   it('returns 403 when JWT sub claim is missing', async () => {

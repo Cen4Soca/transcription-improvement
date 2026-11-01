@@ -20,6 +20,7 @@ import {
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import { validateCIDR } from '../utils/cidr-validator.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { putAuditLog } from '../repositories/audit-repository.js';
 import type { AuthUser } from '../utils/auth-middleware.js';
 
@@ -74,7 +75,9 @@ export async function addEntry(params: {
   // Validate CIDR format (Req 14.15)
   if (!validateCIDR(cidr)) {
     throw validationError(
-      'CIDR形式が無効です。IPv4（例: 192.168.1.0/24）またはIPv6（例: 2001:db8::/32）の形式で入力してください。'
+      'Invalid CIDR format. Enter an IPv4 (e.g. 192.168.1.0/24) or IPv6 (e.g. 2001:db8::/32) value.',
+      undefined,
+      ERROR_CODES.CIDR_INVALID
     );
   }
 
@@ -82,14 +85,20 @@ export async function addEntry(params: {
   const currentEntries = await getAllEntries();
   if (currentEntries.length >= MAX_ENTRIES) {
     throw validationError(
-      `IPアドレス許可リストの最大件数（${MAX_ENTRIES}件）に達しています。既存のエントリを削除してから追加してください。`
+      `The IP allowlist has reached its maximum of ${MAX_ENTRIES} entries. Delete an existing entry before adding a new one.`,
+      undefined,
+      ERROR_CODES.IP_ALLOWLIST_LIMIT_REACHED
     );
   }
 
   // Check for duplicate CIDR
   const isDuplicate = currentEntries.some((entry) => entry.cidr === cidr.trim());
   if (isDuplicate) {
-    throw validationError('このCIDRブロックは既に登録されています。');
+    throw validationError(
+      'This CIDR block is already registered.',
+      undefined,
+      ERROR_CODES.CIDR_DUPLICATE
+    );
   }
 
   const entryId = uuidv4();
@@ -154,7 +163,11 @@ export async function deleteEntry(entryId: string, actor?: AuthUser): Promise<vo
   const targetEntry = currentEntries.find((e) => e.entryId === entryId);
 
   if (!targetEntry) {
-    throw validationError('指定されたIPアドレスエントリが見つかりません。');
+    throw validationError(
+      'The specified IP address entry was not found.',
+      undefined,
+      ERROR_CODES.IP_ENTRY_NOT_FOUND
+    );
   }
 
   await docClient.send(
@@ -242,8 +255,9 @@ async function updateWafIpSet(entries: IPAllowlistEntry[]): Promise<void> {
     // Fail-closed: WAF update failure must reject the operation (Req 14.5)
     console.error('WAF IP set update failed:', error);
     throw internalError(
-      'WAF IPセットの更新に失敗しました。',
-      error instanceof Error ? error.message : undefined
+      'Failed to update the WAF IP set.',
+      error instanceof Error ? error.message : undefined,
+      ERROR_CODES.WAF_IP_SET_UPDATE_FAILED
     );
   }
 }

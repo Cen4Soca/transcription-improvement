@@ -24,7 +24,7 @@ describe('assertSessionEditable', () => {
         name: 'AppError',
         code: 'VALIDATION_ERROR',
         statusCode: 400,
-        message: 'このセッションは既に完了しているため編集できません。',
+        message: 'This session is already completed and cannot be edited.',
       });
     }
   });

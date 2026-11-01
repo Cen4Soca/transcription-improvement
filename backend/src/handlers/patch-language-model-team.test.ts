@@ -14,7 +14,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -198,7 +198,7 @@ describe('PATCH /language-models/{modelName}/team handler', () => {
       mockedChangeModelTeam.mockRejectedValue(
         new AppError({
           code: 'VALIDATION_ERROR',
-          message: '指定されたチームが存在しません。',
+          message: 'The specified team does not exist.',
           statusCode: 400,
         })
       );
@@ -217,7 +217,7 @@ describe('PATCH /language-models/{modelName}/team handler', () => {
       mockedChangeModelTeam.mockRejectedValue(
         new AppError({
           code: 'VALIDATION_ERROR',
-          message: '移動先のチームに同じ表示名のモデルが既に存在します。先に表示名を変更してください。',
+          message: 'A model with the same display name already exists in the destination team. Change the display name first.',
           statusCode: 400,
         })
       );
@@ -238,7 +238,7 @@ describe('PATCH /language-models/{modelName}/team handler', () => {
       mockedChangeModelTeam.mockRejectedValue(
         new AppError({
           code: 'FORBIDDEN',
-          message: 'この操作を実行する権限がありません。',
+          message: 'You do not have permission to perform this operation.',
           statusCode: 403,
         })
       );
@@ -257,7 +257,7 @@ describe('PATCH /language-models/{modelName}/team handler', () => {
       mockedChangeModelTeam.mockRejectedValue(
         new AppError({
           code: 'NOT_FOUND',
-          message: 'リソースが見つかりません。',
+          message: 'Resource not found',
           statusCode: 404,
         })
       );
@@ -282,7 +282,7 @@ describe('PATCH /language-models/{modelName}/team handler', () => {
       expect(result.statusCode).toBe(500);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('INTERNAL_ERROR');
-      expect(body.error.message).toBe('モデルのチーム変更に失敗しました。');
+      expect(body.error.message).toBe('Failed to change the model team.');
       expect(body.error.details).toBe('DynamoDB update failed');
     });
   });

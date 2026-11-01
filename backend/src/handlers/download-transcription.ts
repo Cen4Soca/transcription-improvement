@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { errorResponse } from '../utils/response-builder.js';
 import { AppError, notFoundError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   generateJson,
   generateSrt,
@@ -43,8 +44,9 @@ export async function handler(
     if (!sessionId) {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'sessionId パスパラメータは必須です。',
+        message: 'The sessionId path parameter is required.',
         statusCode: 400,
+        errorCode: ERROR_CODES.SESSION_ID_REQUIRED,
       });
     }
 
@@ -53,9 +55,10 @@ export async function handler(
     if (!isValidFormat(format)) {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: `無効なダウンロード形式です: ${format}`,
+        message: `Invalid download format: ${format}`,
         statusCode: 400,
-        details: `サポートされる形式: ${ALLOWED_FORMATS.join(', ')}`,
+        details: `Supported formats: ${ALLOWED_FORMATS.join(', ')}`,
+        errorCode: ERROR_CODES.DOWNLOAD_FORMAT_INVALID,
       });
     }
 
@@ -80,7 +83,11 @@ export async function handler(
     // Get session name for filename before generating SRT content
     const session = await sessionRepository.getSessionById(sessionId);
     if (!session) {
-      throw notFoundError('指定された ReviewSession が見つかりません。');
+      throw notFoundError(
+        'ReviewSession not found',
+        undefined,
+        ERROR_CODES.REVIEW_SESSION_NOT_FOUND
+      );
     }
 
     const srtContent = await generateSrt(sessionId, user.userId);

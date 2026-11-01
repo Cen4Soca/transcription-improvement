@@ -5,6 +5,7 @@ import type {
 import { extractUser, isAdmin, type AuthUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { getUserTeamIds } from '../services/access-control-service.js';
 import * as mediaFileRepository from '../repositories/media-file-repository.js';
 import { getAllUsers } from '../repositories/user-repository.js';
@@ -48,8 +49,9 @@ export async function handler(
       return successResponse({ data: { mediaFiles: response } });
     } catch (queryError: unknown) {
       throw internalError(
-        'メディアファイル一覧の取得に失敗しました。',
-        queryError instanceof Error ? queryError.message : undefined
+        'Failed to retrieve the media file list.',
+        queryError instanceof Error ? queryError.message : undefined,
+        ERROR_CODES.MEDIA_FILES_FETCH_FAILED
       );
     }
   } catch (error: unknown) {

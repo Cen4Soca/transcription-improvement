@@ -1,6 +1,7 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { notFoundError, forbiddenError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import * as mediaFileRepository from '../repositories/media-file-repository.js';
 
 export interface MediaUrlResult {
@@ -49,22 +50,25 @@ export async function getMediaFileForSession(sessionId: string) {
 
   if (!mediaFile) {
     throw notFoundError(
-      'メディアファイルが見つかりません。',
-      `No media file found for session ${sessionId}`
+      'Media file not found',
+      `No media file found for session ${sessionId}`,
+      ERROR_CODES.MEDIA_FILE_NOT_FOUND
     );
   }
 
   if (!mediaFile.scanStatus || mediaFile.scanStatus === 'PENDING') {
     throw forbiddenError(
-      'マルウェアスキャン完了前のファイルにはアクセスできません',
-      `Media file ${mediaFile.mediaFileId} scan is pending`
+      'This file cannot be accessed until the malware scan is complete.',
+      `Media file ${mediaFile.mediaFileId} scan is pending`,
+      ERROR_CODES.MEDIA_SCAN_PENDING
     );
   }
 
   if (mediaFile.scanStatus === 'INFECTED') {
     throw forbiddenError(
-      'マルウェアが検出されたファイルにはアクセスできません',
-      `Media file ${mediaFile.mediaFileId} is infected`
+      'This file cannot be accessed because malware was detected.',
+      `Media file ${mediaFile.mediaFileId} is infected`,
+      ERROR_CODES.MEDIA_MALWARE_DETECTED
     );
   }
 
@@ -86,15 +90,17 @@ export async function generateSignedUrl(s3Key: string): Promise<{ url: string; e
   const mediaBucketName = getMediaBucketName();
   if (!mediaBucketName) {
     throw internalError(
-      'メディアURL生成の設定が不足しています。',
-      'Missing MEDIA_BUCKET_NAME'
+      'Media URL generation is not configured.',
+      'Missing MEDIA_BUCKET_NAME',
+      ERROR_CODES.MEDIA_CONFIG_MISSING
     );
   }
 
   if (!s3Key) {
     throw internalError(
-      'メディアURL生成に失敗しました。',
-      'Media file record has an empty s3Key'
+      'Failed to generate the media URL.',
+      'Media file record has an empty s3Key',
+      ERROR_CODES.MEDIA_URL_GENERATION_FAILED
     );
   }
 

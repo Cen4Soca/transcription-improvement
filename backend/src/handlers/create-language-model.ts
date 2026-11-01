@@ -6,6 +6,7 @@ import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { createModel, type ConfirmedSegment } from '../services/language-model-service.js';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 
@@ -64,47 +65,81 @@ interface CreateLanguageModelRequestBody {
 
 function parseRequestBody(rawBody: string | undefined): CreateLanguageModelRequestBody {
   if (!rawBody) {
-    throw validationError('リクエストボディが必要です。');
+    throw validationError(
+      'A request body is required.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_REQUIRED
+    );
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawBody);
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 
   const body = parsed as Record<string, unknown>;
 
   if (!body.modelName || typeof body.modelName !== 'string') {
-    throw validationError('modelName は必須です。');
+    throw validationError(
+      'modelName is required.',
+      undefined,
+      ERROR_CODES.MODEL_NAME_REQUIRED
+    );
   }
 
   if (!body.baseModelName || typeof body.baseModelName !== 'string') {
-    throw validationError('baseModelName は必須です。');
+    throw validationError(
+      'baseModelName is required.',
+      undefined,
+      ERROR_CODES.BASE_MODEL_NAME_REQUIRED
+    );
   }
 
   if (body.baseModelName !== 'NarrowBand' && body.baseModelName !== 'WideBand') {
     throw validationError(
-      'baseModelName は "NarrowBand" または "WideBand" を指定してください。'
+      'baseModelName must be "NarrowBand" or "WideBand".',
+      undefined,
+      ERROR_CODES.BASE_MODEL_NAME_INVALID
     );
   }
 
   if (!body.displayName || typeof body.displayName !== 'string') {
-    throw validationError('displayName は必須です。');
+    throw validationError(
+      'displayName is required.',
+      undefined,
+      ERROR_CODES.DISPLAY_NAME_FIELD_REQUIRED
+    );
   }
 
   if (!body.teamId || typeof body.teamId !== 'string') {
-    throw validationError('teamId は必須です。');
+    throw validationError(
+      'teamId is required.',
+      undefined,
+      ERROR_CODES.TEAM_ID_FIELD_REQUIRED
+    );
   }
 
   if (!body.sessionIds || !Array.isArray(body.sessionIds) || body.sessionIds.length === 0) {
-    throw validationError('sessionIds は1つ以上のセッションIDを含む配列で指定してください。');
+    throw validationError(
+      'sessionIds must be an array containing at least one session ID.',
+      undefined,
+      ERROR_CODES.SESSION_IDS_INVALID
+    );
   }
 
   for (const id of body.sessionIds) {
     if (typeof id !== 'string') {
-      throw validationError('sessionIds の各要素は文字列で指定してください。');
+      throw validationError(
+        'Each element of sessionIds must be a string.',
+        undefined,
+        ERROR_CODES.SESSION_IDS_ELEMENT_INVALID
+      );
     }
   }
 

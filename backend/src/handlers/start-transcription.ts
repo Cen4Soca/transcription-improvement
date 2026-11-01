@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { AppError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { startJob } from '../services/transcription-job-service.js';
 
 /**
@@ -51,8 +52,9 @@ function parseRequestBody(rawBody: string | undefined): StartTranscriptionReques
   if (!rawBody) {
     throw new AppError({
       code: 'VALIDATION_ERROR',
-      message: 'リクエストボディが必要です。',
+      message: 'A request body is required.',
       statusCode: 400,
+      errorCode: ERROR_CODES.REQUEST_BODY_REQUIRED,
     });
   }
 
@@ -62,8 +64,9 @@ function parseRequestBody(rawBody: string | undefined): StartTranscriptionReques
   } catch {
     throw new AppError({
       code: 'VALIDATION_ERROR',
-      message: 'リクエストボディのJSON形式が不正です。',
+      message: 'The request body is not valid JSON.',
       statusCode: 400,
+      errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
     });
   }
 
@@ -72,8 +75,9 @@ function parseRequestBody(rawBody: string | undefined): StartTranscriptionReques
   if (!body.mediaFileId || typeof body.mediaFileId !== 'string') {
     throw new AppError({
       code: 'VALIDATION_ERROR',
-      message: 'mediaFileId は必須です。',
+      message: 'mediaFileId is required.',
       statusCode: 400,
+      errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
     });
   }
 
@@ -85,8 +89,9 @@ function parseRequestBody(rawBody: string | undefined): StartTranscriptionReques
     if (typeof body.maxSpeakerLabels !== 'number') {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'maxSpeakerLabels は数値で指定してください。',
+        message: 'maxSpeakerLabels must be a number.',
         statusCode: 400,
+        errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
       });
     }
     result.maxSpeakerLabels = body.maxSpeakerLabels;
@@ -96,8 +101,9 @@ function parseRequestBody(rawBody: string | undefined): StartTranscriptionReques
     if (typeof body.languageCode !== 'string') {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'languageCode は文字列で指定してください。',
+        message: 'languageCode must be a string.',
         statusCode: 400,
+        errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
       });
     }
     result.languageCode = body.languageCode;
@@ -107,8 +113,9 @@ function parseRequestBody(rawBody: string | undefined): StartTranscriptionReques
     if (typeof body.languageModelName !== 'string') {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'languageModelName は文字列で指定してください。',
+        message: 'languageModelName must be a string.',
         statusCode: 400,
+        errorCode: ERROR_CODES.REQUEST_BODY_INVALID,
       });
     }
     result.languageModelName = body.languageModelName;

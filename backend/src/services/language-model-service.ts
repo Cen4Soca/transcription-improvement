@@ -16,6 +16,7 @@ import {
   notFoundError,
   quotaExceededError,
 } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   requireRole,
   isAdmin,
@@ -313,8 +314,9 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
   const team = await getTeamById(teamId);
   if (!team) {
     throw validationError(
-      '指定されたチームが存在しません。',
+      'The specified team does not exist.',
       `Team not found: ${teamId}`,
+      ERROR_CODES.MODEL_TEAM_NOT_FOUND
     );
   }
 
@@ -323,8 +325,9 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
     const member = await isTeamMember(user.userId, teamId);
     if (!member) {
       throw forbiddenError(
-        '指定されたチームのメンバーではありません。',
+        'You are not a member of the specified team.',
         `User ${user.userId} is not a member of team ${teamId}`,
+        ERROR_CODES.MODEL_TEAM_NOT_MEMBER
       );
     }
   }
@@ -341,8 +344,9 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
     const assigned = await hasTeamAssignment(teamId, sessionId);
     if (!assigned) {
       throw validationError(
-        '選択した校閲セッションの中に、指定チームに割り当てられていないものがあります。チームに割り当てられた校閲セッションのみを選択してください。',
+        'Some of the selected review sessions are not assigned to the specified team. Select only review sessions assigned to the team.',
         `Session ${sessionId} is not assigned to team ${teamId}`,
+        ERROR_CODES.MODEL_SESSIONS_NOT_IN_TEAM
       );
     }
   }
@@ -351,7 +355,9 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
   const displayName = params.displayName.trim();
   if (displayName.length < DISPLAY_NAME_MIN || displayName.length > DISPLAY_NAME_MAX) {
     throw validationError(
-      `表示名は${DISPLAY_NAME_MIN}文字以上${DISPLAY_NAME_MAX}文字以下で指定してください。`,
+      `Display name must be between ${DISPLAY_NAME_MIN} and ${DISPLAY_NAME_MAX} characters.`,
+      undefined,
+      ERROR_CODES.MODEL_DISPLAY_NAME_INVALID
     );
   }
 
@@ -360,8 +366,9 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
   const existingByDisplayName = await findByDisplayName(teamId, displayNameLower);
   if (existingByDisplayName) {
     throw validationError(
-      'チーム内に同じ表示名のモデルが既に存在します。別の表示名を指定してください。',
+      'A model with the same display name already exists in the team. Specify a different display name.',
       `Display name "${displayName}" already exists in team ${teamId}`,
+      ERROR_CODES.MODEL_DISPLAY_NAME_DUPLICATE
     );
   }
 
@@ -369,15 +376,20 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
   const isDuplicate = await checkModelNameDuplicate(modelName);
   if (isDuplicate) {
     throw validationError(
-      'モデル名が重複しています。別のモデル名を指定してください。',
+      'The model name is already in use. Specify a different model name.',
       `Model name "${modelName}" already exists`,
+      ERROR_CODES.MODEL_NAME_DUPLICATE
     );
   }
 
   // Generate training data
   const trainingData = generateTrainingData(segments);
   if (!trainingData) {
-    throw validationError('確定済みの Segment がありません。トレーニングデータを生成できません。');
+    throw validationError(
+      'There are no confirmed segments. Training data cannot be generated.',
+      undefined,
+      ERROR_CODES.NO_CONFIRMED_SEGMENTS
+    );
   }
 
   // Upload training data to S3
@@ -385,9 +397,10 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
   if (!dataBucket) {
     throw new AppError({
       code: 'CONFIGURATION_ERROR',
-      message: 'データバケットの設定が不足しています。',
+      message: 'Data bucket configuration is missing.',
       statusCode: 500,
       details: 'DATA_BUCKET_NAME environment variable is not set',
+      errorCode: ERROR_CODES.MODEL_DATA_CONFIG_MISSING,
     });
   }
 
@@ -395,9 +408,10 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
   if (!dataAccessRoleArn) {
     throw new AppError({
       code: 'CONFIGURATION_ERROR',
-      message: 'Transcribe データアクセスロールの設定が不足しています。',
+      message: 'Transcribe data access role configuration is missing.',
       statusCode: 500,
       details: 'TRANSCRIBE_DATA_ACCESS_ROLE_ARN environment variable is not set',
+      errorCode: ERROR_CODES.MODEL_DATA_ACCESS_ROLE_MISSING,
     });
   }
 
@@ -430,8 +444,9 @@ export async function createModel(params: CreateModelParams): Promise<LanguageMo
   } catch (error: unknown) {
     if (isQuotaExceededError(error)) {
       throw quotaExceededError(
-        'カスタム言語モデルの作成上限に達しています。既存のモデルを削除するか、上限緩和を申請してください。',
+        'The custom language model creation limit has been reached. Delete an existing model or request a limit increase.',
         error instanceof Error ? error.message : String(error),
+        ERROR_CODES.MODEL_QUOTA_EXCEEDED
       );
     }
     throw error;
@@ -523,8 +538,9 @@ export async function renameModelDisplayName(
   const existing = await findByDisplayName(model.teamId, displayNameLower);
   if (existing && existing.modelName !== model.modelName) {
     throw validationError(
-      'チーム内に同じ表示名のモデルが既に存在します。別の表示名を指定してください。',
+      'A model with the same display name already exists in the team. Specify a different display name.',
       `Display name "${displayName}" already exists in team ${model.teamId}`,
+      ERROR_CODES.MODEL_DISPLAY_NAME_DUPLICATE
     );
   }
 
@@ -572,8 +588,9 @@ export async function changeModelTeam(
   const model = await getModel(modelName);
   if (!model) {
     throw notFoundError(
-      'リソースが見つかりません。',
+      'Resource not found',
       `Language model not found: ${modelName}`,
+      ERROR_CODES.MODEL_NOT_FOUND
     );
   }
 
@@ -583,8 +600,9 @@ export async function changeModelTeam(
   const team = await getTeamById(newTeamId);
   if (!team) {
     throw validationError(
-      '指定されたチームが存在しません。',
+      'The specified team does not exist.',
       `Team not found: ${newTeamId}`,
+      ERROR_CODES.MODEL_TEAM_NOT_FOUND
     );
   }
 
@@ -593,8 +611,9 @@ export async function changeModelTeam(
   const collision = await findByDisplayName(newTeamId, model.displayNameLower);
   if (collision && collision.modelName !== model.modelName) {
     throw validationError(
-      '移動先のチームに同じ表示名のモデルが既に存在します。先に表示名を変更してください。',
+      'A model with the same display name already exists in the destination team. Change the display name first.',
       `Display name "${model.displayName}" already exists in team ${newTeamId}`,
+      ERROR_CODES.MODEL_DISPLAY_NAME_DUPLICATE_IN_TARGET
     );
   }
 
@@ -754,8 +773,9 @@ export async function deleteModel(user: AuthUser, modelName: string): Promise<vo
     }
     if (describeStatus === 'IN_PROGRESS') {
       throw validationError(
-        'モデルの学習が進行中のため削除できません。学習の完了後に再度お試しください。',
+        'The model cannot be deleted while training is in progress. Try again after training completes.',
         `Model ${modelName} is still training (IN_PROGRESS)`,
+        ERROR_CODES.MODEL_DELETE_TRAINING_IN_PROGRESS
       );
     }
 
@@ -763,8 +783,9 @@ export async function deleteModel(user: AuthUser, modelName: string): Promise<vo
     const inUse = await isModelInUseByInProgressJob(modelName);
     if (inUse) {
       throw validationError(
-        '実行中の文字起こしジョブがこのモデルを使用しているため削除できません。ジョブの完了後に再度お試しください。',
+        'The model cannot be deleted because a running transcription job is using it. Try again after the job completes.',
         `Model ${modelName} is referenced by an in-progress transcription job`,
+        ERROR_CODES.MODEL_DELETE_IN_USE
       );
     }
   }
@@ -913,8 +934,9 @@ export async function getModelStatus(modelName: string): Promise<LanguageModelSt
   if (!model) {
     throw new AppError({
       code: 'NOT_FOUND',
-      message: '指定されたカスタム言語モデルが見つかりません。',
+      message: 'The specified custom language model was not found.',
       statusCode: 404,
+      errorCode: ERROR_CODES.MODEL_NOT_FOUND,
     });
   }
 

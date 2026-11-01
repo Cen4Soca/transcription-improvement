@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { deleteModel } from '../services/language-model-service.js';
 
 /**
@@ -30,7 +31,11 @@ export async function handler(
 
     const modelName = event.pathParameters?.modelName;
     if (!modelName) {
-      throw validationError('modelName パスパラメータが必要です。');
+      throw validationError(
+        'The modelName path parameter is required.',
+        undefined,
+        ERROR_CODES.MODEL_NAME_REQUIRED_PARAM
+      );
     }
 
     try {
@@ -41,8 +46,9 @@ export async function handler(
         throw error;
       }
       throw internalError(
-        'モデルの削除に失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to delete the model.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.MODEL_DELETE_FAILED
       );
     }
   } catch (error: unknown) {

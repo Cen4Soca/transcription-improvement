@@ -57,11 +57,11 @@ export function computeConsensus(input: ConsensusInput): ConsensusOutput {
   }
 
   if (threshold < 1 || threshold > 100) {
-    throw new Error('threshold は 1〜100 の範囲で指定してください。');
+    throw new Error('threshold must be between 1 and 100.');
   }
 
   if (totalReviewers < 1) {
-    throw new Error('totalReviewers は 1 以上である必要があります。');
+    throw new Error('totalReviewers must be at least 1.');
   }
 
   // Count occurrences of each unique afterText

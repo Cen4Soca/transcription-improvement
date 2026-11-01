@@ -34,6 +34,7 @@ import {
   forbiddenError,
   internalError,
 } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import {
   getSessionById,
@@ -64,27 +65,47 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータが必要です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     const session = await getSessionById(sessionId);
     if (!session) {
-      throw notFoundError('指定されたセッションが見つかりません。');
+      throw notFoundError(
+        'Session not found',
+        undefined,
+        ERROR_CODES.SESSION_NOT_FOUND
+      );
     }
 
     // TEAM_LEADER is limited to their own team's sessions; ADMIN has no limit.
     if (!isAdmin(user)) {
       if (!session.assignedTeamId) {
-        throw forbiddenError('このセッションを集計する権限がありません。');
+        throw forbiddenError(
+          'You do not have permission to aggregate this session.',
+          undefined,
+          ERROR_CODES.SESSION_AGGREGATE_FORBIDDEN
+        );
       }
       const member = await isTeamMember(user.userId, session.assignedTeamId);
       if (!member) {
-        throw forbiddenError('自チームのセッションのみ集計できます。');
+        throw forbiddenError(
+          'You can only aggregate sessions in your own team.',
+          undefined,
+          ERROR_CODES.SESSION_AGGREGATE_FORBIDDEN
+        );
       }
     }
 
     if (session.status === 'COMPLETED') {
-      throw validationError('このセッションは既に完了しています。');
+      throw validationError(
+        'This session is already completed.',
+        undefined,
+        ERROR_CODES.SESSION_ALREADY_COMPLETED
+      );
     }
 
     try {
@@ -179,8 +200,9 @@ export async function handler(
         throw error;
       }
       throw internalError(
-        'セッションの集計に失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to aggregate the session.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.SESSION_AGGREGATE_FAILED
       );
     }
   } catch (error: unknown) {

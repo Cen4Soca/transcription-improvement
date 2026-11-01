@@ -107,38 +107,38 @@ describe('correction-service', () => {
     });
 
     it('should throw validation error when body is null', () => {
-      expect(() => validateCorrectionInput(null)).toThrow('リクエストボディが不正です。');
+      expect(() => validateCorrectionInput(null)).toThrow('Request body is invalid.');
     });
 
     it('should throw validation error when body is not an object', () => {
-      expect(() => validateCorrectionInput('string')).toThrow('リクエストボディが不正です。');
+      expect(() => validateCorrectionInput('string')).toThrow('Request body is invalid.');
     });
 
     it('should throw validation error when correctionId is missing', () => {
       const { correctionId, ...input } = validInput;
-      expect(() => validateCorrectionInput(input)).toThrow('correctionId は必須です。');
+      expect(() => validateCorrectionInput(input)).toThrow('correctionId is required.');
     });
 
     it('should throw validation error when segmentId is missing', () => {
       const { segmentId, ...input } = validInput;
-      expect(() => validateCorrectionInput(input)).toThrow('segmentId は必須です。');
+      expect(() => validateCorrectionInput(input)).toThrow('segmentId is required.');
     });
 
     it('should throw validation error when correctionType is invalid', () => {
       const input = { ...validInput, correctionType: 'INVALID' };
       expect(() => validateCorrectionInput(input)).toThrow(
-        'correctionType は TEXT, SPEAKER, SPEAKER_RENAME のいずれかである必要があります。'
+        'correctionType must be one of TEXT, SPEAKER, or SPEAKER_RENAME.'
       );
     });
 
     it('should throw validation error when beforeText is missing', () => {
       const { beforeText, ...input } = validInput;
-      expect(() => validateCorrectionInput(input)).toThrow('beforeText は必須です。');
+      expect(() => validateCorrectionInput(input)).toThrow('beforeText is required.');
     });
 
     it('should throw validation error when afterText is missing', () => {
       const { afterText, ...input } = validInput;
-      expect(() => validateCorrectionInput(input)).toThrow('afterText は必須です。');
+      expect(() => validateCorrectionInput(input)).toThrow('afterText is required.');
     });
 
     it('should accept empty string for beforeText and afterText', () => {
@@ -212,7 +212,7 @@ describe('correction-service', () => {
 
       await expect(
         createCorrection('session-001', mockUser, validInput)
-      ).rejects.toThrow('修正内容の保存に失敗しました。');
+      ).rejects.toThrow('Failed to save the correction.');
     });
 
     it('should include optional fields in the correction record', async () => {

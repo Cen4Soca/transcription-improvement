@@ -106,13 +106,13 @@ describe('validateMaxSpeakers', () => {
   test('rejects value 1 (below minimum)', () => {
     const result = validateMaxSpeakers(1);
     expect(result.valid).toBe(false);
-    expect(result.error).toContain('2〜10');
+    expect(result.error).toContain('between 2 and 10');
   });
 
   test('rejects value 11 (above maximum)', () => {
     const result = validateMaxSpeakers(11);
     expect(result.valid).toBe(false);
-    expect(result.error).toContain('2〜10');
+    expect(result.error).toContain('between 2 and 10');
   });
 
   test('rejects value 0', () => {
@@ -128,7 +128,7 @@ describe('validateMaxSpeakers', () => {
   test('rejects non-integer values', () => {
     const result = validateMaxSpeakers(2.5);
     expect(result.valid).toBe(false);
-    expect(result.error).toContain('整数');
+    expect(result.error).toContain('must be an integer');
   });
 });
 
@@ -320,7 +320,7 @@ describe('startJob', () => {
         maxSpeakerLabels: 15,
         user: reviewerUser,
       })
-    ).rejects.toThrow('MaxSpeakerLabels は 2〜10 の範囲で指定してください。');
+    ).rejects.toThrow('MaxSpeakerLabels must be between 2 and 10.');
   });
 
   test('throws not found error when media file does not exist', async () => {
@@ -331,7 +331,7 @@ describe('startJob', () => {
         mediaFileId: 'nonexistent',
         user: reviewerUser,
       })
-    ).rejects.toThrow('指定されたメディアファイルが見つかりません。');
+    ).rejects.toThrow('Media file not found');
   });
 
   test('throws configuration error when MEDIA_BUCKET_NAME is not set', async () => {
@@ -342,7 +342,7 @@ describe('startJob', () => {
         mediaFileId: 'media-123',
         user: reviewerUser,
       })
-    ).rejects.toThrow('バケットの設定が不足しています。');
+    ).rejects.toThrow('Bucket configuration is missing.');
   });
 
   test('throws configuration error when DATA_BUCKET_NAME is not set', async () => {
@@ -353,7 +353,7 @@ describe('startJob', () => {
         mediaFileId: 'media-123',
         user: reviewerUser,
       })
-    ).rejects.toThrow('バケットの設定が不足しています。');
+    ).rejects.toThrow('Bucket configuration is missing.');
   });
 
   test('starts a job with maxSpeakerLabels at minimum boundary (2)', async () => {
@@ -449,7 +449,7 @@ describe('startJob', () => {
     mockedCheckLanguageModelAccess.mockRejectedValueOnce(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'リソースが見つかりません。',
+        message: 'Resource not found',
         statusCode: 404,
       })
     );
@@ -581,7 +581,7 @@ describe('getJobStatus', () => {
     vi.mocked(transcriptionJobRepository.getById).mockResolvedValue(null);
 
     await expect(getJobStatus('nonexistent')).rejects.toThrow(
-      '指定された Transcription ジョブが見つかりません。'
+      'Transcription job not found'
     );
   });
 });
@@ -731,7 +731,7 @@ describe('getJobStatusFromTranscribe', () => {
     vi.mocked(transcriptionJobRepository.getById).mockResolvedValue(null);
 
     await expect(getJobStatusFromTranscribe('nonexistent')).rejects.toThrow(
-      '指定された Transcription ジョブが見つかりません。'
+      'Transcription job not found'
     );
   });
 

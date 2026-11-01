@@ -26,7 +26,7 @@ describe('errorResponse', () => {
   it('returns structured error for AppError', () => {
     const appError = new AppError({
       code: 'CORRECTION_SAVE_FAILED',
-      message: '修正内容の保存に失敗しました。',
+      message: 'Failed to save the correction.',
       statusCode: 500,
       details: 'DynamoDB write capacity exceeded',
     });
@@ -38,7 +38,7 @@ describe('errorResponse', () => {
     expect(body).toEqual({
       error: {
         code: 'CORRECTION_SAVE_FAILED',
-        message: '修正内容の保存に失敗しました。',
+        message: 'Failed to save the correction.',
         details: 'DynamoDB write capacity exceeded',
       },
     });
@@ -56,13 +56,42 @@ describe('errorResponse', () => {
     expect(body.error.details).toBeUndefined();
   });
 
+  it('includes a detailed errorCode when present on the AppError', () => {
+    const appError = new AppError({
+      code: 'NOT_FOUND',
+      message: 'Session not found',
+      statusCode: 404,
+      errorCode: 'SESSION_NOT_FOUND',
+    });
+
+    const result = errorResponse(appError);
+    const body = JSON.parse(result.body as string);
+    expect(body.error).toEqual({
+      code: 'NOT_FOUND',
+      message: 'Session not found',
+      errorCode: 'SESSION_NOT_FOUND',
+    });
+  });
+
+  it('omits errorCode when not provided', () => {
+    const appError = new AppError({
+      code: 'NOT_FOUND',
+      message: 'リソースが見つかりません',
+      statusCode: 404,
+    });
+
+    const result = errorResponse(appError);
+    const body = JSON.parse(result.body as string);
+    expect(body.error.errorCode).toBeUndefined();
+  });
+
   it('returns 500 for unknown errors', () => {
     const result = errorResponse(new Error('unexpected'));
 
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('INTERNAL_ERROR');
-    expect(body.error.message).toBe('予期しないエラーが発生しました。');
+    expect(body.error.message).toBe('An unexpected error occurred.');
     expect(body.error.details).toBe('unexpected');
   });
 

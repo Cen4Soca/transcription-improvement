@@ -18,6 +18,7 @@ import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, notFoundError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import { getSessionById } from '../repositories/session-repository.js';
 import { assertSessionEditable } from '../utils/session-guard.js';
@@ -36,7 +37,11 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パラメータが必要です。');
+      throw validationError(
+        'The sessionId parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     // Parse and validate request body
@@ -46,20 +51,29 @@ export async function handler(
       // A COMPLETED session is confirmed and must not accept conflict resolution.
       const session = await getSessionById(sessionId);
       if (!session) {
-        throw notFoundError('指定されたセッションが見つかりません。');
+        throw notFoundError(
+          'Session not found',
+          undefined,
+          ERROR_CODES.SESSION_NOT_FOUND
+        );
       }
       assertSessionEditable(session);
 
       // Verify segment exists and is in CONFLICT status
       const segment = await getSegment(sessionId, body.segmentId);
       if (!segment) {
-        throw notFoundError('セグメントが見つかりません。');
+        throw notFoundError(
+          'Segment not found',
+          undefined,
+          ERROR_CODES.SEGMENT_NOT_FOUND
+        );
       }
 
       if (segment.consensusStatus !== 'CONFLICT') {
         throw validationError(
-          '競合解決は「競合解決待ち」状態のセグメントのみに対して実行できます。',
-          `Current status: ${segment.consensusStatus}`
+          'Conflict resolution can only be performed on segments awaiting conflict resolution.',
+          `Current status: ${segment.consensusStatus}`,
+          ERROR_CODES.CONFLICT_RESOLUTION_NOT_PENDING
         );
       }
 
@@ -88,8 +102,9 @@ export async function handler(
         throw error;
       }
       throw internalError(
-        '競合解決の保存に失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to save the conflict resolution.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.CONFLICT_RESOLUTION_SAVE_FAILED
       );
     }
   } catch (error: unknown) {
@@ -99,24 +114,40 @@ export async function handler(
 
 function parseRequestBody(body: string | undefined): ResolveRequestBody {
   if (!body) {
-    throw validationError('リクエストボディが必要です。');
+    throw validationError(
+      'A request body is required.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_REQUIRED
+    );
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(body);
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 
   const { segmentId, selectedText } = parsed as Record<string, unknown>;
 
   if (!segmentId || typeof segmentId !== 'string') {
-    throw validationError('segmentId は必須の文字列パラメータです。');
+    throw validationError(
+      'segmentId is a required string parameter.',
+      undefined,
+      ERROR_CODES.SEGMENT_ID_REQUIRED
+    );
   }
 
   if (selectedText === undefined || selectedText === null || typeof selectedText !== 'string') {
-    throw validationError('selectedText は必須の文字列パラメータです。');
+    throw validationError(
+      'selectedText is a required string parameter.',
+      undefined,
+      ERROR_CODES.SELECTED_TEXT_REQUIRED
+    );
   }
 
   return { segmentId, selectedText };

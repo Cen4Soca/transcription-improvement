@@ -24,7 +24,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -95,10 +95,27 @@ describe('PATCH /me - updateMe handler', () => {
     expect(mockedUpdateUserProfile).toHaveBeenCalledWith({
       actor: { userId: 'user-001', role: 'REVIEWER' },
       targetUserId: 'user-001',
-      fields: { displayName: 'New Me', email: undefined },
+      fields: { displayName: 'New Me', email: undefined, preferredLanguage: undefined },
     });
     const parsed = JSON.parse(result.body);
     expect(parsed.data.displayName).toBe('New Me');
+  });
+
+  it('forwards preferredLanguage to the service', async () => {
+    mockedUpdateUserProfile.mockResolvedValue({ ...selfRecord, preferredLanguage: 'en' });
+
+    const result = (await handler(
+      createEvent(JSON.stringify({ preferredLanguage: 'en' }))
+    )) as { statusCode: number; body: string };
+
+    expect(result.statusCode).toBe(200);
+    expect(mockedUpdateUserProfile).toHaveBeenCalledWith({
+      actor: { userId: 'user-001', role: 'REVIEWER' },
+      targetUserId: 'user-001',
+      fields: { displayName: undefined, email: undefined, preferredLanguage: 'en' },
+    });
+    const parsed = JSON.parse(result.body);
+    expect(parsed.data.preferredLanguage).toBe('en');
   });
 
   it('rejects attempts to change role', async () => {

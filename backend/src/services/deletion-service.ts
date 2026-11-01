@@ -2,6 +2,7 @@ import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { QueryCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import { AppError, forbiddenError, notFoundError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import * as mediaFileRepository from '../repositories/media-file-repository.js';
 import * as sessionRepository from '../repositories/session-repository.js';
 import * as transcriptionJobRepository from '../repositories/transcription-job-repository.js';
@@ -136,7 +137,11 @@ export async function deleteMediaFile(params: DeleteMediaParams): Promise<void> 
   // 1. Get media file record
   const mediaFile = await mediaFileRepository.getById(mediaFileId);
   if (!mediaFile) {
-    throw notFoundError('指定されたメディアファイルが見つかりません。');
+    throw notFoundError(
+      'Media file not found',
+      undefined,
+      ERROR_CODES.MEDIA_FILE_NOT_FOUND
+    );
   }
 
   // 2. Check access based on the uploader (ADMIN / TEAM_LEADER / REVIEWER).
@@ -144,7 +149,11 @@ export async function deleteMediaFile(params: DeleteMediaParams): Promise<void> 
   const hasAccess = await canAccessMediaFile(user, mediaFile.uploadedBy);
   if (!hasAccess) {
     // Return 404 to hide existence from unauthorized users
-    throw notFoundError('指定されたメディアファイルが見つかりません。');
+    throw notFoundError(
+      'Media file not found',
+      undefined,
+      ERROR_CODES.MEDIA_FILE_NOT_FOUND
+    );
   }
 
   // 3. Guard against deleting media linked to an IN_PROGRESS review session.
@@ -156,7 +165,9 @@ export async function deleteMediaFile(params: DeleteMediaParams): Promise<void> 
     if (userRole === 'REVIEWER') {
       // Reviewers may never delete media that is under active review.
       throw forbiddenError(
-        '進行中の校閲セッションに紐づくメディアファイルは削除できません。'
+        'A media file linked to an in-progress review session cannot be deleted.',
+        undefined,
+        ERROR_CODES.MEDIA_FILE_IN_USE
       );
     }
 
@@ -165,8 +176,9 @@ export async function deleteMediaFile(params: DeleteMediaParams): Promise<void> 
       throw new AppError({
         code: CONFIRMATION_REQUIRED_CODE,
         message:
-          'このメディアファイルは進行中の校閲セッションに紐づいています。削除すると校閲中の音声・動画が再生できなくなります。削除を続行しますか？',
+          'This media file is linked to an in-progress review session. Deleting it will make the audio/video under review unplayable. Do you want to continue?',
         statusCode: 409,
+        errorCode: ERROR_CODES.MEDIA_FILE_IN_USE_CONFIRM,
       });
     }
   }
@@ -260,13 +272,21 @@ export async function deleteTranscription(params: DeleteTranscriptionParams): Pr
 
   // 1. Check role access
   if (!checkRoleAccess(userRole)) {
-    throw forbiddenError('Transcription 削除機能へのアクセスが拒否されました。');
+    throw forbiddenError(
+      'Access to the transcription deletion feature was denied.',
+      undefined,
+      ERROR_CODES.TRANSCRIPTION_DELETE_FORBIDDEN
+    );
   }
 
   // 2. Get session record
   const session = await sessionRepository.getSessionById(sessionId);
   if (!session) {
-    throw notFoundError('指定された ReviewSession が見つかりません。');
+    throw notFoundError(
+      'ReviewSession not found',
+      undefined,
+      ERROR_CODES.REVIEW_SESSION_NOT_FOUND
+    );
   }
 
   // Whether the linked media file still exists. When it does (Req 8), the
@@ -276,7 +296,11 @@ export async function deleteTranscription(params: DeleteTranscriptionParams): Pr
   // 3. Check team access - get session's team from DynamoDB item
   const sessionTeamId = await getSessionTeamId(sessionId);
   if (!checkTeamDeleteAccess(userRole, userTeamId, sessionTeamId)) {
-    throw notFoundError('指定された ReviewSession が見つかりません。');
+    throw notFoundError(
+      'ReviewSession not found',
+      undefined,
+      ERROR_CODES.REVIEW_SESSION_NOT_FOUND
+    );
   }
 
   // Resolve the transcription job ID up front (used for both S3 cleanup and

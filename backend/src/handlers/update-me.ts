@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, forbiddenError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { updateUserProfile } from '../services/user-service.js';
 import { getUserById, getUserByEmail } from '../repositories/user-repository.js';
 
@@ -31,7 +32,11 @@ export async function handler(
 
     // Reject privilege-related fields on a self-update.
     if ('role' in body || 'isActive' in body) {
-      throw validationError('この項目は変更できません。');
+      throw validationError(
+        'This field cannot be changed.',
+        undefined,
+        ERROR_CODES.FIELD_NOT_EDITABLE
+      );
     }
 
     // Resolve the caller's canonical DynamoDB userId. On the JWT fast path
@@ -42,7 +47,11 @@ export async function handler(
       record = await getUserByEmail(user.email);
     }
     if (!record) {
-      throw forbiddenError('アプリケーションに登録されていないユーザーです。');
+      throw forbiddenError(
+        'This user is not registered in the application.',
+        undefined,
+        ERROR_CODES.USER_NOT_REGISTERED
+      );
     }
 
     const updatedUser = await updateUserProfile({
@@ -51,6 +60,7 @@ export async function handler(
       fields: {
         displayName: body.displayName as string | undefined,
         email: body.email as string | undefined,
+        preferredLanguage: body.preferredLanguage as 'ja' | 'en' | undefined,
       },
     });
 
@@ -67,6 +77,10 @@ function parseBody(body: string | undefined): Record<string, unknown> {
   try {
     return JSON.parse(body) as Record<string, unknown>;
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 }

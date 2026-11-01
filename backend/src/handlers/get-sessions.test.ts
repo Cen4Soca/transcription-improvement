@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -307,7 +307,7 @@ describe('GET /sessions handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('status パラメータが不正です');
+      expect(body.error.message).toContain('The status parameter is invalid');
     });
 
     it('returns all sessions when no status filter is provided', async () => {
@@ -355,7 +355,7 @@ describe('GET /sessions handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('page パラメータは1以上の整数で指定してください');
+      expect(body.error.message).toContain('The page parameter must be an integer of at least 1');
     });
 
     it('returns 400 for invalid page parameter (zero)', async () => {
@@ -456,7 +456,7 @@ describe('GET /sessions handler', () => {
       expect(result.statusCode).toBe(500);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('INTERNAL_ERROR');
-      expect(body.error.message).toBe('セッション一覧の取得に失敗しました。');
+      expect(body.error.message).toBe('Failed to retrieve the session list.');
     });
 
     it('returns 500 when getAllSessions fails', async () => {
@@ -469,7 +469,7 @@ describe('GET /sessions handler', () => {
       expect(result.statusCode).toBe(500);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('INTERNAL_ERROR');
-      expect(body.error.message).toBe('セッション一覧の取得に失敗しました。');
+      expect(body.error.message).toBe('Failed to retrieve the session list.');
       expect(body.error.details).toBe('Scan timeout');
     });
 

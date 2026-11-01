@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, notFoundError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   getAllUsers,
   getUserById,
@@ -71,16 +72,26 @@ export async function createUserHandler(
     const body = parseBody(event.body);
 
     if (!body.email || typeof body.email !== 'string') {
-      throw validationError('メールアドレスは必須です。');
+      throw validationError(
+        'Email is required.',
+        undefined,
+        ERROR_CODES.EMAIL_REQUIRED
+      );
     }
 
     if (!body.displayName || typeof body.displayName !== 'string') {
-      throw validationError('表示名は必須です。');
+      throw validationError(
+        'Display name is required.',
+        undefined,
+        ERROR_CODES.DISPLAY_NAME_REQUIRED
+      );
     }
 
     if (!body.role || !isValidRole(body.role)) {
       throw validationError(
-        'ロールは REVIEWER, TEAM_LEADER, ADMIN のいずれかを指定してください。'
+        'Role must be one of REVIEWER, TEAM_LEADER, or ADMIN.',
+        undefined,
+        ERROR_CODES.ROLE_INVALID
       );
     }
 
@@ -91,7 +102,11 @@ export async function createUserHandler(
     // Check if email already exists
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
-      throw validationError('このメールアドレスは既に登録されています。');
+      throw validationError(
+        'This email is already registered.',
+        undefined,
+        ERROR_CODES.EMAIL_ALREADY_REGISTERED
+      );
     }
 
     const userId = uuidv4();
@@ -105,8 +120,9 @@ export async function createUserHandler(
       });
     } catch (cognitoError: unknown) {
       throw internalError(
-        'Cognito へのユーザー登録に失敗しました。',
-        cognitoError instanceof Error ? cognitoError.message : undefined
+        'Failed to register the user in Cognito.',
+        cognitoError instanceof Error ? cognitoError.message : undefined,
+        ERROR_CODES.COGNITO_USER_REGISTRATION_FAILED
       );
     }
 
@@ -135,8 +151,9 @@ export async function createUserHandler(
       return successResponse({ data: newUser }, 201);
     } catch (dbError: unknown) {
       throw internalError(
-        'ユーザーの登録に失敗しました。',
-        dbError instanceof Error ? dbError.message : undefined
+        'Failed to register the user.',
+        dbError instanceof Error ? dbError.message : undefined,
+        ERROR_CODES.USER_REGISTRATION_FAILED
       );
     }
   } catch (error: unknown) {
@@ -169,19 +186,29 @@ export async function updateUserHandler(
 
     const userId = event.pathParameters?.userId;
     if (!userId) {
-      throw validationError('ユーザーIDは必須です。');
+      throw validationError(
+        'User ID is required.',
+        undefined,
+        ERROR_CODES.USER_ID_REQUIRED
+      );
     }
 
     const body = parseBody(event.body);
 
     if (body.role !== undefined && !isValidRole(body.role)) {
       throw validationError(
-        'ロールは REVIEWER, TEAM_LEADER, ADMIN のいずれかを指定してください。'
+        'Role must be one of REVIEWER, TEAM_LEADER, or ADMIN.',
+        undefined,
+        ERROR_CODES.ROLE_INVALID
       );
     }
 
     if (body.isActive !== undefined && typeof body.isActive !== 'boolean') {
-      throw validationError('isActive は真偽値で指定してください。');
+      throw validationError(
+        'isActive must be a boolean.',
+        undefined,
+        ERROR_CODES.IS_ACTIVE_INVALID
+      );
     }
 
     const hasProfileFields =
@@ -193,14 +220,20 @@ export async function updateUserHandler(
       !hasProfileFields
     ) {
       throw validationError(
-        '更新するフィールド（role, isActive, displayName, email）を指定してください。'
+        'Specify at least one field to update (role, isActive, displayName, or email).',
+        undefined,
+        ERROR_CODES.NO_UPDATE_FIELDS
       );
     }
 
     // Verify user exists
     const existingUser = await getUserById(userId);
     if (!existingUser) {
-      throw notFoundError('指定されたユーザーが見つかりません。');
+      throw notFoundError(
+        'User not found',
+        undefined,
+        ERROR_CODES.USER_NOT_FOUND
+      );
     }
 
     // Handle user disable (Req 9.6)
@@ -212,8 +245,9 @@ export async function updateUserHandler(
         await disableCognitoUser(existingUser.email);
       } catch (cognitoError: unknown) {
         throw internalError(
-          'ユーザーの無効化処理に失敗しました。',
-          cognitoError instanceof Error ? cognitoError.message : undefined
+          'Failed to deactivate the user.',
+          cognitoError instanceof Error ? cognitoError.message : undefined,
+          ERROR_CODES.USER_DEACTIVATION_FAILED
         );
       }
     }
@@ -226,8 +260,9 @@ export async function updateUserHandler(
         await enableCognitoUser(existingUser.email);
       } catch (cognitoError: unknown) {
         throw internalError(
-          'ユーザーの有効化処理に失敗しました。',
-          cognitoError instanceof Error ? cognitoError.message : undefined
+          'Failed to activate the user.',
+          cognitoError instanceof Error ? cognitoError.message : undefined,
+          ERROR_CODES.USER_ACTIVATION_FAILED
         );
       }
     }
@@ -241,8 +276,9 @@ export async function updateUserHandler(
         );
       } catch (cognitoError: unknown) {
         throw internalError(
-          'ロールの変更に失敗しました。',
-          cognitoError instanceof Error ? cognitoError.message : undefined
+          'Failed to change the role.',
+          cognitoError instanceof Error ? cognitoError.message : undefined,
+          ERROR_CODES.ROLE_UPDATE_FAILED
         );
       }
     }
@@ -276,8 +312,9 @@ export async function updateUserHandler(
         });
       } catch (dbError: unknown) {
         throw internalError(
-          'ユーザー情報の更新に失敗しました。',
-          dbError instanceof Error ? dbError.message : undefined
+          'Failed to update the user information.',
+          dbError instanceof Error ? dbError.message : undefined,
+          ERROR_CODES.USER_UPDATE_FAILED
         );
       }
     }
@@ -308,7 +345,11 @@ function parseBody(body: string | undefined): Record<string, unknown> {
   try {
     return JSON.parse(body) as Record<string, unknown>;
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 }
 

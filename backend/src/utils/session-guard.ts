@@ -1,4 +1,5 @@
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import type { SessionRecord } from '../repositories/session-repository.js';
 
 /**
@@ -13,6 +14,10 @@ import type { SessionRecord } from '../repositories/session-repository.js';
  */
 export function assertSessionEditable(session: SessionRecord): void {
   if (session.status === 'COMPLETED') {
-    throw validationError('このセッションは既に完了しているため編集できません。');
+    throw validationError(
+      'This session is already completed and cannot be edited.',
+      undefined,
+      ERROR_CODES.SESSION_NOT_EDITABLE
+    );
   }
 }

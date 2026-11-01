@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, notFoundError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { checkSessionAccess } from '../services/access-control-service.js';
 import { getSessionById } from '../repositories/session-repository.js';
 import * as mediaFileRepository from '../repositories/media-file-repository.js';
@@ -25,7 +26,11 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パラメータが必要です。');
+      throw validationError(
+        'The sessionId parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     // Verify user has access to this session
@@ -34,7 +39,11 @@ export async function handler(
     try {
       const session = await getSessionById(sessionId);
       if (!session) {
-        throw notFoundError('指定されたセッションが見つかりません。');
+        throw notFoundError(
+          'Session not found',
+          undefined,
+          ERROR_CODES.SESSION_NOT_FOUND
+        );
       }
 
       // Look up associated media file
@@ -60,8 +69,9 @@ export async function handler(
         throw queryError;
       }
       throw internalError(
-        'セッション詳細の取得に失敗しました。',
-        queryError instanceof Error ? queryError.message : undefined
+        'Failed to retrieve the session detail.',
+        queryError instanceof Error ? queryError.message : undefined,
+        ERROR_CODES.SESSION_DETAIL_FETCH_FAILED
       );
     }
   } catch (error: unknown) {

@@ -915,7 +915,7 @@ describe('LanguageModelService', () => {
       mockedCheckLanguageModelAccess.mockRejectedValue(
         new AppError({
           code: 'NOT_FOUND',
-          message: 'リソースが見つかりません。',
+          message: 'Resource not found',
           statusCode: 404,
         })
       );

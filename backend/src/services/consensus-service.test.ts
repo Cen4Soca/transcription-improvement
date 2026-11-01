@@ -165,7 +165,7 @@ describe('consensus-service', () => {
       };
 
       expect(() => computeConsensus(input)).toThrow(
-        'threshold は 1〜100 の範囲で指定してください。'
+        'threshold must be between 1 and 100.'
       );
     });
 
@@ -177,7 +177,7 @@ describe('consensus-service', () => {
       };
 
       expect(() => computeConsensus(input)).toThrow(
-        'threshold は 1〜100 の範囲で指定してください。'
+        'threshold must be between 1 and 100.'
       );
     });
 
@@ -189,7 +189,7 @@ describe('consensus-service', () => {
       };
 
       expect(() => computeConsensus(input)).toThrow(
-        'totalReviewers は 1 以上である必要があります。'
+        'totalReviewers must be at least 1.'
       );
     });
 

@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, notFoundError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   getUserByEmail,
   createUser,
@@ -47,12 +48,18 @@ export async function handler(
     const body = parseBody(event.body);
 
     if (!body.email || typeof body.email !== 'string') {
-      throw validationError('メールアドレスは必須です。');
+      throw validationError(
+        'Email is required.',
+        undefined,
+        ERROR_CODES.EMAIL_REQUIRED
+      );
     }
 
     if (!body.role || !isValidRole(body.role)) {
       throw validationError(
-        'ロールは REVIEWER, TEAM_LEADER, ADMIN のいずれかを指定してください。'
+        'Role must be one of REVIEWER, TEAM_LEADER, or ADMIN.',
+        undefined,
+        ERROR_CODES.ROLE_INVALID
       );
     }
 
@@ -61,14 +68,20 @@ export async function handler(
     // 1. Check if user already registered in DynamoDB
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
-      throw validationError('このメールアドレスは既にアプリに登録されています。');
+      throw validationError(
+        'This email is already registered in the app.',
+        undefined,
+        ERROR_CODES.EMAIL_ALREADY_REGISTERED
+      );
     }
 
     // 2. Verify user exists in Cognito (read-only)
     const cognitoUser = await lookupCognitoUser(email);
     if (!cognitoUser) {
       throw notFoundError(
-        '指定されたメールアドレスのユーザーがCognitoユーザープールに見つかりません。'
+        'No user with the specified email was found in the Cognito user pool.',
+        undefined,
+        ERROR_CODES.COGNITO_USER_NOT_FOUND
       );
     }
 
@@ -107,8 +120,9 @@ export async function handler(
       return successResponse({ data: newUser }, 201);
     } catch (dbError: unknown) {
       throw internalError(
-        'ユーザーの登録に失敗しました。',
-        dbError instanceof Error ? dbError.message : undefined
+        'Failed to register the user.',
+        dbError instanceof Error ? dbError.message : undefined,
+        ERROR_CODES.USER_REGISTRATION_FAILED
       );
     }
   } catch (error: unknown) {
@@ -123,7 +137,11 @@ function parseBody(body: string | undefined): Record<string, unknown> {
   try {
     return JSON.parse(body) as Record<string, unknown>;
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 }
 

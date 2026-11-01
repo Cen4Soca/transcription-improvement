@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { selfAssignSession } from '../services/session-service.js';
 import { recordAuditLog } from '../services/audit-service.js';
 
@@ -28,7 +29,11 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータが必要です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     try {
@@ -49,8 +54,9 @@ export async function handler(
         throw error;
       }
       throw internalError(
-        'セッションへの参加に失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to join the session.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.SESSION_JOIN_FAILED
       );
     }
   } catch (error: unknown) {

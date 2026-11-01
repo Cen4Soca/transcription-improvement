@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { checkSessionAccess } from '../services/access-control-service.js';
 import { getCorrections } from '../repositories/correction-repository.js';
 
@@ -28,7 +29,11 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータが必要です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     await checkSessionAccess(user, sessionId);
@@ -38,8 +43,9 @@ export async function handler(
       return successResponse({ data: corrections });
     } catch (queryError: unknown) {
       throw internalError(
-        '修正内容の復元に失敗しました。',
-        queryError instanceof Error ? queryError.message : undefined
+        'Failed to restore the corrections.',
+        queryError instanceof Error ? queryError.message : undefined,
+        ERROR_CODES.CORRECTION_RESTORE_FAILED
       );
     }
   } catch (error: unknown) {

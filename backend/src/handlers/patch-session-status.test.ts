@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -201,7 +201,7 @@ describe('PATCH /sessions/{sessionId}/status handler', () => {
       mockedChangeSessionStatus.mockRejectedValue(
         new AppError({
           code: 'VALIDATION_ERROR',
-          message: 'status は PENDING, IN_PROGRESS, COMPLETED のいずれかを指定してください。',
+          message: 'status must be one of PENDING, IN_PROGRESS, or COMPLETED.',
           statusCode: 400,
         })
       );
@@ -222,7 +222,7 @@ describe('PATCH /sessions/{sessionId}/status handler', () => {
       mockedChangeSessionStatus.mockRejectedValue(
         new AppError({
           code: 'VALIDATION_ERROR',
-          message: '指定されたセッションが見つかりません。',
+          message: 'Session not found',
           statusCode: 400,
         })
       );
@@ -233,7 +233,7 @@ describe('PATCH /sessions/{sessionId}/status handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('見つかりません');
+      expect(body.error.message).toContain('not found');
     });
 
     it('returns 400 when transition is not allowed (service throws)', async () => {
@@ -242,7 +242,7 @@ describe('PATCH /sessions/{sessionId}/status handler', () => {
       mockedChangeSessionStatus.mockRejectedValue(
         new AppError({
           code: 'VALIDATION_ERROR',
-          message: '現在のステータス「COMPLETED」から「COMPLETED」への変更はできません。',
+          message: 'Cannot change status from "COMPLETED" to "COMPLETED".',
           statusCode: 400,
         })
       );
@@ -253,7 +253,7 @@ describe('PATCH /sessions/{sessionId}/status handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('変更はできません');
+      expect(body.error.message).toContain('Cannot change status');
     });
   });
 
@@ -272,7 +272,7 @@ describe('PATCH /sessions/{sessionId}/status handler', () => {
       mockedCheckSessionAccess.mockRejectedValue(
         new AppError({
           code: 'NOT_FOUND',
-          message: 'リソースが見つかりません。',
+          message: 'Resource not found',
           statusCode: 404,
         })
       );
@@ -300,7 +300,7 @@ describe('PATCH /sessions/{sessionId}/status handler', () => {
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('INTERNAL_ERROR');
       expect(body.error.message).toBe(
-        'セッションステータスの更新に失敗しました。'
+        'Failed to update the session status.'
       );
       expect(body.error.details).toBe('DynamoDB write failed');
     });

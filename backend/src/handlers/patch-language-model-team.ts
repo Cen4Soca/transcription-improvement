@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { changeModelTeam } from '../services/language-model-service.js';
 import { recordAuditLog } from '../services/audit-service.js';
 
@@ -32,12 +33,20 @@ export async function handler(
 
     const modelName = event.pathParameters?.modelName;
     if (!modelName) {
-      throw validationError('modelName パスパラメータが必要です。');
+      throw validationError(
+        'The modelName path parameter is required.',
+        undefined,
+        ERROR_CODES.MODEL_NAME_REQUIRED_PARAM
+      );
     }
 
     const body = event.body ? JSON.parse(event.body) : null;
     if (!body || !body.teamId || typeof body.teamId !== 'string') {
-      throw validationError('リクエストボディに teamId フィールドが必要です。');
+      throw validationError(
+        'The request body must include a teamId field.',
+        undefined,
+        ERROR_CODES.TEAM_ID_FIELD_REQUIRED
+      );
     }
 
     try {
@@ -61,8 +70,9 @@ export async function handler(
         throw error;
       }
       throw internalError(
-        'モデルのチーム変更に失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to change the model team.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.MODEL_TEAM_UPDATE_FAILED
       );
     }
   } catch (error: unknown) {

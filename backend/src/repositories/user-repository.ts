@@ -15,6 +15,8 @@ export interface UserRecord {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Preferred UI language ('ja' | 'en'). Undefined means not yet set. */
+  preferredLanguage?: 'ja' | 'en';
 }
 
 export interface CreateUserInput {
@@ -29,6 +31,7 @@ export interface UpdateUserInput {
   isActive?: boolean;
   displayName?: string;
   email?: string;
+  preferredLanguage?: 'ja' | 'en';
 }
 
 /**
@@ -213,6 +216,11 @@ export async function updateUser(
     expressionAttributeValues[':gsi1pk'] = `EMAIL#${input.email}`;
   }
 
+  if (input.preferredLanguage !== undefined) {
+    updateExpressions.push('preferredLanguage = :preferredLanguage');
+    expressionAttributeValues[':preferredLanguage'] = input.preferredLanguage;
+  }
+
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
@@ -237,6 +245,7 @@ export async function updateUser(
  * Map a DynamoDB item to a UserRecord.
  */
 function mapItemToUserRecord(item: Record<string, unknown>): UserRecord {
+  const preferredLanguage = item['preferredLanguage'];
   return {
     userId: item['userId'] as string,
     email: item['email'] as string,
@@ -245,5 +254,8 @@ function mapItemToUserRecord(item: Record<string, unknown>): UserRecord {
     isActive: item['isActive'] as boolean,
     createdAt: item['createdAt'] as string,
     updatedAt: item['updatedAt'] as string,
+    ...(preferredLanguage === 'ja' || preferredLanguage === 'en'
+      ? { preferredLanguage }
+      : {}),
   };
 }

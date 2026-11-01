@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -185,7 +185,7 @@ describe('POST /upload-url handler', () => {
     expect(result.statusCode).toBe(400);
     const respBody = JSON.parse(result.body as string);
     expect(respBody.error.code).toBe('VALIDATION_ERROR');
-    expect(respBody.error.message).toBe('リクエストボディが必要です。');
+    expect(respBody.error.message).toBe('A request body is required.');
   });
 
   it('returns 400 when request body is invalid JSON', async () => {
@@ -195,7 +195,7 @@ describe('POST /upload-url handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('リクエストボディのJSON形式が不正です。');
+    expect(body.error.message).toBe('The request body is not valid JSON.');
   });
 
   it('returns 400 when filename is missing', async () => {
@@ -207,7 +207,7 @@ describe('POST /upload-url handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('filename は必須です。');
+    expect(body.error.message).toBe('filename is required.');
   });
 
   it('returns 400 when contentType is missing', async () => {
@@ -219,7 +219,7 @@ describe('POST /upload-url handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('contentType は必須です。');
+    expect(body.error.message).toBe('contentType is required.');
   });
 
   it('returns 400 when fileSize is missing', async () => {
@@ -231,7 +231,7 @@ describe('POST /upload-url handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('fileSize は必須です。');
+    expect(body.error.message).toBe('fileSize is required.');
   });
 
   it('returns 400 with UNSUPPORTED_FILE_FORMAT for invalid file extension', async () => {
@@ -247,7 +247,7 @@ describe('POST /upload-url handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('UNSUPPORTED_FILE_FORMAT');
-    expect(body.error.message).toContain('サポートされていないファイル形式');
+    expect(body.error.message).toContain('Unsupported file format');
     expect(body.error.supportedFormats).toEqual([
       'mp3', 'wav', 'flac', 'ogg', 'm4a', 'amr', 'webm',
       'mp4', 'mkv', 'avi', 'mov',
@@ -293,7 +293,7 @@ describe('POST /upload-url handler', () => {
     mockedGeneratePresignedUrl.mockRejectedValue(
       new AppError({
         code: 'CONFIGURATION_ERROR',
-        message: 'メディアバケットの設定が不足しています。',
+        message: 'Media bucket configuration is missing.',
         statusCode: 500,
         details: 'MEDIA_BUCKET_NAME environment variable is not set',
       })

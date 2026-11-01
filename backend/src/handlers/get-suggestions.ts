@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError, internalError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { checkSessionAccess } from '../services/access-control-service.js';
 import { generateSuggestions } from '../services/suggestion-service.js';
 
@@ -29,12 +30,20 @@ export async function handler(
 
     const sessionId = event.pathParameters?.sessionId;
     if (!sessionId) {
-      throw validationError('sessionId パスパラメータが必要です。');
+      throw validationError(
+        'The sessionId path parameter is required.',
+        undefined,
+        ERROR_CODES.SESSION_ID_REQUIRED
+      );
     }
 
     const segmentId = event.queryStringParameters?.segmentId;
     if (!segmentId) {
-      throw validationError('segmentId クエリパラメータが必要です。');
+      throw validationError(
+        'The segmentId query parameter is required.',
+        undefined,
+        ERROR_CODES.SEGMENT_ID_REQUIRED
+      );
     }
 
     const originalText = event.queryStringParameters?.text ?? '';
@@ -46,8 +55,9 @@ export async function handler(
       return successResponse(result);
     } catch (error: unknown) {
       throw internalError(
-        '修正候補の取得に失敗しました。',
-        error instanceof Error ? error.message : undefined
+        'Failed to retrieve correction suggestions.',
+        error instanceof Error ? error.message : undefined,
+        ERROR_CODES.SUGGESTIONS_FETCH_FAILED
       );
     }
   } catch (error: unknown) {

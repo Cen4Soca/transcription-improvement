@@ -5,6 +5,7 @@ import type {
 import { extractUser } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import { deleteMediaFile } from '../services/deletion-service.js';
 
 /**
@@ -31,7 +32,11 @@ export async function handler(
     // Extract mediaFileId from path parameters
     const mediaFileId = event.pathParameters?.mediaFileId;
     if (!mediaFileId) {
-      throw validationError('mediaFileId パスパラメータは必須です。');
+      throw validationError(
+        'The mediaFileId path parameter is required.',
+        undefined,
+        ERROR_CODES.REQUEST_BODY_INVALID
+      );
     }
 
     // force=true confirms deletion of media linked to an IN_PROGRESS session.
@@ -44,7 +49,7 @@ export async function handler(
       force,
     });
 
-    return successResponse({ message: 'メディアファイルを削除しました。' });
+    return successResponse({ message: 'The media file was deleted.' });
   } catch (error: unknown) {
     return errorResponse(error);
   }

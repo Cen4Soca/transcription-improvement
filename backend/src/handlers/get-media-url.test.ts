@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -132,7 +132,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toBe('sessionId パスパラメータが必要です。');
+    expect(body.error.message).toBe('The sessionId path parameter is required.');
   });
 
   it('returns 403 when JWT sub claim is missing', async () => {
@@ -150,7 +150,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     mockedCheckSessionAccess.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'リソースが見つかりません。',
+        message: 'Resource not found',
         statusCode: 404,
       })
     );
@@ -168,7 +168,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     mockedGetMediaUrl.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'メディアファイルが見つかりません。',
+        message: 'Media file not found',
         statusCode: 404,
       })
     );
@@ -179,7 +179,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     expect(result.statusCode).toBe(404);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('NOT_FOUND');
-    expect(body.error.message).toBe('メディアファイルが見つかりません。');
+    expect(body.error.message).toBe('Media file not found');
   });
 
   it('returns 403 when scanStatus is PENDING', async () => {
@@ -187,7 +187,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     mockedGetMediaUrl.mockRejectedValue(
       new AppError({
         code: 'FORBIDDEN',
-        message: 'マルウェアスキャン完了前のファイルにはアクセスできません',
+        message: 'This file cannot be accessed until the malware scan is complete.',
         statusCode: 403,
       })
     );
@@ -198,7 +198,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     expect(result.statusCode).toBe(403);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('FORBIDDEN');
-    expect(body.error.message).toBe('マルウェアスキャン完了前のファイルにはアクセスできません');
+    expect(body.error.message).toBe('This file cannot be accessed until the malware scan is complete.');
   });
 
   it('returns 403 when scanStatus is INFECTED', async () => {
@@ -206,7 +206,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     mockedGetMediaUrl.mockRejectedValue(
       new AppError({
         code: 'FORBIDDEN',
-        message: 'マルウェアが検出されたファイルにはアクセスできません',
+        message: 'This file cannot be accessed because malware was detected.',
         statusCode: 403,
       })
     );
@@ -217,7 +217,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     expect(result.statusCode).toBe(403);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('FORBIDDEN');
-    expect(body.error.message).toBe('マルウェアが検出されたファイルにはアクセスできません');
+    expect(body.error.message).toBe('This file cannot be accessed because malware was detected.');
   });
 
   it('returns 500 when CloudFront signing configuration is missing', async () => {
@@ -225,7 +225,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     mockedGetMediaUrl.mockRejectedValue(
       new AppError({
         code: 'INTERNAL_ERROR',
-        message: 'メディアURL生成の設定が不足しています。',
+        message: 'Media URL generation is not configured.',
         statusCode: 500,
       })
     );
@@ -236,7 +236,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('INTERNAL_ERROR');
-    expect(body.error.message).toBe('メディアURL生成の設定が不足しています。');
+    expect(body.error.message).toBe('Media URL generation is not configured.');
   });
 
   it('calls checkSessionAccess with correct user and sessionId', async () => {
@@ -275,7 +275,7 @@ describe('GET /sessions/{sessionId}/media-url handler', () => {
     mockedCheckSessionAccess.mockRejectedValue(
       new AppError({
         code: 'NOT_FOUND',
-        message: 'リソースが見つかりません。',
+        message: 'Resource not found',
         statusCode: 404,
       })
     );

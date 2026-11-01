@@ -12,6 +12,7 @@ import type {
 import { extractUser, requireRole } from '../utils/auth-middleware.js';
 import { successResponse, errorResponse } from '../utils/response-builder.js';
 import { validationError } from '../utils/error-handler.js';
+import { ERROR_CODES } from '../utils/error-codes.js';
 import {
   searchAuditLogs,
   removeAuditLogs,
@@ -82,8 +83,9 @@ export async function listAuditLogsHandler(
     // Validate operationType if provided
     if (operationType && !isValidOperationType(operationType)) {
       throw validationError(
-        '無効な操作種別です。',
-        `Valid values: ${VALID_OPERATION_TYPES.join(', ')}`
+        'Invalid operation type.',
+        `Valid values: ${VALID_OPERATION_TYPES.join(', ')}`,
+        ERROR_CODES.AUDIT_ACTION_INVALID
       );
     }
 
@@ -92,16 +94,28 @@ export async function listAuditLogsHandler(
     if (pageStr) {
       page = parseInt(pageStr, 10);
       if (isNaN(page) || page < 1) {
-        throw validationError('ページ番号は1以上の整数で指定してください。');
+        throw validationError(
+          'The page number must be an integer of at least 1.',
+          undefined,
+          ERROR_CODES.PAGE_NUMBER_INVALID
+        );
       }
     }
 
     // Validate date formats
     if (startDate && !isValidISODate(startDate)) {
-      throw validationError('開始日はISO 8601形式で指定してください。');
+      throw validationError(
+        'startDate must be in ISO 8601 format.',
+        undefined,
+        ERROR_CODES.START_DATE_INVALID
+      );
     }
     if (endDate && !isValidISODate(endDate)) {
-      throw validationError('終了日はISO 8601形式で指定してください。');
+      throw validationError(
+        'endDate must be in ISO 8601 format.',
+        undefined,
+        ERROR_CODES.END_DATE_INVALID
+      );
     }
 
     const result = await searchAuditLogs({
@@ -165,24 +179,35 @@ export async function deleteAuditLogsHandler(
     // Require at least one filter
     if (!startDate && !endDate && !actorUserId && !actorName && !operationType) {
       throw validationError(
-        '削除条件を少なくとも1つ指定してください（期間・実行者・操作種別）。'
+        'Specify at least one deletion criterion (date range, actor, or operation type).',
+        undefined,
+        ERROR_CODES.DELETE_CRITERIA_REQUIRED
       );
     }
 
     // Validate operationType if provided
     if (operationType && !isValidOperationType(operationType)) {
       throw validationError(
-        '無効な操作種別です。',
-        `Valid values: ${VALID_OPERATION_TYPES.join(', ')}`
+        'Invalid operation type.',
+        `Valid values: ${VALID_OPERATION_TYPES.join(', ')}`,
+        ERROR_CODES.AUDIT_ACTION_INVALID
       );
     }
 
     // Validate date formats
     if (startDate && !isValidISODate(startDate)) {
-      throw validationError('開始日はISO 8601形式で指定してください。');
+      throw validationError(
+        'startDate must be in ISO 8601 format.',
+        undefined,
+        ERROR_CODES.START_DATE_INVALID
+      );
     }
     if (endDate && !isValidISODate(endDate)) {
-      throw validationError('終了日はISO 8601形式で指定してください。');
+      throw validationError(
+        'endDate must be in ISO 8601 format.',
+        undefined,
+        ERROR_CODES.END_DATE_INVALID
+      );
     }
 
     const deletedCount = await removeAuditLogs(
@@ -227,6 +252,10 @@ function parseBody(body: string | undefined): Record<string, unknown> {
   try {
     return JSON.parse(body) as Record<string, unknown>;
   } catch {
-    throw validationError('リクエストボディのJSON形式が不正です。');
+    throw validationError(
+      'The request body is not valid JSON.',
+      undefined,
+      ERROR_CODES.REQUEST_BODY_INVALID
+    );
   }
 }

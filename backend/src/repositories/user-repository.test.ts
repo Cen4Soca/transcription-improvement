@@ -67,4 +67,35 @@ describe('user-repository updateUser', () => {
     expect(input.ExpressionAttributeValues[':role']).toBe('ADMIN');
     expect(input.ExpressionAttributeValues[':isActive']).toBe(false);
   });
+
+  it('sets preferredLanguage in the update expression', async () => {
+    await updateUser('user-001', { preferredLanguage: 'en' });
+
+    const input = mockSend.mock.calls[0][0].input;
+    expect(input.UpdateExpression).toContain('preferredLanguage = :preferredLanguage');
+    expect(input.ExpressionAttributeValues[':preferredLanguage']).toBe('en');
+  });
+
+  it('maps a stored preferredLanguage onto the returned record', async () => {
+    mockSend.mockResolvedValueOnce({
+      Attributes: {
+        userId: 'user-001',
+        email: 'new@example.com',
+        displayName: 'New Name',
+        role: 'REVIEWER',
+        isActive: true,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-02-01T00:00:00.000Z',
+        preferredLanguage: 'en',
+      },
+    });
+
+    const result = await updateUser('user-001', { preferredLanguage: 'en' });
+    expect(result.preferredLanguage).toBe('en');
+  });
+
+  it('omits preferredLanguage when not stored', async () => {
+    const result = await updateUser('user-001', { displayName: 'New Name' });
+    expect(result.preferredLanguage).toBeUndefined();
+  });
 });

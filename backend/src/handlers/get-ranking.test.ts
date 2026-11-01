@@ -15,7 +15,7 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
       const claims = event.requestContext.authorizer.jwt.claims;
       const sub = (claims['sub'] as string) ?? '';
       if (!sub) {
-        throw forbiddenError('認証情報が不正です。', 'Missing sub claim in JWT');
+        throw forbiddenError('Authentication information is invalid.', 'Missing sub claim in JWT');
       }
       const role = (claims['custom:role'] as string) || 'REVIEWER';
       return {
@@ -276,7 +276,7 @@ describe('GET /ranking handler', () => {
     expect(result.statusCode).toBe(400);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('VALIDATION_ERROR');
-    expect(body.error.message).toContain('period パラメータが不正です');
+    expect(body.error.message).toContain('The period parameter is invalid');
   });
 
   it('returns 403 when JWT sub claim is missing', async () => {
@@ -297,7 +297,7 @@ describe('GET /ranking handler', () => {
     expect(result.statusCode).toBe(500);
     const body = JSON.parse(result.body as string);
     expect(body.error.code).toBe('INTERNAL_ERROR');
-    expect(body.error.message).toBe('ランキングの取得に失敗しました。');
+    expect(body.error.message).toBe('Failed to retrieve the ranking.');
     expect(body.error.details).toBe('DynamoDB timeout');
   });
 
@@ -348,7 +348,7 @@ describe('GET /ranking handler', () => {
       expect(result.statusCode).toBe(400);
       const body = JSON.parse(result.body as string);
       expect(body.error.code).toBe('VALIDATION_ERROR');
-      expect(body.error.message).toContain('page パラメータは1以上の整数');
+      expect(body.error.message).toContain('The page parameter must be an integer of at least 1');
     });
 
     it('returns 400 for non-numeric page parameter', async () => {
