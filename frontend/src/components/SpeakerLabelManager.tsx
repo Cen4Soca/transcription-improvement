@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Segment } from '../types/segment';
 import {
@@ -75,6 +75,12 @@ export function SpeakerLabelManager({
   const [isAdding, setIsAdding] = useState(false);
   // Per-label delete error message (Japanese), keyed by label.
   const [deleteError, setDeleteError] = useState<{ label: string; message: string } | null>(null);
+  // Tracks IME composition state, shared by the rename input and the add-label
+  // input (focus/composition is only ever active on one of them at a time).
+  // Some browsers already reset event.isComposing to false on the confirming
+  // keydown, so we keep a ref as a backup guard (same approach as
+  // InlineEditor / SegmentEditor).
+  const isComposingRef = useRef(false);
 
   const uniqueLabels = mergeSpeakerLabels(segments, masterLabels);
 
@@ -176,6 +182,15 @@ export function SpeakerLabelManager({
 
   const handleAddKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // IME変換中の Enter は変換確定のための押下なので無視する。
+      if (
+        e.nativeEvent.isComposing ||
+        isComposingRef.current ||
+        e.keyCode === 229
+      ) {
+        return;
+      }
+
       if (e.key === 'Enter') {
         e.preventDefault();
         void handleAddLabel();
@@ -197,8 +212,26 @@ export function SpeakerLabelManager({
     [onDeleteLabel]
   );
 
+  const handleCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
+
+  const handleCompositionEnd = useCallback(() => {
+    isComposingRef.current = false;
+  }, []);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // IME変換中の Enter は変換確定のための押下なので無視する。
+      // nativeEvent.isComposing / ref / keyCode 229 のいずれかで判定する。
+      if (
+        e.nativeEvent.isComposing ||
+        isComposingRef.current ||
+        e.keyCode === 229
+      ) {
+        return;
+      }
+
       if (e.key === 'Enter') {
         e.preventDefault();
         handleConfirmRename();
@@ -265,6 +298,8 @@ export function SpeakerLabelManager({
                     value={newLabelName}
                     onChange={(e) => setNewLabelName(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    onCompositionStart={handleCompositionStart}
+                    onCompositionEnd={handleCompositionEnd}
                     aria-label={t('speakerManager.newLabelNameAriaLabel', { label })}
                     autoFocus
                     className="flex-1 text-xs border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -349,6 +384,8 @@ export function SpeakerLabelManager({
                 if (addError) setAddError(null);
               }}
               onKeyDown={handleAddKeyDown}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
               aria-label={t('speakerManager.addLabelAriaLabel')}
               placeholder={t('speakerManager.addLabelPlaceholder')}
               className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"

@@ -1,0 +1,149 @@
+{
+  "pbtResults": {
+    "1. バグ条件の探索的再現テストを書く（修正実装の前）": {
+      "status": "passed",
+      "failingExample": "Property failed after 1 tests. 3 件すべてが未修正コードで FAIL し、バグを再現した（＝探索テストとして成功）。\n\n(1) リネーム入力: composition 中の Enter で onRenameConfirm が呼ばれない\n  seed: 2077797380, path: \"0:0\"\n  Counterexample: [\"変換中 \"]  (fc 生成の任意ラベルにスコープ)\n  AssertionError: expected \"vi.fn()\" to not be called at all, but actually been called 1 times (Number of calls: 1)\n  → compositionStart 後・isComposing: true の Enter で onRenameConfirm が {oldLabel:\"spk_0\", newLabel:\"山田\", affectedSegmentCount:2} 相当で発火してしまう\n\n(2) ラベル追加入力: composition 中の Enter で onAddLabel が呼ばれない\n  seed: -2052808578, path: \"0:0\"\n  Counterexample: [\"変換中 \"]\n  AssertionError: expected \"vi.fn()\" to not be called at all, but actually been called 1 times (Number of calls: 1)\n  → compositionStart 後・isComposing: true の Enter で onAddLabel が発火してしまう\n\n(3) リネーム入力: keyCode === 229 の Enter で onRenameConfirm が呼ばれない\n  AssertionError: expected \"vi.fn()\" to not be called at all, but actually been called 1 times (Number of calls: 1)\n  → keyCode 229 の Enter でも onRenameConfirm が発火してしまう\n\n根本原因の確認: handleKeyDown / handleAddKeyDown が event.isComposing / isComposingRef / keyCode === 229 を一切確認せず、e.key === 'Enter' だけで即確定している（design の Hypothesized Root Cause と一致）。",
+      "lastRunTimestamp": 1793546401415
+    },
+    "2. 保持（Preservation）プロパティテストを書く（修正実装の前）": {
+      "status": "passed",
+      "lastRunTimestamp": 1793546593334
+    },
+    "3.2 バグ条件の探索的再現テストがパスすることを確認する": {
+      "status": "passed",
+      "lastRunTimestamp": 1793546885389
+    },
+    "3.3 保持テストが引き続きパスすることを確認する": {
+      "status": "passed",
+      "lastRunTimestamp": 1793546965459
+    }
+  },
+  "executionHistory": {
+    "1. バグ条件の探索的再現テストを書く（修正実装の前）": [
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546259939
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546265066
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546426338
+      }
+    ],
+    "2. 保持（Preservation）プロパティテストを書く（修正実装の前）": [
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546259998
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546431902
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546622485
+      }
+    ],
+    "3.1 IME ガードを実装する": [
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546260017
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546627151
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546810354
+      }
+    ],
+    "3.2 バグ条件の探索的再現テストがパスすることを確認する": [
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546260034
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546816599
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546905498
+      }
+    ],
+    "3.3 保持テストが引き続きパスすることを確認する": [
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546260054
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546910812
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546980523
+      }
+    ],
+    "4. Unit / Integration テストを追加する": [
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546260073
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546986066
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793547128781
+      }
+    ],
+    "5. チェックポイント - 全テストがパスすることを確認する": [
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546260122
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793547133854
+      },
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793547276328
+      }
+    ],
+    "3. SpeakerLabelManager の2入力に IME ガードを実装する": [
+      {
+        "executionId": "8e59a6f7-4008-4942-b980-4c649acc1db4",
+        "chatSessionId": "sess_6b3ad2d5-f282-40be-a1a1-21e9345045e3",
+        "timestamp": 1793546980560
+      }
+    ]
+  }
+}
