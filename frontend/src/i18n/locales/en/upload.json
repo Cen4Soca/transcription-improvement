@@ -1,6 +1,13 @@
 {
   "unsupportedFormat": "Unsupported file format. Supported formats: {{formats}}",
   "fileTooLarge": "The file size exceeds the limit (2GB). Selected file: {{size}}",
+  "transcriptionJobSectionAriaLabel": "Transcription job creation section",
+  "mediaFileListSectionAriaLabel": "Media file list section",
+  "validation": {
+    "unsupportedFormat": "Unsupported file format.",
+    "supportedFormats": "Supported formats: {{formats}}",
+    "fileTooLarge": "The file size exceeds the limit."
+  },
   "pageTitle": "Media upload",
   "pageDescription": "Upload an audio or video file to create a transcription",
   "selectFileAriaLabel": "Select a file",

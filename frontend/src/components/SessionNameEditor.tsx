@@ -4,7 +4,6 @@ import type { AppError } from '../types/api';
 import {
   validateSessionName,
   describeRenameError,
-  SESSION_NAME_RULE_TEXT,
 } from '../utils/session-name';
 
 export interface SessionNameEditorProps {
@@ -32,7 +31,8 @@ export interface SessionNameEditorProps {
  * - ⓘ はホバーとキーボードフォーカスの両方でルール文を表示し、
  *   aria-describedby でスクリーンリーダーから参照できる。
  *
- * UI テキストは全て日本語。API エラー（英語）は describeRenameError で日本語に変換する。
+ * UI テキストは i18n（review namespace）でキー化する。API エラー（英語）は
+ * describeRenameError で表示用メッセージに変換する。
  */
 export function SessionNameEditor({
   name,
@@ -163,7 +163,7 @@ export function SessionNameEditor({
               tooltipVisible ? 'block' : 'hidden'
             }`}
           >
-            {SESSION_NAME_RULE_TEXT}
+            {t('sessionName.rule')}
           </span>
         </span>
 

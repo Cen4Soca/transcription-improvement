@@ -3,6 +3,8 @@
     "loading": "読み込み中...",
     "loadingAriaLabel": "読み込み中",
     "defaultTitle": "校閲セッション一覧",
+    "assignedTitle": "自分の割り当てセッション",
+    "joinableTitle": "参加可能なセッション",
     "statusFilterAriaLabel": "ステータスフィルター",
     "filter": {
       "all": "全て",
@@ -52,7 +54,14 @@
     "deleteMediaWarning": "この操作は取り消せません。メディアファイルが削除されると、再生機能が利用できなくなります。",
     "deleteTranscriptionDialogTitle": "Transcription の削除",
     "transcriptionFallbackName": "Transcription",
-    "deleteTranscriptionWarning": "この操作は取り消せません。関連するすべてのデータ（Segment・Correction・ConsensusResult）が削除されます。"
+    "deleteTranscriptionWarning": "この操作は取り消せません。関連するすべてのデータ（Segment・Correction・ConsensusResult）が削除されます。",
+    "dataFetchFailed": "データの取得に失敗しました。"
+  },
+  "mediaUrlError": {
+    "notFound": "メディアファイルが見つかりません。このセッションには再生可能なファイルが登録されていない可能性があります。",
+    "forbidden": "メディアファイルを再生できません。マルウェアスキャンが完了していないか、アクセスが許可されていない可能性があります。",
+    "genericWithDetail": "メディアの読み込みに失敗しました: {{detail}}",
+    "generic": "メディアの読み込みに失敗しました。"
   },
   "speaker": {
     "editAriaLabel": "話者ラベル: {{label}}。クリックして変更",
@@ -112,7 +121,13 @@
     "confirmMessage": "このセッションを進行中に戻します。確定済みの結果は保持されます。実行してよろしいですか。",
     "execute": "実行する",
     "done": "進行中に戻しました。",
-    "failed": "差し戻しに失敗しました。"
+    "failed": "差し戻しに失敗しました。",
+    "error": {
+      "forbidden": "このセッションを差し戻す権限がありません。",
+      "notFound": "セッションが見つかりません。",
+      "notCompleted": "完了していないセッションは差し戻しできません。",
+      "generic": "差し戻しに失敗しました。時間をおいて再度お試しください。"
+    }
   },
   "aggregate": {
     "groupAriaLabel": "強制集約の操作",
@@ -122,7 +137,12 @@
     "confirmMessage": "集約を実行するとセッションは完了となり、元に戻せません。実行してよろしいですか。",
     "execute": "実行する",
     "resultSummary": "集約が完了しました。確定 {{confirmed}} 件 / 不一致 {{conflict}} 件 / レビュアー {{reviewers}} 名",
-    "failed": "集約に失敗しました。"
+    "failed": "集約に失敗しました。",
+    "error": {
+      "forbidden": "このセッションを集約する権限がありません。",
+      "notAggregatable": "このセッションは集約できません。既に完了しているか、集約できない状態の可能性があります。",
+      "generic": "集約に失敗しました。時間をおいて再度お試しください。"
+    }
   },
   "sessionName": {
     "editAriaLabel": "セッション名を編集",
@@ -130,7 +150,13 @@
     "validationRuleAriaLabel": "バリデーションルール",
     "requestSuggestion": "トランスクリプションから名前を提案",
     "suggesting": "提案を取得中...",
-    "suggestionFailed": "提案を取得できませんでした。"
+    "suggestionFailed": "提案を取得できませんでした。",
+    "rule": "セッション名は必須です。1〜100文字で入力してください。前後の空白は自動的に削除されます。",
+    "validation": {
+      "required": "セッション名を入力してください。",
+      "tooLong": "セッション名は100文字以内で入力してください。"
+    },
+    "updateFailed": "セッション名の更新に失敗しました。しばらくしてからもう一度お試しください。"
   },
   "suggestion": {
     "title": "修正候補",
@@ -208,6 +234,7 @@
     "saveAssignment": "割り当てを保存"
   },
   "speakerManager": {
+    "sessionNotIdentified": "セッションが特定できません。",
     "dialogAriaLabel": "話者ラベル管理",
     "heading": "話者ラベル管理",
     "closeAriaLabel": "話者ラベル管理を閉じる",

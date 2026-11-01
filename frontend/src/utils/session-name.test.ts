@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import i18n from '../i18n';
 import {
   validateSessionName,
   describeRenameError,
-  SESSION_NAME_RULE_TEXT,
+  getSessionNameRuleText,
 } from './session-name';
 import type { AppError } from '../types/api';
 
@@ -11,7 +12,7 @@ describe('validateSessionName', () => {
     const result = validateSessionName('');
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('セッション名を入力してください。');
+      expect(result.message).toBe(i18n.t('review:sessionName.validation.required'));
     }
   });
 
@@ -19,7 +20,7 @@ describe('validateSessionName', () => {
     const result = validateSessionName('   ');
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('セッション名を入力してください。');
+      expect(result.message).toBe(i18n.t('review:sessionName.validation.required'));
     }
   });
 
@@ -38,7 +39,7 @@ describe('validateSessionName', () => {
     const result = validateSessionName('a'.repeat(101));
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('セッション名は100文字以内で入力してください。');
+      expect(result.message).toBe(i18n.t('review:sessionName.validation.tooLong'));
     }
   });
 
@@ -59,7 +60,7 @@ describe('describeRenameError', () => {
       code: 'VALIDATION_ERROR',
       message: 'Session name must be between 1 and 100 characters.',
     };
-    expect(describeRenameError(error)).toBe(SESSION_NAME_RULE_TEXT);
+    expect(describeRenameError(error)).toBe(getSessionNameRuleText());
   });
 
   it('その他のコードは汎用文を返す', () => {
@@ -68,7 +69,7 @@ describe('describeRenameError', () => {
       message: 'Something failed.',
     };
     expect(describeRenameError(error)).toBe(
-      'セッション名の更新に失敗しました。しばらくしてからもう一度お試しください。'
+      i18n.t('review:sessionName.updateFailed')
     );
   });
 });

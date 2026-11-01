@@ -1,5 +1,6 @@
 {
   "pageTitle": "管理画面",
+  "loadFailed": "データの読み込みに失敗しました。",
   "tabsAriaLabel": "管理画面タブ",
   "tab": {
     "users": "ユーザー管理",

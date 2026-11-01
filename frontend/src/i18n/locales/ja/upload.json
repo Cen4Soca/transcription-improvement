@@ -1,6 +1,13 @@
 {
   "unsupportedFormat": "サポートされていないファイル形式です。サポートされる形式: {{formats}}",
   "fileTooLarge": "ファイルサイズが上限（2GB）を超えています。選択されたファイル: {{size}}",
+  "transcriptionJobSectionAriaLabel": "文字起こしジョブ作成セクション",
+  "mediaFileListSectionAriaLabel": "メディアファイル一覧セクション",
+  "validation": {
+    "unsupportedFormat": "サポートされていないファイル形式です。",
+    "supportedFormats": "サポートされる形式: {{formats}}",
+    "fileTooLarge": "ファイルサイズが上限を超えています。"
+  },
   "pageTitle": "メディアアップロード",
   "pageDescription": "音声・動画ファイルをアップロードして文字起こしを作成します",
   "selectFileAriaLabel": "ファイルを選択",

@@ -16,6 +16,14 @@
   "answerCandidatesAriaLabel": "セグメント {{segmentId}} の回答候補",
   "answerCount": "{{count}}名",
   "resolveAction": "この回答で確定",
+  "statusFetchFailed": "Consensus 状態の取得に失敗しました。",
+  "resolveError": {
+    "notResolvable": "このセグメントは解決できません。競合解決待ちのセグメントのみ確定できます。",
+    "forbidden": "この操作を行う権限がありません。",
+    "notFound": "対象のセッションまたはセグメントが見つかりません。",
+    "genericWithDetail": "Consensus の確定に失敗しました: {{detail}}",
+    "generic": "Consensus の確定に失敗しました。"
+  },
   "conflictPanel": {
     "status": {
       "confirmed": "確定済み",

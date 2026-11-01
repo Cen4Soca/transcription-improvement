@@ -16,6 +16,14 @@
   "answerCandidatesAriaLabel": "Answer candidates for segment {{segmentId}}",
   "answerCount": "{{count}} reviewer(s)",
   "resolveAction": "Confirm this answer",
+  "statusFetchFailed": "Failed to fetch consensus status.",
+  "resolveError": {
+    "notResolvable": "This segment cannot be resolved. Only segments awaiting conflict resolution can be confirmed.",
+    "forbidden": "You do not have permission to perform this action.",
+    "notFound": "The target session or segment was not found.",
+    "genericWithDetail": "Failed to confirm consensus: {{detail}}",
+    "generic": "Failed to confirm consensus."
+  },
   "conflictPanel": {
     "status": {
       "confirmed": "Confirmed",

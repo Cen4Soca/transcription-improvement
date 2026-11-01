@@ -3,6 +3,8 @@
     "loading": "Loading...",
     "loadingAriaLabel": "Loading",
     "defaultTitle": "Review sessions",
+    "assignedTitle": "My assigned sessions",
+    "joinableTitle": "Joinable sessions",
     "statusFilterAriaLabel": "Status filter",
     "filter": {
       "all": "All",
@@ -52,7 +54,14 @@
     "deleteMediaWarning": "This action cannot be undone. Once the media file is deleted, playback will no longer be available.",
     "deleteTranscriptionDialogTitle": "Delete transcription",
     "transcriptionFallbackName": "Transcription",
-    "deleteTranscriptionWarning": "This action cannot be undone. All related data (segments, corrections, consensus results) will be deleted."
+    "deleteTranscriptionWarning": "This action cannot be undone. All related data (segments, corrections, consensus results) will be deleted.",
+    "dataFetchFailed": "Failed to fetch data."
+  },
+  "mediaUrlError": {
+    "notFound": "The media file was not found. This session may not have a playable file registered.",
+    "forbidden": "The media file cannot be played. The malware scan may not have completed, or access may not be permitted.",
+    "genericWithDetail": "Failed to load media: {{detail}}",
+    "generic": "Failed to load media."
   },
   "speaker": {
     "editAriaLabel": "Speaker label: {{label}}. Click to change",
@@ -112,7 +121,13 @@
     "confirmMessage": "This will return the session to in progress. Confirmed results are preserved. Do you want to continue?",
     "execute": "Execute",
     "done": "Returned to in progress.",
-    "failed": "Failed to reopen."
+    "failed": "Failed to reopen.",
+    "error": {
+      "forbidden": "You do not have permission to reopen this session.",
+      "notFound": "Session not found.",
+      "notCompleted": "A session that is not completed cannot be reopened.",
+      "generic": "Failed to reopen. Please wait a moment and try again."
+    }
   },
   "aggregate": {
     "groupAriaLabel": "Force aggregation actions",
@@ -122,7 +137,12 @@
     "confirmMessage": "Running aggregation will complete the session and cannot be undone. Do you want to continue?",
     "execute": "Execute",
     "resultSummary": "Aggregation complete. Confirmed {{confirmed}} / Conflicts {{conflict}} / Reviewers {{reviewers}}",
-    "failed": "Failed to aggregate."
+    "failed": "Failed to aggregate.",
+    "error": {
+      "forbidden": "You do not have permission to aggregate this session.",
+      "notAggregatable": "This session cannot be aggregated. It may already be completed or in a state that cannot be aggregated.",
+      "generic": "Failed to aggregate. Please wait a moment and try again."
+    }
   },
   "sessionName": {
     "editAriaLabel": "Edit session name",
@@ -130,7 +150,13 @@
     "validationRuleAriaLabel": "Validation rules",
     "requestSuggestion": "Suggest a name from the transcription",
     "suggesting": "Fetching suggestion...",
-    "suggestionFailed": "Could not fetch a suggestion."
+    "suggestionFailed": "Could not fetch a suggestion.",
+    "rule": "A session name is required. Enter 1–100 characters. Leading and trailing whitespace is removed automatically.",
+    "validation": {
+      "required": "Please enter a session name.",
+      "tooLong": "The session name must be 100 characters or fewer."
+    },
+    "updateFailed": "Failed to update the session name. Please try again later."
   },
   "suggestion": {
     "title": "Correction suggestions",
@@ -208,6 +234,7 @@
     "saveAssignment": "Save assignment"
   },
   "speakerManager": {
+    "sessionNotIdentified": "The session could not be identified.",
     "dialogAriaLabel": "Speaker label management",
     "heading": "Speaker label management",
     "closeAriaLabel": "Close speaker label management",

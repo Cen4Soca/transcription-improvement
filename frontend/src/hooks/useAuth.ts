@@ -4,6 +4,29 @@ import { useState, useEffect, useCallback } from 'react';
 import type { AuthState } from '../services/auth-context-value';
 import type { AuthUser } from '../types/auth';
 import type { UserRole } from '../types/user';
+import i18n, { LANGUAGE_STORAGE_KEY, normalizeLanguage } from '../i18n';
+
+/**
+ * プロファイルの優先言語で i18n を上書きし、localStorage も同期する。
+ * 言語決定の優先順位（プロファイル > localStorage > ブラウザ > ja）のうち、
+ * ログイン後の「プロファイル最優先」を担う。
+ */
+function applyProfileLanguage(preferredLanguage: unknown): void {
+  const lang = normalizeLanguage(
+    typeof preferredLanguage === 'string' ? preferredLanguage : undefined
+  );
+  if (!lang) {
+    return;
+  }
+  if (i18n.language !== lang) {
+    void i18n.changeLanguage(lang);
+  }
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+  } catch {
+    // localStorage が使えない環境では無視する
+  }
+}
 
 /**
  * useAuth - Cognito Hosted UI (OAuth) ベースの認証状態管理フック
@@ -44,12 +67,19 @@ export function useAuth(): AuthState {
       if (response.ok) {
         const body = await response.json();
         const data = body.data;
+        const preferredLanguage =
+          data.preferredLanguage === 'ja' || data.preferredLanguage === 'en'
+            ? (data.preferredLanguage as 'ja' | 'en')
+            : undefined;
         setUser({
           userId: data.userId ?? cognitoUser.userId,
           email: data.email ?? email,
           displayName: data.displayName ?? email,
           role: data.role as UserRole,
+          ...(preferredLanguage ? { preferredLanguage } : {}),
         });
+        // プロファイルに保存された言語があれば UI 言語を上書きする。
+        applyProfileLanguage(preferredLanguage);
         setError(null);
       } else {
         setUser({
@@ -58,7 +88,7 @@ export function useAuth(): AuthState {
           displayName: email,
           role: 'REVIEWER',
         });
-        setError('ユーザー情報の取得に失敗しました');
+        setError(i18n.t('common:auth.userInfoFetchFailed'));
       }
 
       setIsAuthenticated(true);

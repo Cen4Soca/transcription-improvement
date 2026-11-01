@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { MediaApi, UploadUrlResponse, MediaFile } from '../services/media-api';
 import type { AppError } from '../types/api';
+import i18n from '../i18n';
 
 export type UploadPhase = 'idle' | 'validating' | 'requesting-url' | 'uploading' | 'completed' | 'error';
 
@@ -71,8 +72,10 @@ export function useMediaUpload(mediaApi: MediaApi): UseMediaUploadReturn {
         mediaFileId: null,
         error: {
           code: 'UNSUPPORTED_FILE_FORMAT',
-          message: 'サポートされていないファイル形式です。',
-          details: `サポートされる形式: ${ALLOWED_EXTENSIONS.join(', ')}`,
+          message: i18n.t('upload:validation.unsupportedFormat'),
+          details: i18n.t('upload:validation.supportedFormats', {
+            formats: ALLOWED_EXTENSIONS.join(', '),
+          }),
         },
       });
       return;
@@ -85,8 +88,8 @@ export function useMediaUpload(mediaApi: MediaApi): UseMediaUploadReturn {
         mediaFileId: null,
         error: {
           code: 'FILE_TOO_LARGE',
-          message: 'ファイルサイズが上限を超えています。',
-          details: '最大ファイルサイズ: 2GB',
+          message: i18n.t('upload:validation.fileTooLarge'),
+          details: i18n.t('upload:maxFileSize'),
         },
       });
       return;

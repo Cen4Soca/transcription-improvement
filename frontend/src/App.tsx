@@ -24,6 +24,7 @@ import { useLanguageModels } from './hooks/useLanguageModels';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useMemo, useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ApiClient } from './services/api-client';
 import { AdminApi } from './services/admin-api';
 import { SessionApi } from './services/session-api';
@@ -40,6 +41,7 @@ import { ProfileApi } from './services/profile-api';
 import type { AuthUser } from './types/auth';
 import type { AppError } from './types/api';
 import { translateError } from './utils/translateError';
+import i18n from './i18n';
 import type { UserRole } from './types/user';
 import type { ReviewSession, ReviewSessionStatus, ForceAggregateResult, ReopenSessionResult } from './types/session';
 import type { Team, TeamMembership } from './types/team';
@@ -356,16 +358,16 @@ function describeMediaUrlError(error: AppError): string {
   const code = error.code;
 
   if (status === 404 || code === 'NOT_FOUND') {
-    return 'メディアファイルが見つかりません。このセッションには再生可能なファイルが登録されていない可能性があります。';
+    return i18n.t('review:mediaUrlError.notFound');
   }
   if (status === 403 || code === 'FORBIDDEN') {
-    return 'メディアファイルを再生できません。マルウェアスキャンが完了していないか、アクセスが許可されていない可能性があります。';
+    return i18n.t('review:mediaUrlError.forbidden');
   }
   // その他（500 等）はサーバー側メッセージ（errorCode があれば翻訳）があれば添える
   const detail = translateError(error);
   return detail
-    ? `メディアの読み込みに失敗しました: ${detail}`
-    : 'メディアの読み込みに失敗しました。';
+    ? i18n.t('review:mediaUrlError.genericWithDetail', { detail })
+    : i18n.t('review:mediaUrlError.generic');
 }
 
 /**
@@ -485,7 +487,7 @@ function ReviewPageWrapper({ getToken, userRole }: { getToken: () => Promise<str
         }
       } catch {
         if (!cancelled) {
-          setError({ message: 'データの取得に失敗しました。' });
+          setError({ message: i18n.t('review:page.dataFetchFailed') });
         }
       } finally {
         if (!cancelled) {
@@ -677,7 +679,7 @@ function ReviewPageWrapper({ getToken, userRole }: { getToken: () => Promise<str
   // 話者ラベルを追加する。成功時はマスタ一覧を更新して null を返し、失敗時はエラーメッセージを返す。
   const handleAddSpeakerLabel = useCallback(
     async (label: string): Promise<string | null> => {
-      if (!sessionId) return 'セッションが特定できません。';
+      if (!sessionId) return i18n.t('review:speakerManager.sessionNotIdentified');
       const result = await apis.session.addSpeakerLabel(sessionId, label);
       if (result.ok) {
         setMasterSpeakerLabels(result.value.data.speakerLabels ?? []);
@@ -691,7 +693,7 @@ function ReviewPageWrapper({ getToken, userRole }: { getToken: () => Promise<str
   // 話者ラベルを削除する。成功時はマスタ一覧を更新して null を返し、失敗時はエラーメッセージを返す。
   const handleDeleteSpeakerLabel = useCallback(
     async (label: string): Promise<string | null> => {
-      if (!sessionId) return 'セッションが特定できません。';
+      if (!sessionId) return i18n.t('review:speakerManager.sessionNotIdentified');
       const result = await apis.session.deleteSpeakerLabel(sessionId, label);
       if (result.ok) {
         setMasterSpeakerLabels(result.value.data.speakerLabels ?? []);
@@ -867,18 +869,18 @@ function describeConsensusResolveError(error: AppError): string {
   const code = error.code;
   const status = error.statusCode;
   if (code === 'VALIDATION_ERROR' || status === 400) {
-    return 'このセグメントは解決できません。競合解決待ちのセグメントのみ確定できます。';
+    return i18n.t('consensus:resolveError.notResolvable');
   }
   if (code === 'FORBIDDEN' || status === 403) {
-    return 'この操作を行う権限がありません。';
+    return i18n.t('consensus:resolveError.forbidden');
   }
   if (code === 'NOT_FOUND' || status === 404) {
-    return '対象のセッションまたはセグメントが見つかりません。';
+    return i18n.t('consensus:resolveError.notFound');
   }
   const detail = translateError(error);
   return detail
-    ? `Consensus の確定に失敗しました: ${detail}`
-    : 'Consensus の確定に失敗しました。';
+    ? i18n.t('consensus:resolveError.genericWithDetail', { detail })
+    : i18n.t('consensus:resolveError.generic');
 }
 
 /**
@@ -909,7 +911,7 @@ function ConsensusPageWrapper({ user, getToken }: { user: AuthUser | null; getTo
         setSegments(result.value.data);
         setError(null);
       } else {
-        setError({ message: 'Consensus 状態の取得に失敗しました。' });
+        setError({ message: i18n.t('consensus:statusFetchFailed') });
       }
       setIsLoading(false);
     }
@@ -965,6 +967,7 @@ function ConsensusPageWrapper({ user, getToken }: { user: AuthUser | null; getTo
  */
 function MediaUploadPageWrapper({ getToken }: { getToken: () => Promise<string> }) {
   const navigate = useNavigate();
+  const { t } = useTranslation('upload');
 
   const mediaApi = useMemo(() => {
     const client = new ApiClient({ baseUrl: getApiBaseUrl(), getToken });
@@ -1089,7 +1092,7 @@ function MediaUploadPageWrapper({ getToken }: { getToken: () => Promise<string> 
       <MediaUploadPage mediaApi={mediaApi} onUploadComplete={handleUploadComplete} />
 
       <div className="max-w-2xl mx-auto w-full space-y-8">
-        <section aria-label="文字起こしジョブ作成セクション">
+        <section aria-label={t('transcriptionJobSectionAriaLabel')}>
           <TranscriptionJobForm
             transcriptionApi={transcriptionApi}
             languageModelApi={languageModelApi}
@@ -1098,7 +1101,7 @@ function MediaUploadPageWrapper({ getToken }: { getToken: () => Promise<string> 
           />
         </section>
 
-        <section aria-label="メディアファイル一覧セクション">
+        <section aria-label={t('mediaFileListSectionAriaLabel')}>
           <MediaFileList
             mediaApi={mediaApi}
             mediaFiles={mediaFiles}
@@ -1215,6 +1218,7 @@ function LanguageModelPageWrapper({ userRole, getToken }: { userRole: UserRole; 
  * Requirements: 1.1, 2.1, 5.4, 6.1, 7.1, 9.9
  */
 function AppRoutes() {
+  const { t } = useTranslation('review');
   const auth = useAuth();
 
   const handleLogout = useCallback(async () => {
@@ -1284,7 +1288,7 @@ function AppRoutes() {
                 userRole={auth.user?.role}
                 userId={auth.user?.userId}
                 scope="assigned"
-                title="自分の割り当てセッション"
+                title={t('sessionList.assignedTitle')}
               />
             </>
           }
@@ -1299,7 +1303,7 @@ function AppRoutes() {
                 userRole={auth.user?.role}
                 userId={auth.user?.userId}
                 scope="joinable"
-                title="参加可能なセッション"
+                title={t('sessionList.joinableTitle')}
               />
             </>
           }
@@ -1413,6 +1417,7 @@ function App() {
  * Cognito Hosted UI へのリダイレクトは行わない。
  */
 function AuthGate() {
+  const { t } = useTranslation('common');
   const { isAuthenticated, isLoading } = useAuth();
   const [authCompleted, setAuthCompleted] = useState(false);
 
@@ -1426,7 +1431,7 @@ function AuthGate() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">認証を確認しています...</p>
+        <p className="text-gray-500">{t('authGuard.checking')}</p>
       </div>
     );
   }

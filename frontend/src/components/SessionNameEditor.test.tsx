@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import i18n from '../i18n';
 import { SessionNameEditor } from './SessionNameEditor';
-import { SESSION_NAME_RULE_TEXT } from '../utils/session-name';
 
 const tsn = (key: string) => i18n.t(`review:sessionName.${key}`);
 const tc = (key: string) => i18n.t(`common:${key}`);
@@ -122,7 +121,7 @@ describe('SessionNameEditor', () => {
     await user.click(screen.getByRole('button', { name: tc('save') }));
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(SESSION_NAME_RULE_TEXT);
+      expect(screen.getByRole('alert')).toHaveTextContent(tsn('rule'));
     });
   });
 
@@ -218,7 +217,7 @@ describe('SessionNameEditor', () => {
     const tooltip = document.getElementById(describedBy!);
     expect(tooltip).not.toBeNull();
     expect(tooltip).toHaveAttribute('role', 'tooltip');
-    expect(tooltip).toHaveTextContent(SESSION_NAME_RULE_TEXT);
+    expect(tooltip).toHaveTextContent(tsn('rule'));
 
     // フォーカスでツールチップが可視になる
     await user.tab();

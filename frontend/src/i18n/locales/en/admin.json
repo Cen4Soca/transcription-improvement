@@ -1,5 +1,6 @@
 {
   "pageTitle": "Admin",
+  "loadFailed": "Failed to load data.",
   "tabsAriaLabel": "Admin tabs",
   "tab": {
     "users": "User management",

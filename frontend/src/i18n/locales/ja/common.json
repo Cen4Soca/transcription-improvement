@@ -31,7 +31,8 @@
     "queueOverflow": "キュー上限（{{max}}件）を超過したため、最古の{{discarded}}件を破棄しました。"
   },
   "auth": {
-    "tokenUnavailable": "認証トークンを取得できませんでした"
+    "tokenUnavailable": "認証トークンを取得できませんでした",
+    "userInfoFetchFailed": "ユーザー情報の取得に失敗しました"
   },
   "sessionTimeout": {
     "title": "セッションがまもなく期限切れになります",

@@ -7,6 +7,7 @@ import type { ReviewSession } from '../types/session';
 import type { IPAllowlistEntry, AuditLog } from '../types/audit';
 import type { AuditLogFilters } from '../components/AuditLogViewer';
 import type { AppError } from '../types/api';
+import i18n from '../i18n';
 
 export interface UseAdminReturn {
   // Data
@@ -204,7 +205,7 @@ export function useAdmin(adminApi: AdminApi, sessionApi: SessionApi): UseAdminRe
         }
       } catch {
         if (!cancelled) {
-          setError({ code: 'NETWORK_ERROR', message: 'データの読み込みに失敗しました。' });
+          setError({ code: 'NETWORK_ERROR', message: i18n.t('admin:loadFailed') });
         }
       } finally {
         if (!cancelled) {

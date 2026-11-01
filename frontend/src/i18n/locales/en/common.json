@@ -31,7 +31,8 @@
     "queueOverflow": "The queue limit ({{max}}) was exceeded, so the oldest {{discarded}} item(s) were discarded."
   },
   "auth": {
-    "tokenUnavailable": "Failed to obtain an authentication token"
+    "tokenUnavailable": "Failed to obtain an authentication token",
+    "userInfoFetchFailed": "Failed to fetch user information"
   },
   "sessionTimeout": {
     "title": "Your session is about to expire",
