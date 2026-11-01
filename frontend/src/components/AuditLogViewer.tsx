@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AuditLog, AuditOperationType } from '../types/audit';
 
 export interface AuditLogFilters {
@@ -25,29 +26,23 @@ export interface AuditLogViewerProps {
   onDeleteLogs?: (filters: AuditLogFilters) => void;
 }
 
-const OPERATION_TYPE_LABELS: Record<AuditOperationType, string> = {
-  IP_ALLOWLIST_CHANGE: 'IPアドレス許可リスト変更',
-  USER_MANAGEMENT: 'ユーザー管理',
-  TEAM_MANAGEMENT: 'チーム管理',
-  REVIEW_ASSIGNMENT_CHANGE: 'レビュー割り当て変更',
-  TEAM_ASSIGNMENT_CHANGE: 'チーム割り当て変更',
-  SESSION_COMPLETED: 'セッション完了',
-  CONSENSUS_MANUAL_CONFIRM: 'コンセンサス手動確定',
-  CORRECTION_CONFIRMED: '修正確定',
-  SPEAKER_LABEL_CHANGED: '話者ラベル変更',
-  LOGIN_FAILURE: 'ログイン失敗',
-  MEDIA_DELETED: 'メディア削除',
-  TRANSCRIPTION_DELETED: 'Transcription削除',
-  PARTIAL_DELETION_FAILURE: '部分削除失敗',
-  LANGUAGE_MODEL_CREATED: '言語モデル作成',
-  AUDIT_LOG_DELETED: '監査ログ削除',
-};
-
-const ROLE_LABELS: Record<string, string> = {
-  REVIEWER: 'レビュアー',
-  TEAM_LEADER: 'チームリーダー',
-  ADMIN: '管理者',
-};
+const OPERATION_TYPE_KEYS: AuditOperationType[] = [
+  'IP_ALLOWLIST_CHANGE',
+  'USER_MANAGEMENT',
+  'TEAM_MANAGEMENT',
+  'REVIEW_ASSIGNMENT_CHANGE',
+  'TEAM_ASSIGNMENT_CHANGE',
+  'SESSION_COMPLETED',
+  'CONSENSUS_MANUAL_CONFIRM',
+  'CORRECTION_CONFIRMED',
+  'SPEAKER_LABEL_CHANGED',
+  'LOGIN_FAILURE',
+  'MEDIA_DELETED',
+  'TRANSCRIPTION_DELETED',
+  'PARTIAL_DELETION_FAILURE',
+  'LANGUAGE_MODEL_CREATED',
+  'AUDIT_LOG_DELETED',
+];
 
 /**
  * AuditLogViewer - 監査ログ閲覧・検索・削除コンポーネント
@@ -65,6 +60,10 @@ export function AuditLogViewer({
   onPageChange,
   onDeleteLogs,
 }: AuditLogViewerProps) {
+  const { t } = useTranslation('admin');
+  const operationTypeLabel = (type: string) =>
+    t(`auditLog.operationType.${type}`, { defaultValue: type });
+  const roleLabel = (role: string) => t(`auditLog.role.${role}`, { defaultValue: role });
   const [filters, setFilters] = useState<AuditLogFilters>({
     startDate: '',
     endDate: '',
@@ -102,7 +101,7 @@ export function AuditLogViewer({
       <div
         className="flex items-center justify-center h-48"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('auditLog.loadingAriaLabel')}
       >
         <div className="w-6 h-6 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
@@ -110,17 +109,17 @@ export function AuditLogViewer({
   }
 
   return (
-    <div className="space-y-4" aria-label="監査ログ管理">
+    <div className="space-y-4" aria-label={t('auditLog.managementAriaLabel')}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">監査ログ</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('auditLog.heading')}</h2>
         <button
           type="button"
           onClick={() => setShowDeleteDialog(true)}
           disabled={totalCount === 0}
           className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          フィルタ条件で削除
+          {t('auditLog.deleteByFilter')}
         </button>
       </div>
 
@@ -128,12 +127,12 @@ export function AuditLogViewer({
       <form
         onSubmit={handleSearch}
         className="p-4 bg-gray-50 border border-gray-200 rounded-lg"
-        aria-label="監査ログフィルタ"
+        aria-label={t('auditLog.filterAriaLabel')}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label htmlFor="audit-start-date" className="block text-sm font-medium text-gray-700">
-              開始日
+              {t('auditLog.startDate')}
             </label>
             <input
               id="audit-start-date"
@@ -145,7 +144,7 @@ export function AuditLogViewer({
           </div>
           <div>
             <label htmlFor="audit-end-date" className="block text-sm font-medium text-gray-700">
-              終了日
+              {t('auditLog.endDate')}
             </label>
             <input
               id="audit-end-date"
@@ -157,7 +156,7 @@ export function AuditLogViewer({
           </div>
           <div>
             <label htmlFor="audit-actor" className="block text-sm font-medium text-gray-700">
-              実行者名
+              {t('auditLog.actorName')}
             </label>
             <input
               id="audit-actor"
@@ -165,12 +164,12 @@ export function AuditLogViewer({
               value={filters.actorName}
               onChange={(e) => handleFilterChange('actorName', e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="実行者の名前"
+              placeholder={t('auditLog.actorNamePlaceholder')}
             />
           </div>
           <div>
             <label htmlFor="audit-operation" className="block text-sm font-medium text-gray-700">
-              操作種別
+              {t('auditLog.operationTypeLabel')}
             </label>
             <select
               id="audit-operation"
@@ -178,10 +177,10 @@ export function AuditLogViewer({
               onChange={(e) => handleFilterChange('operationType', e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">すべて</option>
-              {Object.entries(OPERATION_TYPE_LABELS).map(([value, label]) => (
+              <option value="">{t('auditLog.all')}</option>
+              {OPERATION_TYPE_KEYS.map((value) => (
                 <option key={value} value={value}>
-                  {label}
+                  {operationTypeLabel(value)}
                 </option>
               ))}
             </select>
@@ -192,41 +191,44 @@ export function AuditLogViewer({
             type="submit"
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            検索
+            {t('auditLog.search')}
           </button>
         </div>
       </form>
 
       {/* Results info */}
       <p className="text-sm text-gray-500">
-        {totalCount}件中 {Math.min((currentPage - 1) * pageSize + 1, totalCount)}〜
-        {Math.min(currentPage * pageSize, totalCount)}件を表示
+        {t('auditLog.itemRange', {
+          totalItems: totalCount,
+          start: Math.min((currentPage - 1) * pageSize + 1, totalCount),
+          end: Math.min(currentPage * pageSize, totalCount),
+        })}
       </p>
 
       {/* Log table */}
       {logs.length === 0 ? (
         <p className="text-center text-gray-500 py-8">
-          該当する監査ログがありません
+          {t('auditLog.emptyState')}
         </p>
       ) : (
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200" aria-label="監査ログテーブル">
+          <table className="min-w-full divide-y divide-gray-200" aria-label={t('auditLog.tableAriaLabel')}>
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  日時
+                  {t('auditLog.column.datetime')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  実行者
+                  {t('auditLog.column.actor')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  ロール
+                  {t('auditLog.column.role')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  操作種別
+                  {t('auditLog.column.operationType')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  リソースID
+                  {t('auditLog.column.resourceId')}
                 </th>
               </tr>
             </thead>
@@ -240,11 +242,11 @@ export function AuditLogViewer({
                     {actorNames[log.actorUserId] || log.actorUserId}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
-                    {ROLE_LABELS[log.actorRole] || log.actorRole}
+                    {roleLabel(log.actorRole)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                      {OPERATION_TYPE_LABELS[log.operationType] || log.operationType}
+                      {operationTypeLabel(log.operationType)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm font-mono text-gray-500">
@@ -259,27 +261,27 @@ export function AuditLogViewer({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <nav className="flex items-center justify-center gap-2" aria-label="ページネーション">
+        <nav className="flex items-center justify-center gap-2" aria-label={t('auditLog.paginationAriaLabel')}>
           <button
             type="button"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage <= 1}
             className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="前へ（前のページ）"
+            aria-label={t('auditLog.previousAriaLabel')}
           >
-            前へ
+            {t('auditLog.previous')}
           </button>
           <span className="text-sm text-gray-700" aria-current="page">
-            {currentPage} / {totalPages} ページ
+            {t('auditLog.pageIndicator', { current: currentPage, total: totalPages })}
           </span>
           <button
             type="button"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
             className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="次へ（次のページ）"
+            aria-label={t('auditLog.nextAriaLabel')}
           >
-            次へ
+            {t('auditLog.next')}
           </button>
         </nav>
       )}
@@ -294,13 +296,13 @@ export function AuditLogViewer({
         >
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
             <h3 id="delete-audit-dialog-title" className="text-lg font-semibold text-gray-900">
-              監査ログ削除の確認
+              {t('auditLog.deleteDialogTitle')}
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              現在のフィルタ条件に一致する監査ログ（{totalCount}件）を削除します。
+              {t('auditLog.deleteDialogDescription', { count: totalCount })}
             </p>
             <p className="mt-2 text-sm font-medium text-red-600">
-              この操作は取り消せません。
+              {t('auditLog.deleteDialogWarning')}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -308,14 +310,14 @@ export function AuditLogViewer({
                 onClick={() => setShowDeleteDialog(false)}
                 className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
-                キャンセル
+                {t('common:cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleDeleteConfirm}
                 className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                削除する
+                {t('auditLog.deleteConfirm')}
               </button>
             </div>
           </div>

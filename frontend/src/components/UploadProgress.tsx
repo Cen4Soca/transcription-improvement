@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 export interface UploadProgressProps {
   /** Current upload progress percentage (0-100) */
   progress: number;
@@ -14,11 +16,12 @@ export interface UploadProgressProps {
  * Requirements: 16.9
  */
 export function UploadProgress({ progress, isCompleted }: UploadProgressProps) {
+  const { t } = useTranslation('upload');
   return (
     <div className="mt-3">
       <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
         <span>
-          {isCompleted ? 'アップロード完了' : 'アップロード中...'}
+          {isCompleted ? t('progress.completed') : t('progress.uploading')}
         </span>
         <span>{progress}%</span>
       </div>
@@ -28,7 +31,7 @@ export function UploadProgress({ progress, isCompleted }: UploadProgressProps) {
         aria-valuenow={progress}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="アップロード進捗"
+        aria-label={t('progress.ariaLabel')}
       >
         <div
           className={`h-2 rounded-full transition-all duration-300 ${

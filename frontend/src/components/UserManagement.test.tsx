@@ -2,8 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { UserManagement } from './UserManagement';
 import type { User } from '../types/user';
+
+const tu = (key: string, opts?: Record<string, unknown>) => i18n.t(`admin:user.${key}`, opts);
+const tc = (key: string) => i18n.t(`common:${key}`);
 
 const mockUsers: User[] = [
   {
@@ -38,20 +42,20 @@ describe('UserManagement', () => {
 
     expect(screen.getByText('管理者太郎')).toBeInTheDocument();
     expect(screen.getByText('admin@example.com')).toBeInTheDocument();
-    expect(screen.getByText('管理者')).toBeInTheDocument();
+    expect(screen.getByText(tu('role.ADMIN'))).toBeInTheDocument();
 
     expect(screen.getByText('レビュアー花子')).toBeInTheDocument();
-    expect(screen.getAllByText('レビュアー')).toHaveLength(2);
+    expect(screen.getAllByText(tu('role.REVIEWER'))).toHaveLength(2);
 
     // Active/inactive status badges
-    const activeBadges = screen.getAllByText('有効');
+    const activeBadges = screen.getAllByText(tu('status.active'));
     expect(activeBadges).toHaveLength(2);
-    expect(screen.getByText('無効')).toBeInTheDocument();
+    expect(screen.getByText(tu('status.inactive'))).toBeInTheDocument();
   });
 
   it('shows empty message when no users', () => {
     render(<UserManagement users={[]} />);
-    expect(screen.getByText('ユーザーがいません')).toBeInTheDocument();
+    expect(screen.getByText(tu('emptyState'))).toBeInTheDocument();
   });
 
   it('shows loading state', () => {
@@ -63,11 +67,11 @@ describe('UserManagement', () => {
     const user = userEvent.setup();
     render(<UserManagement users={mockUsers} />);
 
-    await user.click(screen.getByText('ユーザー追加'));
+    await user.click(screen.getByText(tu('addUser')));
 
-    expect(screen.getByLabelText('メールアドレス')).toBeInTheDocument();
-    expect(screen.getByLabelText('表示名')).toBeInTheDocument();
-    expect(screen.getByLabelText('ロール')).toBeInTheDocument();
+    expect(screen.getByLabelText(tu('email'))).toBeInTheDocument();
+    expect(screen.getByLabelText(tu('displayName'))).toBeInTheDocument();
+    expect(screen.getByLabelText(tu('roleLabel'))).toBeInTheDocument();
   });
 
   it('calls onCreateUser with form data on submit', async () => {
@@ -75,10 +79,10 @@ describe('UserManagement', () => {
     const onCreateUser = vi.fn();
     render(<UserManagement users={mockUsers} onCreateUser={onCreateUser} />);
 
-    await user.click(screen.getByText('ユーザー追加'));
-    await user.type(screen.getByLabelText('メールアドレス'), 'new@example.com');
-    await user.type(screen.getByLabelText('表示名'), '新規ユーザー');
-    await user.click(screen.getByText('登録'));
+    await user.click(screen.getByText(tu('addUser')));
+    await user.type(screen.getByLabelText(tu('email')), 'new@example.com');
+    await user.type(screen.getByLabelText(tu('displayName')), '新規ユーザー');
+    await user.click(screen.getByText(tu('register')));
 
     expect(onCreateUser).toHaveBeenCalledWith({
       email: 'new@example.com',
@@ -92,12 +96,12 @@ describe('UserManagement', () => {
     const onDisableUser = vi.fn();
     render(<UserManagement users={mockUsers} onDisableUser={onDisableUser} />);
 
-    const disableButtons = screen.getAllByText('無効化');
+    const disableButtons = screen.getAllByText(tu('disable'));
     await user.click(disableButtons[0]);
 
-    expect(screen.getByText('ユーザー無効化の確認')).toBeInTheDocument();
+    expect(screen.getByText(tu('disableDialogTitle'))).toBeInTheDocument();
 
-    await user.click(screen.getByText('無効化する'));
+    await user.click(screen.getByText(tu('disableConfirm')));
     expect(onDisableUser).toHaveBeenCalledWith('user-1');
   });
 
@@ -105,20 +109,20 @@ describe('UserManagement', () => {
     const user = userEvent.setup();
     render(<UserManagement users={mockUsers} />);
 
-    const disableButtons = screen.getAllByText('無効化');
+    const disableButtons = screen.getAllByText(tu('disable'));
     await user.click(disableButtons[0]);
 
-    expect(screen.getByText('ユーザー無効化の確認')).toBeInTheDocument();
+    expect(screen.getByText(tu('disableDialogTitle'))).toBeInTheDocument();
 
-    await user.click(screen.getByText('キャンセル'));
-    expect(screen.queryByText('ユーザー無効化の確認')).not.toBeInTheDocument();
+    await user.click(screen.getByText(tc('cancel')));
+    expect(screen.queryByText(tu('disableDialogTitle'))).not.toBeInTheDocument();
   });
 
   it('does not show disable button for already disabled users', () => {
     render(<UserManagement users={mockUsers} />);
 
     // Only 2 active users should have disable buttons
-    const disableButtons = screen.getAllByText('無効化');
+    const disableButtons = screen.getAllByText(tu('disable'));
     expect(disableButtons).toHaveLength(2);
   });
 
@@ -126,7 +130,7 @@ describe('UserManagement', () => {
     render(<UserManagement users={mockUsers} />);
 
     // Only the single disabled user (user-3) should have an enable button
-    const enableButtons = screen.getAllByText('有効化');
+    const enableButtons = screen.getAllByText(tu('enable'));
     expect(enableButtons).toHaveLength(1);
   });
 
@@ -135,11 +139,11 @@ describe('UserManagement', () => {
     const onEnableUser = vi.fn();
     render(<UserManagement users={mockUsers} onEnableUser={onEnableUser} />);
 
-    await user.click(screen.getByText('有効化'));
+    await user.click(screen.getByText(tu('enable')));
 
-    expect(screen.getByText('ユーザー有効化の確認')).toBeInTheDocument();
+    expect(screen.getByText(tu('enableDialogTitle'))).toBeInTheDocument();
 
-    await user.click(screen.getByText('有効化する'));
+    await user.click(screen.getByText(tu('enableConfirm')));
     expect(onEnableUser).toHaveBeenCalledWith('user-3');
   });
 
@@ -147,29 +151,29 @@ describe('UserManagement', () => {
     const user = userEvent.setup();
     render(<UserManagement users={mockUsers} />);
 
-    await user.click(screen.getByText('有効化'));
+    await user.click(screen.getByText(tu('enable')));
 
-    expect(screen.getByText('ユーザー有効化の確認')).toBeInTheDocument();
+    expect(screen.getByText(tu('enableDialogTitle'))).toBeInTheDocument();
 
-    await user.click(screen.getByText('キャンセル'));
-    expect(screen.queryByText('ユーザー有効化の確認')).not.toBeInTheDocument();
+    await user.click(screen.getByText(tc('cancel')));
+    expect(screen.queryByText(tu('enableDialogTitle'))).not.toBeInTheDocument();
   });
 
   it('displays role badges with correct labels', () => {
     render(<UserManagement users={mockUsers} />);
 
-    expect(screen.getByText('管理者')).toBeInTheDocument();
+    expect(screen.getByText(tu('role.ADMIN'))).toBeInTheDocument();
     // Two REVIEWER users should have 'レビュアー' badges
-    const reviewerBadges = screen.getAllByText('レビュアー');
+    const reviewerBadges = screen.getAllByText(tu('role.REVIEWER'));
     expect(reviewerBadges.length).toBe(2);
   });
 
   it('shows edit button only when onEditUser is provided', () => {
     const { rerender } = render(<UserManagement users={mockUsers} />);
-    expect(screen.queryByLabelText('管理者太郎を編集')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(tu('editAriaLabel', { name: '管理者太郎' }))).not.toBeInTheDocument();
 
     rerender(<UserManagement users={mockUsers} onEditUser={vi.fn().mockResolvedValue(null)} />);
-    expect(screen.getByLabelText('管理者太郎を編集')).toBeInTheDocument();
+    expect(screen.getByLabelText(tu('editAriaLabel', { name: '管理者太郎' }))).toBeInTheDocument();
   });
 
   it('submits only changed fields when editing a user', async () => {
@@ -177,12 +181,12 @@ describe('UserManagement', () => {
     const onEditUser = vi.fn().mockResolvedValue(null);
     render(<UserManagement users={mockUsers} onEditUser={onEditUser} />);
 
-    await user.click(screen.getByLabelText('管理者太郎を編集'));
+    await user.click(screen.getByLabelText(tu('editAriaLabel', { name: '管理者太郎' })));
 
-    const nameInput = screen.getByLabelText('表示名');
+    const nameInput = screen.getByLabelText(tu('displayName'));
     await user.clear(nameInput);
     await user.type(nameInput, '管理者次郎');
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     expect(onEditUser).toHaveBeenCalledWith('user-1', { displayName: '管理者次郎' });
   });
@@ -194,11 +198,11 @@ describe('UserManagement', () => {
       .mockResolvedValue({ code: 'VALIDATION_ERROR', message: 'このメールアドレスは既に使用されています。' });
     render(<UserManagement users={mockUsers} onEditUser={onEditUser} />);
 
-    await user.click(screen.getByLabelText('管理者太郎を編集'));
-    const emailInput = screen.getByLabelText('メールアドレス');
+    await user.click(screen.getByLabelText(tu('editAriaLabel', { name: '管理者太郎' })));
+    const emailInput = screen.getByLabelText(tu('email'));
     await user.clear(emailInput);
     await user.type(emailInput, 'reviewer@example.com');
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('このメールアドレスは既に使用されています。');
   });
@@ -208,11 +212,11 @@ describe('UserManagement', () => {
     const onEditUser = vi.fn().mockResolvedValue(null);
     render(<UserManagement users={mockUsers} onEditUser={onEditUser} />);
 
-    await user.click(screen.getByLabelText('レビュアー花子を編集'));
+    await user.click(screen.getByLabelText(tu('editAriaLabel', { name: 'レビュアー花子' })));
 
-    const roleSelect = screen.getByLabelText('ロール');
+    const roleSelect = screen.getByLabelText(tu('roleLabel'));
     await user.selectOptions(roleSelect, 'TEAM_LEADER');
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     expect(onEditUser).toHaveBeenCalledWith('user-2', { role: 'TEAM_LEADER' });
   });
@@ -222,12 +226,12 @@ describe('UserManagement', () => {
     const onEditUser = vi.fn().mockResolvedValue(null);
     render(<UserManagement users={mockUsers} onEditUser={onEditUser} />);
 
-    await user.click(screen.getByLabelText('レビュアー花子を編集'));
+    await user.click(screen.getByLabelText(tu('editAriaLabel', { name: 'レビュアー花子' })));
 
-    const nameInput = screen.getByLabelText('表示名');
+    const nameInput = screen.getByLabelText(tu('displayName'));
     await user.clear(nameInput);
     await user.type(nameInput, 'レビュアー次郎');
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     expect(onEditUser).toHaveBeenCalledWith('user-2', { displayName: 'レビュアー次郎' });
     const payload = onEditUser.mock.calls[0][1];
@@ -241,9 +245,9 @@ describe('UserManagement', () => {
       <UserManagement users={mockUsers} onEditUser={onEditUser} currentUserId="user-1" />
     );
 
-    await user.click(screen.getByLabelText('管理者太郎を編集'));
+    await user.click(screen.getByLabelText(tu('editAriaLabel', { name: '管理者太郎' })));
 
-    const roleSelect = screen.getByLabelText('ロール');
+    const roleSelect = screen.getByLabelText(tu('roleLabel'));
     expect(roleSelect).toBeDisabled();
   });
 
@@ -254,17 +258,17 @@ describe('UserManagement', () => {
       <UserManagement users={mockUsers} onEditUser={onEditUser} currentUserId="user-1" />
     );
 
-    await user.click(screen.getByLabelText('管理者太郎を編集'));
+    await user.click(screen.getByLabelText(tu('editAriaLabel', { name: '管理者太郎' })));
 
     // The select is disabled in the UI, so drive the guard via the form state by
     // enabling the control before changing it, mirroring a bypass attempt.
-    const roleSelect = screen.getByLabelText('ロール') as HTMLSelectElement;
+    const roleSelect = screen.getByLabelText(tu('roleLabel')) as HTMLSelectElement;
     roleSelect.removeAttribute('disabled');
     await user.selectOptions(roleSelect, 'REVIEWER');
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      '自分自身の管理者ロールは変更できません。'
+      tu('validation.selfAdmin')
     );
     expect(onEditUser).not.toHaveBeenCalled();
   });
@@ -276,7 +280,7 @@ describe('UserManagement', () => {
       <UserManagement users={mockUsers} onEditUser={onEditUser} />
     );
 
-    await user.click(screen.getByLabelText('レビュアー花子を編集'));
+    await user.click(screen.getByLabelText(tu('editAriaLabel', { name: 'レビュアー花子' })));
 
     const results = await axe(container);
     expect(results).toHaveNoViolations();

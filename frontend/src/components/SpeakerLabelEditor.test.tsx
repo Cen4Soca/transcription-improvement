@@ -1,7 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { SpeakerLabelEditor } from './SpeakerLabelEditor';
+
+const editButtonName = () =>
+  new RegExp(
+    i18n
+      .t('review:speaker.editAriaLabel', { label: 'spk_0' })
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
+const selectListboxName = () => i18n.t('review:speaker.selectAriaLabel');
 
 describe('SpeakerLabelEditor', () => {
   const defaultProps = {
@@ -15,7 +24,7 @@ describe('SpeakerLabelEditor', () => {
     it('displays current label as a button', () => {
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      const button = screen.getByRole('button', { name: /話者ラベル: spk_0/ });
+      const button = screen.getByRole('button', { name: editButtonName() });
       expect(button).toBeInTheDocument();
       expect(button).toHaveTextContent('spk_0');
     });
@@ -24,9 +33,9 @@ describe('SpeakerLabelEditor', () => {
       const user = userEvent.setup();
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /話者ラベル: spk_0/ }));
+      await user.click(screen.getByRole('button', { name: editButtonName() }));
 
-      const listbox = screen.getByRole('listbox', { name: '話者ラベル選択' });
+      const listbox = screen.getByRole('listbox', { name: selectListboxName() });
       expect(listbox).toBeInTheDocument();
 
       const options = screen.getAllByRole('option');
@@ -40,7 +49,7 @@ describe('SpeakerLabelEditor', () => {
       const user = userEvent.setup();
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /話者ラベル: spk_0/ }));
+      await user.click(screen.getByRole('button', { name: editButtonName() }));
 
       const currentOption = screen.getByRole('option', { name: 'spk_0' });
       expect(currentOption).toHaveAttribute('aria-selected', 'true');
@@ -53,7 +62,7 @@ describe('SpeakerLabelEditor', () => {
       const user = userEvent.setup();
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      const button = screen.getByRole('button', { name: /話者ラベル: spk_0/ });
+      const button = screen.getByRole('button', { name: editButtonName() });
 
       await user.click(button);
       expect(screen.getByRole('listbox')).toBeInTheDocument();
@@ -66,7 +75,7 @@ describe('SpeakerLabelEditor', () => {
       const user = userEvent.setup();
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      const button = screen.getByRole('button', { name: /話者ラベル: spk_0/ });
+      const button = screen.getByRole('button', { name: editButtonName() });
       button.focus();
       await user.keyboard('{Enter}');
 
@@ -77,7 +86,7 @@ describe('SpeakerLabelEditor', () => {
       const user = userEvent.setup();
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      const button = screen.getByRole('button', { name: /話者ラベル: spk_0/ });
+      const button = screen.getByRole('button', { name: editButtonName() });
       button.focus();
       await user.keyboard(' ');
 
@@ -91,7 +100,7 @@ describe('SpeakerLabelEditor', () => {
       const onSelect = vi.fn();
       render(<SpeakerLabelEditor {...defaultProps} onSelect={onSelect} />);
 
-      await user.click(screen.getByRole('button', { name: /話者ラベル: spk_0/ }));
+      await user.click(screen.getByRole('button', { name: editButtonName() }));
       await user.click(screen.getByRole('option', { name: 'spk_1' }));
 
       expect(onSelect).toHaveBeenCalledWith('spk_1');
@@ -101,7 +110,7 @@ describe('SpeakerLabelEditor', () => {
       const user = userEvent.setup();
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /話者ラベル: spk_0/ }));
+      await user.click(screen.getByRole('button', { name: editButtonName() }));
       await user.click(screen.getByRole('option', { name: 'spk_1' }));
 
       expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -119,7 +128,7 @@ describe('SpeakerLabelEditor', () => {
         />
       );
 
-      await user.click(screen.getByRole('button', { name: /話者ラベル: spk_0/ }));
+      await user.click(screen.getByRole('button', { name: editButtonName() }));
       await user.click(screen.getByRole('option', { name: 'spk_0' }));
 
       expect(onCancel).toHaveBeenCalled();
@@ -131,7 +140,7 @@ describe('SpeakerLabelEditor', () => {
       const onSelect = vi.fn();
       render(<SpeakerLabelEditor {...defaultProps} onSelect={onSelect} />);
 
-      await user.click(screen.getByRole('button', { name: /話者ラベル: spk_0/ }));
+      await user.click(screen.getByRole('button', { name: editButtonName() }));
       const option = screen.getByRole('option', { name: 'spk_2' });
       option.focus();
       await user.keyboard('{Enter}');
@@ -146,7 +155,7 @@ describe('SpeakerLabelEditor', () => {
       const onCancel = vi.fn();
       render(<SpeakerLabelEditor {...defaultProps} onCancel={onCancel} />);
 
-      const button = screen.getByRole('button', { name: /話者ラベル: spk_0/ });
+      const button = screen.getByRole('button', { name: editButtonName() });
       await user.click(button);
       expect(screen.getByRole('listbox')).toBeInTheDocument();
 
@@ -166,7 +175,7 @@ describe('SpeakerLabelEditor', () => {
         </div>
       );
 
-      await user.click(screen.getByRole('button', { name: /話者ラベル: spk_0/ }));
+      await user.click(screen.getByRole('button', { name: editButtonName() }));
       expect(screen.getByRole('listbox')).toBeInTheDocument();
 
       await user.click(screen.getByTestId('outside'));
@@ -180,7 +189,7 @@ describe('SpeakerLabelEditor', () => {
     it('has proper ARIA attributes on the button', () => {
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      const button = screen.getByRole('button', { name: /話者ラベル: spk_0/ });
+      const button = screen.getByRole('button', { name: editButtonName() });
       expect(button).toHaveAttribute('aria-haspopup', 'listbox');
       expect(button).toHaveAttribute('aria-expanded', 'false');
     });
@@ -189,7 +198,7 @@ describe('SpeakerLabelEditor', () => {
       const user = userEvent.setup();
       render(<SpeakerLabelEditor {...defaultProps} />);
 
-      const button = screen.getByRole('button', { name: /話者ラベル: spk_0/ });
+      const button = screen.getByRole('button', { name: editButtonName() });
       await user.click(button);
 
       expect(button).toHaveAttribute('aria-expanded', 'true');

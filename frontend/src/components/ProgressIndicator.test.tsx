@@ -1,28 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import i18n from '../i18n';
 import { ProgressIndicator } from './ProgressIndicator';
+
+const remaining = (count: number) => i18n.t('common:progress.remainingCount', { count });
+const stillCollecting = () => i18n.t('common:progress.stillCollecting');
+const allCompleted = () => i18n.t('common:progress.allCompleted');
 
 describe('ProgressIndicator', () => {
   describe('5名以上の場合（具体的人数表示）', () => {
     it('displays specific remaining count when totalReviewers >= 5', () => {
       render(<ProgressIndicator totalReviewers={7} completedCount={4} />);
 
-      expect(screen.getByText('あと3人が回答待ち')).toBeInTheDocument();
+      expect(screen.getByText(remaining(3))).toBeInTheDocument();
     });
 
     it('displays remaining count for exactly 5 reviewers', () => {
       render(<ProgressIndicator totalReviewers={5} completedCount={2} />);
 
-      expect(screen.getByText('あと3人が回答待ち')).toBeInTheDocument();
+      expect(screen.getByText(remaining(3))).toBeInTheDocument();
     });
 
     it('has correct aria-label with remaining count', () => {
       render(<ProgressIndicator totalReviewers={10} completedCount={7} />);
 
-      expect(screen.getByRole('status')).toHaveAttribute(
-        'aria-label',
-        'あと3人が回答待ち'
-      );
+      expect(screen.getByRole('status')).toHaveAttribute('aria-label', remaining(3));
     });
   });
 
@@ -30,22 +32,19 @@ describe('ProgressIndicator', () => {
     it('displays generic message when totalReviewers < 5', () => {
       render(<ProgressIndicator totalReviewers={3} completedCount={1} />);
 
-      expect(screen.getByText('まだ回答が集まっています')).toBeInTheDocument();
+      expect(screen.getByText(stillCollecting())).toBeInTheDocument();
     });
 
     it('displays generic message for 4 reviewers', () => {
       render(<ProgressIndicator totalReviewers={4} completedCount={2} />);
 
-      expect(screen.getByText('まだ回答が集まっています')).toBeInTheDocument();
+      expect(screen.getByText(stillCollecting())).toBeInTheDocument();
     });
 
     it('has correct aria-label for generic message', () => {
       render(<ProgressIndicator totalReviewers={3} completedCount={1} />);
 
-      expect(screen.getByRole('status')).toHaveAttribute(
-        'aria-label',
-        'まだ回答が集まっています'
-      );
+      expect(screen.getByRole('status')).toHaveAttribute('aria-label', stillCollecting());
     });
   });
 
@@ -53,22 +52,19 @@ describe('ProgressIndicator', () => {
     it('displays completion message when all reviewers have answered', () => {
       render(<ProgressIndicator totalReviewers={5} completedCount={5} />);
 
-      expect(screen.getByText('全員回答済み')).toBeInTheDocument();
+      expect(screen.getByText(allCompleted())).toBeInTheDocument();
     });
 
     it('displays completion message when completedCount exceeds totalReviewers', () => {
       render(<ProgressIndicator totalReviewers={3} completedCount={4} />);
 
-      expect(screen.getByText('全員回答済み')).toBeInTheDocument();
+      expect(screen.getByText(allCompleted())).toBeInTheDocument();
     });
 
     it('has correct aria-label for completion', () => {
       render(<ProgressIndicator totalReviewers={5} completedCount={5} />);
 
-      expect(screen.getByRole('status')).toHaveAttribute(
-        'aria-label',
-        '全員回答済み'
-      );
+      expect(screen.getByRole('status')).toHaveAttribute('aria-label', allCompleted());
     });
   });
 

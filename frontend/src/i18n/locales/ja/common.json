@@ -1,0 +1,51 @@
+{
+  "appName": "Transcription Review",
+  "logout": "ログアウト",
+  "save": "保存",
+  "saving": "保存中...",
+  "cancel": "キャンセル",
+  "close": "閉じる",
+  "language": "言語",
+  "languageJa": "日本語",
+  "languageEn": "English",
+  "deleteDialog": {
+    "defaultWarning": "この操作は取り消せません。削除されたデータは復元できません。",
+    "description": "以下のリソースを削除しようとしています：",
+    "deleting": "削除中...",
+    "confirm": "削除する",
+    "failed": "削除に失敗しました"
+  },
+  "offline": {
+    "banner": "オフライン — インターネット接続がありません"
+  },
+  "mobileUnsupported": {
+    "ariaLabel": "モバイルデバイス非対応",
+    "title": "デスクトップブラウザをご利用ください",
+    "description": "本アプリケーションはデスクトップブラウザ（横幅1024px以上）での利用を推奨しています。タブレット（横幅768px以上）では簡易編集が可能です。"
+  },
+  "sync": {
+    "syncing": "同期中...",
+    "completed": "同期完了",
+    "failed": "同期失敗",
+    "retry": "再試行"
+  },
+  "sessionTimeout": {
+    "title": "セッションがまもなく期限切れになります",
+    "description": "セッションがまもなく期限切れになります。続行しますか？",
+    "remaining": "残り {{time}}",
+    "continue": "続行"
+  },
+  "progress": {
+    "allCompleted": "全員回答済み",
+    "remainingCount": "あと{{count}}人が回答待ち",
+    "stillCollecting": "まだ回答が集まっています"
+  },
+  "draftRecovery": {
+    "title": "未保存の編集内容があります",
+    "description": "前回のセッションで保存されていない編集内容が見つかりました。復元しますか？",
+    "targetSegments": "対象セグメント（{{count}}件）:",
+    "listAriaLabel": "未保存ドラフト一覧",
+    "discard": "破棄する",
+    "restore": "復元する"
+  }
+}

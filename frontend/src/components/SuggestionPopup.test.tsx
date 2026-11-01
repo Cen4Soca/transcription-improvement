@@ -2,7 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { SuggestionPopup, SuggestionButton, type SuggestionPopupProps } from './SuggestionPopup';
+
+const fetching = () => i18n.t('review:suggestion.fetching');
+const noCandidates = () => i18n.t('review:suggestion.noCandidates');
+const editDirectly = () => i18n.t('review:suggestion.editDirectly');
+const suggestionError = () => i18n.t('review:suggestion.error');
+const suggestionTitle = () => i18n.t('review:suggestion.title');
+const closeLabel = () => i18n.t('common:close');
+const showButtonLabel = () => i18n.t('review:suggestion.showButtonAriaLabel');
 
 function createDefaultProps(overrides: Partial<SuggestionPopupProps> = {}): SuggestionPopupProps {
   return {
@@ -81,7 +90,7 @@ describe('SuggestionPopup', () => {
     render(<SuggestionPopup {...props} />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.getByText('候補を取得中...')).toBeInTheDocument();
+    expect(screen.getByText(fetching())).toBeInTheDocument();
   });
 
   it('does not display suggestions while loading', () => {
@@ -121,8 +130,8 @@ describe('SuggestionPopup', () => {
     const props = createDefaultProps({ suggestions: [] });
     render(<SuggestionPopup {...props} />);
 
-    expect(screen.getByText('候補がありません')).toBeInTheDocument();
-    expect(screen.getByText('直接編集する')).toBeInTheDocument();
+    expect(screen.getByText(noCandidates())).toBeInTheDocument();
+    expect(screen.getByText(editDirectly())).toBeInTheDocument();
   });
 
   it('calls onEditMode when "直接編集する" is clicked (Req 8.6)', async () => {
@@ -132,7 +141,7 @@ describe('SuggestionPopup', () => {
     const props = createDefaultProps({ suggestions: [], onEditMode });
     render(<SuggestionPopup {...props} />);
 
-    await user.click(screen.getByText('直接編集する'));
+    await user.click(screen.getByText(editDirectly()));
 
     expect(onEditMode).toHaveBeenCalled();
   });
@@ -146,7 +155,7 @@ describe('SuggestionPopup', () => {
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(
-      screen.getByText('外部APIからの候補取得に失敗しました。履歴からの候補のみ表示しています。')
+      screen.getByText(suggestionError())
     ).toBeInTheDocument();
     // Still shows history-based suggestions
     expect(screen.getByText('履歴候補')).toBeInTheDocument();
@@ -216,7 +225,7 @@ describe('SuggestionPopup', () => {
     render(<SuggestionPopup {...props} />);
 
     const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveAttribute('aria-label', '修正候補');
+    expect(dialog).toHaveAttribute('aria-label', suggestionTitle());
     expect(dialog).toHaveAttribute('data-segment-id', 'seg-1');
   });
 
@@ -232,7 +241,7 @@ describe('SuggestionPopup', () => {
     const props = createDefaultProps({ suggestions: [], isLoading: true });
     render(<SuggestionPopup {...props} />);
 
-    expect(screen.queryByText('候補がありません')).not.toBeInTheDocument();
+    expect(screen.queryByText(noCandidates())).not.toBeInTheDocument();
   });
 
   it('does not show error message while loading', () => {
@@ -249,7 +258,7 @@ describe('SuggestionPopup', () => {
     const props = createDefaultProps({ onClose });
     render(<SuggestionPopup {...props} />);
 
-    await user.click(screen.getByLabelText('閉じる'));
+    await user.click(screen.getByLabelText(closeLabel()));
 
     expect(onClose).toHaveBeenCalled();
   });
@@ -295,7 +304,7 @@ describe('SuggestionButton', () => {
     const onClick = vi.fn();
     render(<SuggestionButton segmentId="seg-1" onClick={onClick} />);
 
-    const button = screen.getByLabelText('修正候補を表示');
+    const button = screen.getByLabelText(showButtonLabel());
     expect(button).toBeInTheDocument();
   });
 
@@ -304,7 +313,7 @@ describe('SuggestionButton', () => {
     const onClick = vi.fn();
     render(<SuggestionButton segmentId="seg-1" onClick={onClick} />);
 
-    await user.click(screen.getByLabelText('修正候補を表示'));
+    await user.click(screen.getByLabelText(showButtonLabel()));
 
     expect(onClick).toHaveBeenCalledWith('seg-1');
   });
@@ -320,7 +329,7 @@ describe('SuggestionButton', () => {
       </div>
     );
 
-    await user.click(screen.getByLabelText('修正候補を表示'));
+    await user.click(screen.getByLabelText(showButtonLabel()));
 
     expect(onClick).toHaveBeenCalledWith('seg-1');
     expect(parentClick).not.toHaveBeenCalled();

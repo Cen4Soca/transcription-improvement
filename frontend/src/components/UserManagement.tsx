@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { User, UserRole } from '../types/user';
 import type { AppError } from '../types/api';
 
@@ -20,12 +21,6 @@ export interface UserManagementProps {
   currentUserId?: string;
 }
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  REVIEWER: 'レビュアー',
-  TEAM_LEADER: 'チームリーダー',
-  ADMIN: '管理者',
-};
-
 const ROLE_BADGE_COLORS: Record<UserRole, string> = {
   REVIEWER: 'bg-gray-100 text-gray-700',
   TEAM_LEADER: 'bg-blue-100 text-blue-700',
@@ -46,6 +41,8 @@ export function UserManagement({
   onEditUser,
   currentUserId,
 }: UserManagementProps) {
+  const { t } = useTranslation('admin');
+  const roleLabel = (role: UserRole) => t(`user.role.${role}`);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [confirmDisableUserId, setConfirmDisableUserId] = useState<string | null>(null);
   const [confirmEnableUserId, setConfirmEnableUserId] = useState<string | null>(null);
@@ -81,14 +78,14 @@ export function UserManagement({
     const displayName = editForm.displayName.trim();
     const email = editForm.email.trim();
     if (!displayName || !email) {
-      setEditError('表示名とメールアドレスを入力してください。');
+      setEditError(t('user.validation.required'));
       return;
     }
 
     // Self-demotion guard: a logged-in ADMIN cannot change their own role away from ADMIN.
     const isSelfAdmin = currentUserId === user.userId && user.role === 'ADMIN';
     if (isSelfAdmin && editForm.role !== 'ADMIN') {
-      setEditError('自分自身の管理者ロールは変更できません。');
+      setEditError(t('user.validation.selfAdmin'));
       return;
     }
 
@@ -141,7 +138,7 @@ export function UserManagement({
       <div
         className="flex items-center justify-center h-48"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('user.loadingAriaLabel')}
       >
         <div className="w-6 h-6 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
@@ -149,10 +146,10 @@ export function UserManagement({
   }
 
   return (
-    <div className="space-y-4" aria-label="ユーザー管理">
+    <div className="space-y-4" aria-label={t('user.managementAriaLabel')}>
       {/* Header with create button */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">ユーザー一覧</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('user.heading')}</h2>
         <button
           type="button"
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -160,7 +157,7 @@ export function UserManagement({
           aria-expanded={showCreateForm}
           aria-controls="create-user-form"
         >
-          {showCreateForm ? 'キャンセル' : 'ユーザー追加'}
+          {showCreateForm ? t('common:cancel') : t('user.addUser')}
         </button>
       </div>
 
@@ -170,11 +167,11 @@ export function UserManagement({
           id="create-user-form"
           onSubmit={handleSubmit}
           className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3"
-          aria-label="ユーザー登録フォーム"
+          aria-label={t('user.createFormAriaLabel')}
         >
           <div>
             <label htmlFor="user-email" className="block text-sm font-medium text-gray-700">
-              メールアドレス
+              {t('user.email')}
             </label>
             <input
               id="user-email"
@@ -188,7 +185,7 @@ export function UserManagement({
           </div>
           <div>
             <label htmlFor="user-display-name" className="block text-sm font-medium text-gray-700">
-              表示名
+              {t('user.displayName')}
             </label>
             <input
               id="user-display-name"
@@ -197,12 +194,12 @@ export function UserManagement({
               value={formData.displayName}
               onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="山田太郎"
+              placeholder={t('user.displayNamePlaceholder')}
             />
           </div>
           <div>
             <label htmlFor="user-role" className="block text-sm font-medium text-gray-700">
-              ロール
+              {t('user.roleLabel')}
             </label>
             <select
               id="user-role"
@@ -210,42 +207,42 @@ export function UserManagement({
               onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="REVIEWER">レビュアー</option>
-              <option value="TEAM_LEADER">チームリーダー</option>
-              <option value="ADMIN">管理者</option>
+              <option value="REVIEWER">{t('user.role.REVIEWER')}</option>
+              <option value="TEAM_LEADER">{t('user.role.TEAM_LEADER')}</option>
+              <option value="ADMIN">{t('user.role.ADMIN')}</option>
             </select>
           </div>
           <button
             type="submit"
             className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            登録
+            {t('user.register')}
           </button>
         </form>
       )}
 
       {/* User list */}
       {users.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">ユーザーがいません</p>
+        <p className="text-center text-gray-500 py-8">{t('user.emptyState')}</p>
       ) : (
         <div className="overflow-hidden border border-gray-200 rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200" aria-label="ユーザー一覧テーブル">
+          <table className="min-w-full divide-y divide-gray-200" aria-label={t('user.tableAriaLabel')}>
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  表示名
+                  {t('user.column.displayName')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  メール
+                  {t('user.column.email')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  ロール
+                  {t('user.column.role')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  ステータス
+                  {t('user.column.status')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  操作
+                  {t('user.column.actions')}
                 </th>
               </tr>
             </thead>
@@ -258,7 +255,7 @@ export function UserManagement({
                       <form
                         onSubmit={(e) => handleEditSubmit(e, user)}
                         className="space-y-3"
-                        aria-label={`${user.displayName}の編集フォーム`}
+                        aria-label={t('user.editFormAriaLabel', { name: user.displayName })}
                       >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
@@ -266,7 +263,7 @@ export function UserManagement({
                               htmlFor={`edit-name-${user.userId}`}
                               className="block text-sm font-medium text-gray-700"
                             >
-                              表示名
+                              {t('user.displayName')}
                             </label>
                             <input
                               id={`edit-name-${user.userId}`}
@@ -285,7 +282,7 @@ export function UserManagement({
                               htmlFor={`edit-email-${user.userId}`}
                               className="block text-sm font-medium text-gray-700"
                             >
-                              メールアドレス
+                              {t('user.email')}
                             </label>
                             <input
                               id={`edit-email-${user.userId}`}
@@ -303,7 +300,7 @@ export function UserManagement({
                               htmlFor={`edit-role-${user.userId}`}
                               className="block text-sm font-medium text-gray-700"
                             >
-                              ロール
+                              {t('user.roleLabel')}
                             </label>
                             <select
                               id={`edit-role-${user.userId}`}
@@ -314,9 +311,9 @@ export function UserManagement({
                               }
                               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <option value="REVIEWER">レビュアー</option>
-                              <option value="TEAM_LEADER">チームリーダー</option>
-                              <option value="ADMIN">管理者</option>
+                              <option value="REVIEWER">{t('user.role.REVIEWER')}</option>
+                              <option value="TEAM_LEADER">{t('user.role.TEAM_LEADER')}</option>
+                              <option value="ADMIN">{t('user.role.ADMIN')}</option>
                             </select>
                           </div>
                         </div>
@@ -331,14 +328,14 @@ export function UserManagement({
                             onClick={cancelEdit}
                             className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
                           >
-                            キャンセル
+                            {t('common:cancel')}
                           </button>
                           <button
                             type="submit"
                             disabled={isEditing}
                             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            {isEditing ? '保存中...' : '保存'}
+                            {isEditing ? t('common:saving') : t('common:save')}
                           </button>
                         </div>
                       </form>
@@ -352,7 +349,7 @@ export function UserManagement({
                       <span
                         className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${ROLE_BADGE_COLORS[user.role]}`}
                       >
-                        {ROLE_LABELS[user.role]}
+                        {roleLabel(user.role)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -363,7 +360,7 @@ export function UserManagement({
                             : 'bg-red-100 text-red-700'
                         }`}
                       >
-                        {user.isActive ? '有効' : '無効'}
+                        {user.isActive ? t('user.status.active') : t('user.status.inactive')}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -373,9 +370,9 @@ export function UserManagement({
                             type="button"
                             onClick={() => startEdit(user)}
                             className="text-sm text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                            aria-label={`${user.displayName}を編集`}
+                            aria-label={t('user.editAriaLabel', { name: user.displayName })}
                           >
-                            編集
+                            {t('user.edit')}
                           </button>
                         )}
                         {user.isActive ? (
@@ -383,18 +380,18 @@ export function UserManagement({
                             type="button"
                             onClick={() => setConfirmDisableUserId(user.userId)}
                             className="text-sm text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-2 py-1"
-                            aria-label={`${user.displayName}を無効化`}
+                            aria-label={t('user.disableAriaLabel', { name: user.displayName })}
                           >
-                            無効化
+                            {t('user.disable')}
                           </button>
                         ) : (
                           <button
                             type="button"
                             onClick={() => setConfirmEnableUserId(user.userId)}
                             className="text-sm text-green-600 hover:text-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 rounded px-2 py-1"
-                            aria-label={`${user.displayName}を有効化`}
+                            aria-label={t('user.enableAriaLabel', { name: user.displayName })}
                           >
-                            有効化
+                            {t('user.enable')}
                           </button>
                         )}
                       </div>
@@ -417,10 +414,10 @@ export function UserManagement({
         >
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <h3 id="disable-dialog-title" className="text-lg font-semibold text-gray-900">
-              ユーザー無効化の確認
+              {t('user.disableDialogTitle')}
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              このユーザーを無効化しますか？無効化するとログインできなくなります。
+              {t('user.disableDialogDescription')}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -428,14 +425,14 @@ export function UserManagement({
                 onClick={() => setConfirmDisableUserId(null)}
                 className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
-                キャンセル
+                {t('common:cancel')}
               </button>
               <button
                 type="button"
                 onClick={() => handleDisableConfirm(confirmDisableUserId)}
                 className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                無効化する
+                {t('user.disableConfirm')}
               </button>
             </div>
           </div>
@@ -452,10 +449,10 @@ export function UserManagement({
         >
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <h3 id="enable-dialog-title" className="text-lg font-semibold text-gray-900">
-              ユーザー有効化の確認
+              {t('user.enableDialogTitle')}
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              このユーザーを有効化しますか？有効化すると再びログインできるようになります。
+              {t('user.enableDialogDescription')}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -463,14 +460,14 @@ export function UserManagement({
                 onClick={() => setConfirmEnableUserId(null)}
                 className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
-                キャンセル
+                {t('common:cancel')}
               </button>
               <button
                 type="button"
                 onClick={() => handleEnableConfirm(confirmEnableUserId)}
                 className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
               >
-                有効化する
+                {t('user.enableConfirm')}
               </button>
             </div>
           </div>

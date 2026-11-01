@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import i18n from '../i18n';
 import { ResponsiveLayout } from './ResponsiveLayout';
 
 describe('ResponsiveLayout', () => {
@@ -10,7 +11,7 @@ describe('ResponsiveLayout', () => {
     render(<ResponsiveLayout primary={primary} secondary={secondary} />);
 
     expect(
-      screen.getByText('デスクトップブラウザをご利用ください')
+      screen.getByText(i18n.t('common:mobileUnsupported.title'))
     ).toBeInTheDocument();
   });
 

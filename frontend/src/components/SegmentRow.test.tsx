@@ -1,9 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { SegmentRow } from './SegmentRow';
 import { highlightText } from '../utils/highlight-text';
 import type { Segment } from '../types/segment';
+
+const speakerLabelText = () => i18n.t('review:segmentRow.speakerLabel');
 
 function createSegment(overrides: Partial<Segment> = {}): Segment {
   return {
@@ -37,14 +40,14 @@ describe('SegmentRow', () => {
     render(<SegmentRow segment={segment} />);
 
     expect(screen.getByText('spk_0')).toBeInTheDocument();
-    expect(screen.getByLabelText('話者ラベル')).toBeInTheDocument();
+    expect(screen.getByLabelText(speakerLabelText())).toBeInTheDocument();
   });
 
   it('does not display speaker label when speakerLabel is absent', () => {
     const segment = createSegment({ speakerLabel: undefined });
     render(<SegmentRow segment={segment} />);
 
-    expect(screen.queryByLabelText('話者ラベル')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(speakerLabelText())).not.toBeInTheDocument();
   });
 
   it('calls onEdit callback with segmentId on click', async () => {
@@ -105,7 +108,10 @@ describe('SegmentRow', () => {
     render(<SegmentRow segment={segment} />);
 
     const row = screen.getByRole('listitem');
-    expect(row).toHaveAttribute('aria-label', 'セグメント 00:00:00');
+    expect(row).toHaveAttribute(
+      'aria-label',
+      i18n.t('review:segmentRow.segmentAriaLabel', { time: '00:00:00' })
+    );
     expect(row).toHaveAttribute('tabIndex', '0');
   });
 

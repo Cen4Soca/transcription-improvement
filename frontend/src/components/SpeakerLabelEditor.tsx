@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface SpeakerLabelEditorProps {
   /** Current speaker label for this segment */
@@ -26,6 +27,7 @@ export function SpeakerLabelEditor({
   onSelect,
   onCancel,
 }: SpeakerLabelEditorProps) {
+  const { t } = useTranslation('review');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -107,7 +109,7 @@ export function SpeakerLabelEditor({
         type="button"
         onClick={handleToggleDropdown}
         onKeyDown={handleKeyDown}
-        aria-label={`話者ラベル: ${currentLabel}。クリックして変更`}
+        aria-label={t('speaker.editAriaLabel', { label: currentLabel })}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded whitespace-nowrap cursor-pointer hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors"
@@ -118,7 +120,7 @@ export function SpeakerLabelEditor({
       {isOpen && (
         <div
           role="listbox"
-          aria-label="話者ラベル選択"
+          aria-label={t('speaker.selectAriaLabel')}
           className="absolute z-50 mt-1 left-0 min-w-[120px] bg-white border border-gray-200 rounded-md shadow-lg py-1"
         >
           {availableLabels.map((label) => (

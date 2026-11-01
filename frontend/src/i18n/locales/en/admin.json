@@ -6,5 +6,108 @@
     "teams": "Team management",
     "ipAllowlist": "IP address restriction",
     "auditLogs": "Audit logs"
+  },
+  "user": {
+    "loadingAriaLabel": "Loading",
+    "managementAriaLabel": "User management",
+    "heading": "Users",
+    "addUser": "Add user",
+    "createFormAriaLabel": "User registration form",
+    "email": "Email address",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "John Doe",
+    "roleLabel": "Role",
+    "register": "Register",
+    "emptyState": "No users",
+    "tableAriaLabel": "User list table",
+    "edit": "Edit",
+    "editAriaLabel": "Edit {{name}}",
+    "editFormAriaLabel": "Edit form for {{name}}",
+    "disable": "Disable",
+    "disableAriaLabel": "Disable {{name}}",
+    "enable": "Enable",
+    "enableAriaLabel": "Enable {{name}}",
+    "column": {
+      "displayName": "Display name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "role": {
+      "REVIEWER": "Reviewer",
+      "TEAM_LEADER": "Team leader",
+      "ADMIN": "Admin"
+    },
+    "validation": {
+      "required": "Please enter a display name and email address.",
+      "selfAdmin": "You cannot change your own admin role."
+    },
+    "disableDialogTitle": "Confirm user deactivation",
+    "disableDialogDescription": "Disable this user? Once disabled, they will not be able to sign in.",
+    "disableConfirm": "Disable",
+    "enableDialogTitle": "Confirm user activation",
+    "enableDialogDescription": "Enable this user? Once enabled, they will be able to sign in again.",
+    "enableConfirm": "Enable"
+  },
+  "auditLog": {
+    "loadingAriaLabel": "Loading",
+    "managementAriaLabel": "Audit log management",
+    "heading": "Audit logs",
+    "deleteByFilter": "Delete by filter",
+    "filterAriaLabel": "Audit log filter",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "actorName": "Actor name",
+    "actorNamePlaceholder": "Actor name",
+    "operationTypeLabel": "Operation type",
+    "all": "All",
+    "search": "Search",
+    "itemRange": "Showing {{start}}–{{end}} of {{totalItems}}",
+    "emptyState": "No matching audit logs",
+    "tableAriaLabel": "Audit log table",
+    "column": {
+      "datetime": "Date and time",
+      "actor": "Actor",
+      "role": "Role",
+      "operationType": "Operation type",
+      "resourceId": "Resource ID"
+    },
+    "paginationAriaLabel": "Pagination",
+    "previous": "Previous",
+    "previousAriaLabel": "Previous (previous page)",
+    "next": "Next",
+    "nextAriaLabel": "Next (next page)",
+    "pageIndicator": "Page {{current}} / {{total}}",
+    "deleteDialogTitle": "Confirm audit log deletion",
+    "deleteDialogDescription": "Delete audit logs matching the current filter ({{count}}).",
+    "deleteDialogWarning": "This action cannot be undone.",
+    "deleteConfirm": "Delete",
+    "operationType": {
+      "IP_ALLOWLIST_CHANGE": "IP allowlist change",
+      "USER_MANAGEMENT": "User management",
+      "TEAM_MANAGEMENT": "Team management",
+      "REVIEW_ASSIGNMENT_CHANGE": "Review assignment change",
+      "TEAM_ASSIGNMENT_CHANGE": "Team assignment change",
+      "SESSION_COMPLETED": "Session completed",
+      "CONSENSUS_MANUAL_CONFIRM": "Consensus manual confirmation",
+      "CORRECTION_CONFIRMED": "Correction confirmed",
+      "SPEAKER_LABEL_CHANGED": "Speaker label changed",
+      "LOGIN_FAILURE": "Login failure",
+      "MEDIA_DELETED": "Media deleted",
+      "TRANSCRIPTION_DELETED": "Transcription deleted",
+      "PARTIAL_DELETION_FAILURE": "Partial deletion failure",
+      "LANGUAGE_MODEL_CREATED": "Language model created",
+      "AUDIT_LOG_DELETED": "Audit log deleted"
+    },
+    "role": {
+      "REVIEWER": "Reviewer",
+      "TEAM_LEADER": "Team leader",
+      "ADMIN": "Admin"
+    }
   }
 }

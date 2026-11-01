@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface SuggestionPopupProps {
   segmentId: string;
@@ -25,6 +26,7 @@ export function SuggestionPopup({
   onClose,
   onEditMode,
 }: SuggestionPopupProps) {
+  const { t } = useTranslation('review');
   const popupRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click (Req 8.8)
@@ -67,18 +69,18 @@ export function SuggestionPopup({
     <div
       ref={popupRef}
       role="dialog"
-      aria-label="修正候補"
+      aria-label={t('suggestion.title')}
       aria-busy={isLoading}
       data-segment-id={segmentId}
       className="border-b border-gray-200 border-l-4 border-l-blue-300 bg-blue-50/40"
     >
       <div className="p-3">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-gray-700">修正候補</h3>
+          <h3 className="text-sm font-medium text-gray-700">{t('suggestion.title')}</h3>
           <button
             type="button"
             onClick={onClose}
-            aria-label="閉じる"
+            aria-label={t('common:close')}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg
@@ -101,7 +103,7 @@ export function SuggestionPopup({
         {isLoading && (
           <div
             role="status"
-            aria-label="読み込み中"
+            aria-label={t('suggestion.loadingAriaLabel')}
             className="flex items-center justify-center py-4"
           >
             <svg
@@ -124,7 +126,7 @@ export function SuggestionPopup({
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
               />
             </svg>
-            <span className="ml-2 text-sm text-gray-500">候補を取得中...</span>
+            <span className="ml-2 text-sm text-gray-500">{t('suggestion.fetching')}</span>
           </div>
         )}
 
@@ -134,7 +136,7 @@ export function SuggestionPopup({
             role="alert"
             className="mb-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700"
           >
-            外部APIからの候補取得に失敗しました。履歴からの候補のみ表示しています。
+            {t('suggestion.error')}
           </div>
         )}
 
@@ -142,7 +144,7 @@ export function SuggestionPopup({
         {!isLoading && displayedSuggestions.length > 0 && (
           <ul
             role="listbox"
-            aria-label="候補一覧"
+            aria-label={t('suggestion.listAriaLabel')}
             className="space-y-1"
           >
             {displayedSuggestions.map((suggestion, index) => (
@@ -174,13 +176,13 @@ export function SuggestionPopup({
         {/* No candidates message (Req 8.6) */}
         {showNoCandidates && (
           <div className="py-3 text-center">
-            <p className="text-sm text-gray-500 mb-2">候補がありません</p>
+            <p className="text-sm text-gray-500 mb-2">{t('suggestion.noCandidates')}</p>
             <button
               type="button"
               onClick={onEditMode}
               className="text-sm text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded"
             >
-              直接編集する
+              {t('suggestion.editDirectly')}
             </button>
           </div>
         )}
@@ -199,10 +201,11 @@ export interface SuggestionButtonProps {
  * ホバー自動表示が無効の場合、このボタンのみで候補を表示する (Req 8.2, 8.10)
  */
 export function SuggestionButton({ segmentId, onClick }: SuggestionButtonProps) {
+  const { t } = useTranslation('review');
   return (
     <button
       type="button"
-      aria-label="修正候補を表示"
+      aria-label={t('suggestion.showButtonAriaLabel')}
       onClick={(e) => {
         e.stopPropagation();
         onClick(segmentId);

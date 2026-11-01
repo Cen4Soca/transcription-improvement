@@ -1,0 +1,51 @@
+{
+  "appName": "Transcription Review",
+  "logout": "Log out",
+  "save": "Save",
+  "saving": "Saving...",
+  "cancel": "Cancel",
+  "close": "Close",
+  "language": "Language",
+  "languageJa": "日本語",
+  "languageEn": "English",
+  "deleteDialog": {
+    "defaultWarning": "This action cannot be undone. Deleted data cannot be restored.",
+    "description": "You are about to delete the following resource:",
+    "deleting": "Deleting...",
+    "confirm": "Delete",
+    "failed": "Failed to delete"
+  },
+  "offline": {
+    "banner": "Offline — no internet connection"
+  },
+  "mobileUnsupported": {
+    "ariaLabel": "Mobile device not supported",
+    "title": "Please use a desktop browser",
+    "description": "This application is designed for desktop browsers (1024px or wider). Basic editing is available on tablets (768px or wider)."
+  },
+  "sync": {
+    "syncing": "Syncing...",
+    "completed": "Sync complete",
+    "failed": "Sync failed",
+    "retry": "Retry"
+  },
+  "sessionTimeout": {
+    "title": "Your session is about to expire",
+    "description": "Your session is about to expire. Do you want to continue?",
+    "remaining": "{{time}} left",
+    "continue": "Continue"
+  },
+  "progress": {
+    "allCompleted": "Everyone has responded",
+    "remainingCount": "Waiting for {{count}} more to respond",
+    "stillCollecting": "Still collecting responses"
+  },
+  "draftRecovery": {
+    "title": "You have unsaved edits",
+    "description": "Unsaved edits from your previous session were found. Do you want to restore them?",
+    "targetSegments": "Target segments ({{count}}):",
+    "listAriaLabel": "Unsaved drafts",
+    "discard": "Discard",
+    "restore": "Restore"
+  }
+}

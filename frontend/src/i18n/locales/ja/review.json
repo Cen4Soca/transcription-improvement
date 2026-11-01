@@ -53,5 +53,38 @@
     "deleteTranscriptionDialogTitle": "Transcription の削除",
     "transcriptionFallbackName": "Transcription",
     "deleteTranscriptionWarning": "この操作は取り消せません。関連するすべてのデータ（Segment・Correction・ConsensusResult）が削除されます。"
+  },
+  "speaker": {
+    "editAriaLabel": "話者ラベル: {{label}}。クリックして変更",
+    "selectAriaLabel": "話者ラベル選択"
+  },
+  "segmentRow": {
+    "segmentAriaLabel": "セグメント {{time}}",
+    "startTime": "開始時刻",
+    "speakerLabel": "話者ラベル"
+  },
+  "inlineEditor": {
+    "editTextAriaLabel": "テキストを編集: {{text}}",
+    "groupAriaLabel": "インライン編集",
+    "originalTextAriaLabel": "編集前テキスト",
+    "editTextareaAriaLabel": "編集テキスト",
+    "confirm": "確定",
+    "cancel": "キャンセル",
+    "confirmEditAriaLabel": "編集を確定",
+    "cancelEditAriaLabel": "編集をキャンセル",
+    "emptyConfirmTitle": "確認",
+    "emptyConfirmDescription": "テキストが空です。空文字列として確定しますか？",
+    "emptyConfirmCancelAriaLabel": "空文字列確定をキャンセル",
+    "emptyConfirmConfirmAriaLabel": "空文字列として確定"
+  },
+  "suggestion": {
+    "title": "修正候補",
+    "loadingAriaLabel": "読み込み中",
+    "fetching": "候補を取得中...",
+    "error": "外部APIからの候補取得に失敗しました。履歴からの候補のみ表示しています。",
+    "listAriaLabel": "候補一覧",
+    "noCandidates": "候補がありません",
+    "editDirectly": "直接編集する",
+    "showButtonAriaLabel": "修正候補を表示"
   }
 }

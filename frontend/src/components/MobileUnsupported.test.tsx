@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import i18n from '../i18n';
 import { MobileUnsupported } from './MobileUnsupported';
 
 describe('MobileUnsupported', () => {
@@ -7,7 +8,7 @@ describe('MobileUnsupported', () => {
     render(<MobileUnsupported />);
 
     expect(
-      screen.getByText('デスクトップブラウザをご利用ください')
+      screen.getByText(i18n.t('common:mobileUnsupported.title'))
     ).toBeInTheDocument();
   });
 
@@ -15,7 +16,7 @@ describe('MobileUnsupported', () => {
     render(<MobileUnsupported />);
 
     expect(
-      screen.getByText(/デスクトップブラウザ（横幅1024px以上）/)
+      screen.getByText(i18n.t('common:mobileUnsupported.description'))
     ).toBeInTheDocument();
   });
 
@@ -30,7 +31,7 @@ describe('MobileUnsupported', () => {
 
     expect(screen.getByRole('alert')).toHaveAttribute(
       'aria-label',
-      'モバイルデバイス非対応'
+      i18n.t('common:mobileUnsupported.ariaLabel')
     );
   });
 

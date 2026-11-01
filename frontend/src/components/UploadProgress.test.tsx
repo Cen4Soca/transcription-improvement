@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import i18n from '../i18n';
 import { UploadProgress } from './UploadProgress';
+
+const uploading = () => i18n.t('upload:progress.uploading');
+const completed = () => i18n.t('upload:progress.completed');
+const progressAriaLabel = () => i18n.t('upload:progress.ariaLabel');
 
 describe('UploadProgress', () => {
   it('displays progress percentage', () => {
@@ -9,22 +14,22 @@ describe('UploadProgress', () => {
     expect(screen.getByText('45%')).toBeInTheDocument();
   });
 
-  it('shows "アップロード中..." when not completed', () => {
+  it('shows uploading label when not completed', () => {
     render(<UploadProgress progress={60} isCompleted={false} />);
 
-    expect(screen.getByText('アップロード中...')).toBeInTheDocument();
+    expect(screen.getByText(uploading())).toBeInTheDocument();
   });
 
-  it('shows "アップロード完了" when completed', () => {
+  it('shows completed label when completed', () => {
     render(<UploadProgress progress={100} isCompleted={true} />);
 
-    expect(screen.getByText('アップロード完了')).toBeInTheDocument();
+    expect(screen.getByText(completed())).toBeInTheDocument();
   });
 
   it('has proper ARIA progressbar attributes', () => {
     render(<UploadProgress progress={75} isCompleted={false} />);
 
-    const progressBar = screen.getByRole('progressbar', { name: 'アップロード進捗' });
+    const progressBar = screen.getByRole('progressbar', { name: progressAriaLabel() });
     expect(progressBar).toHaveAttribute('aria-valuenow', '75');
     expect(progressBar).toHaveAttribute('aria-valuemin', '0');
     expect(progressBar).toHaveAttribute('aria-valuemax', '100');

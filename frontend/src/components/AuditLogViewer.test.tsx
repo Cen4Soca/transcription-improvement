@@ -1,8 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { AuditLogViewer } from './AuditLogViewer';
 import type { AuditLog } from '../types/audit';
+
+const ta = (key: string, opts?: Record<string, unknown>) => i18n.t(`admin:auditLog.${key}`, opts);
 
 const sampleLogs: AuditLog[] = [
   {
@@ -47,10 +50,10 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByText('フィルタ条件で削除'));
+      await user.click(screen.getByText(ta('deleteByFilter')));
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText('監査ログ削除の確認')).toBeInTheDocument();
+      expect(screen.getByText(ta('deleteDialogTitle'))).toBeInTheDocument();
     });
 
     it('確認ダイアログに削除対象件数を表示する', async () => {
@@ -63,9 +66,9 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByText('フィルタ条件で削除'));
+      await user.click(screen.getByText(ta('deleteByFilter')));
 
-      expect(screen.getByText(/150件.*削除します/)).toBeInTheDocument();
+      expect(screen.getByText(ta('deleteDialogDescription', { count: 150 }))).toBeInTheDocument();
     });
 
     it('確認ダイアログに不可逆性の警告を表示する', async () => {
@@ -78,9 +81,9 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByText('フィルタ条件で削除'));
+      await user.click(screen.getByText(ta('deleteByFilter')));
 
-      expect(screen.getByText('この操作は取り消せません。')).toBeInTheDocument();
+      expect(screen.getByText(ta('deleteDialogWarning'))).toBeInTheDocument();
     });
 
     it('確定ボタンクリックでonDeleteLogsコールバックを呼び出す', async () => {
@@ -95,8 +98,8 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByText('フィルタ条件で削除'));
-      await user.click(screen.getByText('削除する'));
+      await user.click(screen.getByText(ta('deleteByFilter')));
+      await user.click(screen.getByText(ta('deleteConfirm')));
 
       expect(onDeleteLogs).toHaveBeenCalledTimes(1);
     });
@@ -113,8 +116,8 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByText('フィルタ条件で削除'));
-      await user.click(screen.getByText('キャンセル'));
+      await user.click(screen.getByText(ta('deleteByFilter')));
+      await user.click(screen.getByText(i18n.t('common:cancel')));
 
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(onDeleteLogs).not.toHaveBeenCalled();
@@ -129,7 +132,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      const deleteButton = screen.getByText('フィルタ条件で削除');
+      const deleteButton = screen.getByText(ta('deleteByFilter'));
       expect(deleteButton).toBeDisabled();
     });
   });
@@ -147,7 +150,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.selectOptions(screen.getByLabelText('操作種別'), 'USER_MANAGEMENT');
+      await user.selectOptions(screen.getByLabelText(ta('operationTypeLabel')), 'USER_MANAGEMENT');
 
       expect(onFilterChange).toHaveBeenCalledWith(
         expect.objectContaining({ operationType: 'USER_MANAGEMENT' })
@@ -166,7 +169,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.type(screen.getByLabelText('実行者名'), '山田太郎');
+      await user.type(screen.getByLabelText(ta('actorName')), '山田太郎');
 
       expect(onFilterChange).toHaveBeenCalled();
       const lastCall = onFilterChange.mock.calls[onFilterChange.mock.calls.length - 1][0];
@@ -198,7 +201,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByText('検索'));
+      await user.click(screen.getByText(ta('search')));
 
       expect(onFilterChange).toHaveBeenCalled();
     });
@@ -212,7 +215,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      expect(screen.getByText('該当する監査ログがありません')).toBeInTheDocument();
+      expect(screen.getByText(ta('emptyState'))).toBeInTheDocument();
     });
   });
 
@@ -226,8 +229,8 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      expect(screen.getByLabelText('ページネーション')).toBeInTheDocument();
-      expect(screen.getByText('1 / 3 ページ')).toBeInTheDocument();
+      expect(screen.getByLabelText(ta('paginationAriaLabel'))).toBeInTheDocument();
+      expect(screen.getByText(ta('pageIndicator', { current: 1, total: 3 }))).toBeInTheDocument();
     });
 
     it('次へボタンクリックでonPageChangeを呼び出す', async () => {
@@ -242,7 +245,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByLabelText('次へ（次のページ）'));
+      await user.click(screen.getByLabelText(ta('nextAriaLabel')));
 
       expect(onPageChange).toHaveBeenCalledWith(2);
     });
@@ -259,7 +262,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      await user.click(screen.getByLabelText('前へ（前のページ）'));
+      await user.click(screen.getByLabelText(ta('previousAriaLabel')));
 
       expect(onPageChange).toHaveBeenCalledWith(1);
     });
@@ -273,7 +276,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      expect(screen.getByLabelText('前へ（前のページ）')).toBeDisabled();
+      expect(screen.getByLabelText(ta('previousAriaLabel'))).toBeDisabled();
     });
 
     it('最後のページでは次へボタンが無効化される', () => {
@@ -285,7 +288,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      expect(screen.getByLabelText('次へ（次のページ）')).toBeDisabled();
+      expect(screen.getByLabelText(ta('nextAriaLabel'))).toBeDisabled();
     });
 
     it('1ページ以下の場合はページネーションUIを非表示にする', () => {
@@ -297,7 +300,7 @@ describe('AuditLogViewer', () => {
         />
       );
 
-      expect(screen.queryByLabelText('ページネーション')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(ta('paginationAriaLabel'))).not.toBeInTheDocument();
     });
   });
 
@@ -313,7 +316,7 @@ describe('AuditLogViewer', () => {
 
       expect(screen.getAllByText('admin-001').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('user-123')).toBeInTheDocument();
-      expect(screen.getAllByText('管理者').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(ta('role.ADMIN')).length).toBeGreaterThanOrEqual(1);
     });
 
     it('ローディング中はスピナーを表示する', () => {

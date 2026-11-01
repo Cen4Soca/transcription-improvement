@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import i18n from '../i18n';
 import { OfflineBanner } from './OfflineBanner';
+
+const offlineBanner = () => i18n.t('common:offline.banner');
 
 describe('OfflineBanner', () => {
   it('should display offline banner when isOffline is true', () => {
@@ -8,7 +11,7 @@ describe('OfflineBanner', () => {
 
     const banner = screen.getByRole('alert');
     expect(banner).toBeInTheDocument();
-    expect(banner).toHaveTextContent('オフライン');
+    expect(banner).toHaveTextContent(offlineBanner());
   });
 
   it('should not render when isOffline is false', () => {
@@ -46,7 +49,7 @@ describe('OfflineBanner', () => {
     render(<OfflineBanner isOffline={true} />);
 
     const banner = screen.getByRole('alert');
-    expect(banner).toHaveTextContent('オフライン — インターネット接続がありません');
+    expect(banner).toHaveTextContent(offlineBanner());
   });
 
   it('should have z-50 to appear above other content', () => {

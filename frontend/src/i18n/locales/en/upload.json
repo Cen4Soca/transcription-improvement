@@ -20,5 +20,10 @@
   "supportedFormatsTitle": "Supported file formats",
   "audio": "Audio",
   "video": "Video",
-  "maxFileSize": "Maximum file size: 2GB"
+  "maxFileSize": "Maximum file size: 2GB",
+  "progress": {
+    "completed": "Upload complete",
+    "uploading": "Uploading...",
+    "ariaLabel": "Upload progress"
+  }
 }

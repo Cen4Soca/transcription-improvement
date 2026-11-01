@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * InlineEditorProps - インライン編集コンポーネントのプロパティ
@@ -28,6 +29,7 @@ export function InlineEditor({
   onConfirm,
   onCancel,
 }: InlineEditorProps) {
+  const { t } = useTranslation('review');
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(originalText);
   const [showEmptyConfirmDialog, setShowEmptyConfirmDialog] = useState(false);
@@ -115,7 +117,7 @@ export function InlineEditor({
       <div
         role="button"
         tabIndex={0}
-        aria-label={`テキストを編集: ${originalText}`}
+        aria-label={t('inlineEditor.editTextAriaLabel', { text: originalText })}
         onClick={handleTextClick}
         onKeyDown={handleTextKeyDown}
         className="flex-1 text-sm text-gray-900 leading-relaxed cursor-pointer hover:bg-gray-100 rounded px-2 py-1 transition-colors"
@@ -128,13 +130,13 @@ export function InlineEditor({
   return (
     <div
       className="flex-1 space-y-2"
-      aria-label="インライン編集"
+      aria-label={t('inlineEditor.groupAriaLabel')}
       role="group"
     >
       {/* Requirement 2.2: 編集前テキストの表示 */}
       <div
         className="text-sm text-gray-400 line-through px-2 py-1"
-        aria-label="編集前テキスト"
+        aria-label={t('inlineEditor.originalTextAriaLabel')}
       >
         {originalText}
       </div>
@@ -147,7 +149,7 @@ export function InlineEditor({
         onKeyDown={handleKeyDown}
         onCompositionStart={handleCompositionStart}
         onCompositionEnd={handleCompositionEnd}
-        aria-label="編集テキスト"
+        aria-label={t('inlineEditor.editTextareaAriaLabel')}
         className="w-full text-sm text-gray-900 border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y min-h-[2.5rem]"
         rows={2}
       />
@@ -157,18 +159,18 @@ export function InlineEditor({
         <button
           type="button"
           onClick={handleConfirm}
-          aria-label="編集を確定"
+          aria-label={t('inlineEditor.confirmEditAriaLabel')}
           className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
         >
-          確定
+          {t('inlineEditor.confirm')}
         </button>
         <button
           type="button"
           onClick={handleCancel}
-          aria-label="編集をキャンセル"
+          aria-label={t('inlineEditor.cancelEditAriaLabel')}
           className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
         >
-          キャンセル
+          {t('inlineEditor.cancel')}
         </button>
       </div>
 
@@ -185,30 +187,30 @@ export function InlineEditor({
               id={`empty-confirm-title-${segmentId}`}
               className="text-lg font-semibold text-gray-900 mb-2"
             >
-              確認
+              {t('inlineEditor.emptyConfirmTitle')}
             </h3>
             <p
               id={`empty-confirm-desc-${segmentId}`}
               className="text-sm text-gray-600 mb-4"
             >
-              テキストが空です。空文字列として確定しますか？
+              {t('inlineEditor.emptyConfirmDescription')}
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={handleEmptyCancel}
-                aria-label="空文字列確定をキャンセル"
+                aria-label={t('inlineEditor.emptyConfirmCancelAriaLabel')}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
               >
-                キャンセル
+                {t('inlineEditor.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleEmptyConfirm}
-                aria-label="空文字列として確定"
+                aria-label={t('inlineEditor.emptyConfirmConfirmAriaLabel')}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors"
               >
-                確定
+                {t('inlineEditor.confirm')}
               </button>
             </div>
           </div>

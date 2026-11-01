@@ -53,5 +53,38 @@
     "deleteTranscriptionDialogTitle": "Delete transcription",
     "transcriptionFallbackName": "Transcription",
     "deleteTranscriptionWarning": "This action cannot be undone. All related data (segments, corrections, consensus results) will be deleted."
+  },
+  "speaker": {
+    "editAriaLabel": "Speaker label: {{label}}. Click to change",
+    "selectAriaLabel": "Select speaker label"
+  },
+  "segmentRow": {
+    "segmentAriaLabel": "Segment {{time}}",
+    "startTime": "Start time",
+    "speakerLabel": "Speaker label"
+  },
+  "inlineEditor": {
+    "editTextAriaLabel": "Edit text: {{text}}",
+    "groupAriaLabel": "Inline editing",
+    "originalTextAriaLabel": "Original text",
+    "editTextareaAriaLabel": "Edit text",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "confirmEditAriaLabel": "Confirm edit",
+    "cancelEditAriaLabel": "Cancel edit",
+    "emptyConfirmTitle": "Confirm",
+    "emptyConfirmDescription": "The text is empty. Confirm it as an empty string?",
+    "emptyConfirmCancelAriaLabel": "Cancel confirming empty string",
+    "emptyConfirmConfirmAriaLabel": "Confirm as empty string"
+  },
+  "suggestion": {
+    "title": "Correction suggestions",
+    "loadingAriaLabel": "Loading",
+    "fetching": "Fetching suggestions...",
+    "error": "Failed to fetch suggestions from the external API. Showing suggestions from history only.",
+    "listAriaLabel": "Suggestion list",
+    "noCandidates": "No suggestions",
+    "editDirectly": "Edit directly",
+    "showButtonAriaLabel": "Show correction suggestions"
   }
 }

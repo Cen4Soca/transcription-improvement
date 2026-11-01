@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { highlightText } from '../utils/highlight-text';
 import type { Segment } from '../types/segment';
 import { formatTimestamp } from '../utils/segments';
@@ -25,6 +26,7 @@ export function SegmentRow({
   onEdit,
   onClick,
 }: SegmentRowProps) {
+  const { t } = useTranslation('review');
   const handleClick = () => {
     onClick?.(segment.segmentId);
     onEdit?.(segment.segmentId);
@@ -41,7 +43,7 @@ export function SegmentRow({
     <div
       role="listitem"
       data-segment-id={segment.segmentId}
-      aria-label={`セグメント ${formatTimestamp(segment.startTime)}`}
+      aria-label={t('segmentRow.segmentAriaLabel', { time: formatTimestamp(segment.startTime) })}
       aria-current={isHighlighted || isEditing ? 'true' : undefined}
       tabIndex={0}
       onClick={handleClick}
@@ -54,7 +56,7 @@ export function SegmentRow({
     >
       <span
         className="text-xs text-gray-500 font-mono whitespace-nowrap pt-0.5 min-w-[60px]"
-        aria-label="開始時刻"
+        aria-label={t('segmentRow.startTime')}
       >
         {formatTimestamp(segment.startTime)}
       </span>
@@ -62,7 +64,7 @@ export function SegmentRow({
       {segment.speakerLabel && (
         <span
           className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded whitespace-nowrap"
-          aria-label="話者ラベル"
+          aria-label={t('segmentRow.speakerLabel')}
         >
           {segment.speakerLabel}
         </span>

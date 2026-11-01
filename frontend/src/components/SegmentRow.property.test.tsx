@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { render, within } from '@testing-library/react';
 import fc from 'fast-check';
+import i18n from '../i18n';
 import { SegmentRow } from './SegmentRow';
 import type { Segment } from '../types/segment';
+
+const speakerLabelText = () => i18n.t('review:segmentRow.speakerLabel');
 
 const consensusStatusArb = fc.constantFrom(
   'UNDECIDED' as const,
@@ -55,7 +58,7 @@ describe('Feature: segment-display, Property 3: 話者ラベルの条件付き�
           const { container, unmount } = render(<SegmentRow segment={segment} />);
           const scope = within(container);
 
-          const labelElement = scope.queryByLabelText('話者ラベル');
+          const labelElement = scope.queryByLabelText(speakerLabelText());
           const isNonEmptyString =
             typeof segmentData.speakerLabel === 'string' &&
             segmentData.speakerLabel.length > 0;

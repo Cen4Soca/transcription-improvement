@@ -1,7 +1,27 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { InlineEditor } from './InlineEditor';
+
+const editTextLabel = (text: string) =>
+  i18n.t('review:inlineEditor.editTextAriaLabel', { text });
+const editTextRe = () =>
+  new RegExp(
+    i18n
+      .t('review:inlineEditor.editTextAriaLabel', { text: '' })
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
+const editTextareaLabel = () => i18n.t('review:inlineEditor.editTextareaAriaLabel');
+const originalTextLabel = () => i18n.t('review:inlineEditor.originalTextAriaLabel');
+const confirmEditLabel = () => i18n.t('review:inlineEditor.confirmEditAriaLabel');
+const cancelEditLabel = () => i18n.t('review:inlineEditor.cancelEditAriaLabel');
+const groupLabel = () => i18n.t('review:inlineEditor.groupAriaLabel');
+const emptyConfirmDesc = () => i18n.t('review:inlineEditor.emptyConfirmDescription');
+const emptyConfirmConfirmLabel = () =>
+  i18n.t('review:inlineEditor.emptyConfirmConfirmAriaLabel');
+const emptyConfirmCancelLabel = () =>
+  i18n.t('review:inlineEditor.emptyConfirmCancelAriaLabel');
 
 describe('InlineEditor', () => {
   const defaultProps = {
@@ -22,31 +42,31 @@ describe('InlineEditor', () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
 
-      expect(screen.getByLabelText('編集テキスト')).toBeInTheDocument();
+      expect(screen.getByLabelText(editTextareaLabel())).toBeInTheDocument();
     });
 
     it('switches to edit mode on Enter key', async () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      const textButton = screen.getByRole('button', { name: /テキストを編集/ });
+      const textButton = screen.getByRole('button', { name: editTextRe() });
       textButton.focus();
       await user.keyboard('{Enter}');
 
-      expect(screen.getByLabelText('編集テキスト')).toBeInTheDocument();
+      expect(screen.getByLabelText(editTextareaLabel())).toBeInTheDocument();
     });
 
     it('switches to edit mode on Space key', async () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      const textButton = screen.getByRole('button', { name: /テキストを編集/ });
+      const textButton = screen.getByRole('button', { name: editTextRe() });
       textButton.focus();
       await user.keyboard(' ');
 
-      expect(screen.getByLabelText('編集テキスト')).toBeInTheDocument();
+      expect(screen.getByLabelText(editTextareaLabel())).toBeInTheDocument();
     });
   });
 
@@ -55,16 +75,16 @@ describe('InlineEditor', () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
 
       // Original text shown with strikethrough
-      const originalTextEl = screen.getByLabelText('編集前テキスト');
+      const originalTextEl = screen.getByLabelText(originalTextLabel());
       expect(originalTextEl).toBeInTheDocument();
       expect(originalTextEl).toHaveTextContent('テストテキストです');
       expect(originalTextEl).toHaveClass('line-through');
 
       // Editing textarea shown
-      const textarea = screen.getByLabelText('編集テキスト');
+      const textarea = screen.getByLabelText(editTextareaLabel());
       expect(textarea).toBeInTheDocument();
       expect(textarea).toHaveValue('テストテキストです');
     });
@@ -73,8 +93,8 @@ describe('InlineEditor', () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      const textarea = screen.getByLabelText('編集テキスト');
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      const textarea = screen.getByLabelText(editTextareaLabel());
       await user.clear(textarea);
       await user.type(textarea, '修正後テキスト');
 
@@ -88,11 +108,11 @@ describe('InlineEditor', () => {
       const onConfirm = vi.fn();
       render(<InlineEditor {...defaultProps} onConfirm={onConfirm} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      const textarea = screen.getByLabelText('編集テキスト');
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      const textarea = screen.getByLabelText(editTextareaLabel());
       await user.clear(textarea);
       await user.type(textarea, '新しいテキスト');
-      await user.click(screen.getByLabelText('編集を確定'));
+      await user.click(screen.getByLabelText(confirmEditLabel()));
 
       expect(onConfirm).toHaveBeenCalledWith('seg-1', '新しいテキスト');
     });
@@ -101,10 +121,10 @@ describe('InlineEditor', () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      await user.click(screen.getByLabelText('編集を確定'));
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      await user.click(screen.getByLabelText(confirmEditLabel()));
 
-      expect(screen.queryByLabelText('編集テキスト')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(editTextareaLabel())).not.toBeInTheDocument();
     });
   });
 
@@ -114,8 +134,8 @@ describe('InlineEditor', () => {
       const onCancel = vi.fn();
       render(<InlineEditor {...defaultProps} onCancel={onCancel} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      await user.click(screen.getByLabelText('編集をキャンセル'));
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      await user.click(screen.getByLabelText(cancelEditLabel()));
 
       expect(onCancel).toHaveBeenCalledWith('seg-1');
     });
@@ -124,10 +144,10 @@ describe('InlineEditor', () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      await user.click(screen.getByLabelText('編集をキャンセル'));
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      await user.click(screen.getByLabelText(cancelEditLabel()));
 
-      expect(screen.queryByLabelText('編集テキスト')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(editTextareaLabel())).not.toBeInTheDocument();
     });
 
     it('cancels editing on Escape key', async () => {
@@ -135,13 +155,13 @@ describe('InlineEditor', () => {
       const onCancel = vi.fn();
       render(<InlineEditor {...defaultProps} onCancel={onCancel} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      const textarea = screen.getByLabelText('編集テキスト');
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      const textarea = screen.getByLabelText(editTextareaLabel());
       textarea.focus();
       await user.keyboard('{Escape}');
 
       expect(onCancel).toHaveBeenCalledWith('seg-1');
-      expect(screen.queryByLabelText('編集テキスト')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(editTextareaLabel())).not.toBeInTheDocument();
     });
   });
 
@@ -150,14 +170,14 @@ describe('InlineEditor', () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      const textarea = screen.getByLabelText('編集テキスト');
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      const textarea = screen.getByLabelText(editTextareaLabel());
       await user.clear(textarea);
-      await user.click(screen.getByLabelText('編集を確定'));
+      await user.click(screen.getByLabelText(confirmEditLabel()));
 
       expect(screen.getByRole('alertdialog')).toBeInTheDocument();
       expect(
-        screen.getByText('テキストが空です。空文字列として確定しますか？')
+        screen.getByText(emptyConfirmDesc())
       ).toBeInTheDocument();
     });
 
@@ -166,11 +186,11 @@ describe('InlineEditor', () => {
       const onConfirm = vi.fn();
       render(<InlineEditor {...defaultProps} onConfirm={onConfirm} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      const textarea = screen.getByLabelText('編集テキスト');
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      const textarea = screen.getByLabelText(editTextareaLabel());
       await user.clear(textarea);
-      await user.click(screen.getByLabelText('編集を確定'));
-      await user.click(screen.getByLabelText('空文字列として確定'));
+      await user.click(screen.getByLabelText(confirmEditLabel()));
+      await user.click(screen.getByLabelText(emptyConfirmConfirmLabel()));
 
       expect(onConfirm).toHaveBeenCalledWith('seg-1', '');
     });
@@ -180,14 +200,14 @@ describe('InlineEditor', () => {
       const onConfirm = vi.fn();
       render(<InlineEditor {...defaultProps} onConfirm={onConfirm} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      const textarea = screen.getByLabelText('編集テキスト');
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      const textarea = screen.getByLabelText(editTextareaLabel());
       await user.clear(textarea);
-      await user.click(screen.getByLabelText('編集を確定'));
-      await user.click(screen.getByLabelText('空文字列確定をキャンセル'));
+      await user.click(screen.getByLabelText(confirmEditLabel()));
+      await user.click(screen.getByLabelText(emptyConfirmCancelLabel()));
 
       expect(onConfirm).not.toHaveBeenCalled();
-      expect(screen.getByLabelText('編集テキスト')).toBeInTheDocument();
+      expect(screen.getByLabelText(editTextareaLabel())).toBeInTheDocument();
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     });
   });
@@ -200,7 +220,7 @@ describe('InlineEditor', () => {
       expect(button).toHaveAttribute('tabIndex', '0');
       expect(button).toHaveAttribute(
         'aria-label',
-        'テキストを編集: テストテキストです'
+        editTextLabel('テストテキストです')
       );
     });
 
@@ -208,25 +228,25 @@ describe('InlineEditor', () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
 
       expect(screen.getByRole('group')).toHaveAttribute(
         'aria-label',
-        'インライン編集'
+        groupLabel()
       );
-      expect(screen.getByLabelText('編集テキスト')).toBeInTheDocument();
-      expect(screen.getByLabelText('編集を確定')).toBeInTheDocument();
-      expect(screen.getByLabelText('編集をキャンセル')).toBeInTheDocument();
+      expect(screen.getByLabelText(editTextareaLabel())).toBeInTheDocument();
+      expect(screen.getByLabelText(confirmEditLabel())).toBeInTheDocument();
+      expect(screen.getByLabelText(cancelEditLabel())).toBeInTheDocument();
     });
 
     it('confirmation dialog has proper ARIA attributes', async () => {
       const user = userEvent.setup();
       render(<InlineEditor {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /テキストを編集/ }));
-      const textarea = screen.getByLabelText('編集テキスト');
+      await user.click(screen.getByRole('button', { name: editTextRe() }));
+      const textarea = screen.getByLabelText(editTextareaLabel());
       await user.clear(textarea);
-      await user.click(screen.getByLabelText('編集を確定'));
+      await user.click(screen.getByLabelText(confirmEditLabel()));
 
       const dialog = screen.getByRole('alertdialog');
       expect(dialog).toHaveAttribute(

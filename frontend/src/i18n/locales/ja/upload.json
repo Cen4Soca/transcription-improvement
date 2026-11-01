@@ -20,5 +20,10 @@
   "supportedFormatsTitle": "対応ファイル形式",
   "audio": "音声",
   "video": "動画",
-  "maxFileSize": "最大ファイルサイズ: 2GB"
+  "maxFileSize": "最大ファイルサイズ: 2GB",
+  "progress": {
+    "completed": "アップロード完了",
+    "uploading": "アップロード中...",
+    "ariaLabel": "アップロード進捗"
+  }
 }
