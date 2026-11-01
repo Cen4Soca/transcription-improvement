@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ReviewSession } from '../types/session';
 import type { UserRole } from '../types/user';
 import type { Team, TeamMembership } from '../types/team';
@@ -46,6 +47,7 @@ export function SessionAssignmentControls({
   teams = [],
   loadTeamMembers,
 }: SessionAssignmentControlsProps) {
+  const { t } = useTranslation('review');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAssign, setShowAssign] = useState(false);
@@ -112,7 +114,7 @@ export function SessionAssignmentControls({
     try {
       await onClaim(session.sessionId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '引き受けに失敗しました。');
+      setError(e instanceof Error ? e.message : t('assignment.claimFailed'));
     } finally {
       setBusy(false);
     }
@@ -129,11 +131,11 @@ export function SessionAssignmentControls({
     if (!onAssign) return;
     if (mode === 'team') {
       if (!selectedTeamId) {
-        setError('割り当て先のチームを選択してください。');
+        setError(t('assignment.teamRequired'));
         return;
       }
     } else if (!selectedUserId) {
-      setError('割り当て先のユーザーを選択してください。');
+      setError(t('assignment.userRequired'));
       return;
     }
 
@@ -149,7 +151,7 @@ export function SessionAssignmentControls({
       setShowAssign(false);
       resetAssignForm();
     } catch (e) {
-      setError(e instanceof Error ? e.message : '割り当てに失敗しました。');
+      setError(e instanceof Error ? e.message : t('assignment.assignFailed'));
     } finally {
       setBusy(false);
     }
@@ -164,17 +166,17 @@ export function SessionAssignmentControls({
       <p className="text-xs text-gray-500">
         {isClaimed
           ? claimedByMe
-            ? '自分が引き受け中'
-            : `割り当て済み（${session.assignedUserId}）`
+            ? t('assignment.claimedByMe')
+            : t('assignment.assignedToUser', { userId: session.assignedUserId })
           : session.assignedTeamId
-            ? `チーム ${session.assignedTeamId} に割り当て（未引き受け）`
-            : '未割り当て'}
+            ? t('assignment.assignedToTeam', { teamId: session.assignedTeamId })
+            : t('assignment.unassigned')}
       </p>
 
       <div
         className="flex flex-wrap items-center gap-2"
         role="group"
-        aria-label="担当の割り当て・引き受け操作"
+        aria-label={t('assignment.groupAriaLabel')}
       >
         {/* Reviewer claim / self-assign */}
         {showClaimButton && (
@@ -184,7 +186,7 @@ export function SessionAssignmentControls({
             disabled={busy}
             className="px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {isJoinableScope ? '参加' : '引き受ける'}
+            {isJoinableScope ? t('assignment.join') : t('assignment.claim')}
           </button>
         )}
 
@@ -199,7 +201,7 @@ export function SessionAssignmentControls({
             aria-expanded={showAssign}
             className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            担当者を割り当て
+            {t('assignment.assignUser')}
           </button>
         )}
       </div>
@@ -211,7 +213,7 @@ export function SessionAssignmentControls({
           <div
             className="flex gap-2"
             role="radiogroup"
-            aria-label="割り当て先の種類"
+            aria-label={t('assignment.modeAriaLabel')}
           >
             <button
               type="button"
@@ -227,7 +229,7 @@ export function SessionAssignmentControls({
                   : 'bg-white text-gray-700 border-gray-300'
               }`}
             >
-              チームに割り当て
+              {t('assignment.assignToTeam')}
             </button>
             <button
               type="button"
@@ -243,7 +245,7 @@ export function SessionAssignmentControls({
                   : 'bg-white text-gray-700 border-gray-300'
               }`}
             >
-              ユーザーに割り当て
+              {t('assignment.assignToUser')}
             </button>
           </div>
 
@@ -253,7 +255,7 @@ export function SessionAssignmentControls({
               htmlFor={`assign-team-${session.sessionId}`}
               className="text-xs font-medium text-gray-700"
             >
-              チーム
+              {t('assignment.team')}
             </label>
             <select
               id={`assign-team-${session.sessionId}`}
@@ -261,7 +263,7 @@ export function SessionAssignmentControls({
               onChange={(e) => setSelectedTeamId(e.target.value)}
               className="px-2 py-1 text-sm rounded border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">チームを選択</option>
+              <option value="">{t('assignment.selectTeam')}</option>
               {teams.map((team) => (
                 <option key={team.teamId} value={team.teamId}>
                   {team.name}
@@ -277,7 +279,7 @@ export function SessionAssignmentControls({
                 htmlFor={`assign-user-${session.sessionId}`}
                 className="text-xs font-medium text-gray-700"
               >
-                メンバー
+                {t('assignment.member')}
               </label>
               <select
                 id={`assign-user-${session.sessionId}`}
@@ -288,12 +290,12 @@ export function SessionAssignmentControls({
               >
                 <option value="">
                   {!selectedTeamId
-                    ? '先にチームを選択'
+                    ? t('assignment.selectTeamFirst')
                     : membersLoading
-                      ? '読み込み中...'
+                      ? t('assignment.loadingMembers')
                       : members.length === 0
-                        ? 'メンバーがいません'
-                        : 'メンバーを選択'}
+                        ? t('assignment.noMembers')
+                        : t('assignment.selectMember')}
                 </option>
                 {members.map((m) => (
                   <option key={m.userId} value={m.userId}>
@@ -311,7 +313,7 @@ export function SessionAssignmentControls({
               disabled={busy}
               className="px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              割り当てを保存
+              {t('assignment.saveAssignment')}
             </button>
           </div>
         </div>

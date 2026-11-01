@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Segment } from '../types/segment';
 import { formatTimestamp } from '../utils/segments';
 import { highlightText } from '../utils/highlight-text';
@@ -79,6 +80,7 @@ export function SegmentEditor({
   onHoverStart,
   onHoverEnd,
 }: SegmentEditorProps) {
+  const { t } = useTranslation('review');
   const [showEmptyConfirmDialog, setShowEmptyConfirmDialog] = useState(false);
   const [isEditingSpeaker, setIsEditingSpeaker] = useState(false);
   const isComposingRef = useRef(false);
@@ -208,7 +210,7 @@ export function SegmentEditor({
     <div
       role="listitem"
       data-segment-id={segment.segmentId}
-      aria-label={`セグメント ${formatTimestamp(segment.startTime)}`}
+      aria-label={t('segmentEditor.segmentAriaLabel', { time: formatTimestamp(segment.startTime) })}
       aria-current={isHighlighted || isEditing ? 'true' : undefined}
       tabIndex={isEditing ? undefined : 0}
       onClick={!isEditing ? handleClick : undefined}
@@ -228,7 +230,7 @@ export function SegmentEditor({
       {/* タイムスタンプ */}
       <span
         className="text-xs text-gray-500 font-mono whitespace-nowrap pt-0.5 min-w-[60px]"
-        aria-label="開始時刻"
+        aria-label={t('segmentEditor.startTime')}
       >
         {formatTimestamp(segment.startTime)}
       </span>
@@ -252,7 +254,7 @@ export function SegmentEditor({
                 e.stopPropagation();
                 setIsEditingSpeaker(true);
               }}
-              aria-label="話者ラベル"
+              aria-label={t('segmentEditor.speakerLabel')}
               className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded whitespace-nowrap cursor-pointer hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors"
             >
               {segment.speakerLabel}
@@ -261,7 +263,7 @@ export function SegmentEditor({
         ) : (
           <span
             className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded whitespace-nowrap"
-            aria-label="話者ラベル"
+            aria-label={t('segmentEditor.speakerLabel')}
           >
             {segment.speakerLabel}
           </span>
@@ -269,11 +271,11 @@ export function SegmentEditor({
 
       {/* テキスト表示 / 編集エリア */}
       {isEditing ? (
-        <div className="flex-1 space-y-2" role="group" aria-label="インライン編集">
+        <div className="flex-1 space-y-2" role="group" aria-label={t('segmentEditor.groupAriaLabel')}>
           {/* Requirement 2.2: 編集前テキストの表示（取り消し線付き） */}
           <div
             className="text-sm text-gray-400 line-through px-2 py-1"
-            aria-label="編集前テキスト"
+            aria-label={t('segmentEditor.originalTextAriaLabel')}
           >
             {segment.originalText}
           </div>
@@ -286,7 +288,7 @@ export function SegmentEditor({
             onKeyDown={handleTextareaKeyDown}
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
-            aria-label="編集テキスト"
+            aria-label={t('segmentEditor.editTextareaAriaLabel')}
             className="w-full text-sm text-gray-900 border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y min-h-[2.5rem]"
             rows={2}
           />
@@ -296,21 +298,21 @@ export function SegmentEditor({
             <button
               type="button"
               onClick={handleConfirm}
-              aria-label="編集を確定"
+              aria-label={t('segmentEditor.confirmEditAriaLabel')}
               className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
             >
-              確定
+              {t('segmentEditor.confirm')}
             </button>
             <button
               type="button"
               onClick={handleCancelEdit}
-              aria-label="編集をキャンセル"
+              aria-label={t('segmentEditor.cancelEditAriaLabel')}
               className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
             >
-              キャンセル
+              {t('segmentEditor.cancel')}
             </button>
             <span className="text-xs text-gray-400 self-center ml-2">
-              Ctrl+Enter で確定 / Esc でキャンセル
+              {t('segmentEditor.keyboardHint')}
             </span>
           </div>
         </div>
@@ -324,11 +326,11 @@ export function SegmentEditor({
                   className="text-xs font-medium text-gray-500 whitespace-nowrap"
                   aria-hidden="true"
                 >
-                  修正前
+                  {t('segmentEditor.beforeCorrection')}
                 </span>
                 <span
                   className="text-sm text-gray-400 line-through leading-relaxed"
-                  aria-label="修正前のテキスト"
+                  aria-label={t('segmentEditor.beforeCorrectionAriaLabel')}
                 >
                   {displayCorrection.originalText}
                 </span>
@@ -338,11 +340,11 @@ export function SegmentEditor({
                   className="text-xs font-medium text-green-700 whitespace-nowrap"
                   aria-hidden="true"
                 >
-                  修正後
+                  {t('segmentEditor.afterCorrection')}
                 </span>
                 <span
                   className="text-sm text-gray-900 leading-relaxed"
-                  aria-label="修正後のテキスト"
+                  aria-label={t('segmentEditor.afterCorrectionAriaLabel')}
                 >
                   {highlightText(displayCorrection.correctedText, searchQuery ?? '')}
                 </span>
@@ -353,10 +355,10 @@ export function SegmentEditor({
                   <button
                     type="button"
                     onClick={handleRevertClick}
-                    aria-label="修正前に戻す"
+                    aria-label={t('segmentEditor.revert')}
                     className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-colors"
                   >
-                    修正前に戻す
+                    {t('segmentEditor.revert')}
                   </button>
                 </div>
               )}
@@ -368,16 +370,16 @@ export function SegmentEditor({
               {isCorrected ? (
                 <span
                   className="text-xs font-medium text-green-700 whitespace-nowrap"
-                  aria-label="修正済"
+                  aria-label={t('segmentEditor.corrected')}
                 >
-                  修正済
+                  {t('segmentEditor.corrected')}
                 </span>
               ) : (
                 <span
                   className="text-xs font-medium text-amber-700 whitespace-nowrap"
-                  aria-label="未修正"
+                  aria-label={t('segmentEditor.uncorrected')}
                 >
-                  未修正
+                  {t('segmentEditor.uncorrected')}
                 </span>
               )}
               <span className="text-sm text-gray-900 leading-relaxed">
@@ -408,30 +410,30 @@ export function SegmentEditor({
               id={`empty-confirm-title-${segment.segmentId}`}
               className="text-lg font-semibold text-gray-900 mb-2"
             >
-              確認
+              {t('segmentEditor.emptyConfirmTitle')}
             </h3>
             <p
               id={`empty-confirm-desc-${segment.segmentId}`}
               className="text-sm text-gray-600 mb-4"
             >
-              空のテキストで確定しますか？
+              {t('segmentEditor.emptyConfirmDescription')}
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={handleEmptyCancel}
-                aria-label="空文字列確定をキャンセル"
+                aria-label={t('segmentEditor.emptyConfirmCancelAriaLabel')}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
               >
-                キャンセル
+                {t('segmentEditor.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleEmptyConfirm}
-                aria-label="空のテキストで確定"
+                aria-label={t('segmentEditor.emptyConfirmConfirmAriaLabel')}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors"
               >
-                確定
+                {t('segmentEditor.confirm')}
               </button>
             </div>
           </div>

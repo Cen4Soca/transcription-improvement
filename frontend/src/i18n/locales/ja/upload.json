@@ -25,5 +25,32 @@
     "completed": "アップロード完了",
     "uploading": "アップロード中...",
     "ariaLabel": "アップロード進捗"
+  },
+  "fileList": {
+    "loadingAriaLabel": "読み込み中",
+    "emptyState": "メディアファイルがありません",
+    "ariaLabel": "メディアファイル一覧",
+    "heading": "メディアファイル一覧",
+    "listAriaLabel": "メディアファイルリスト",
+    "uploadedBy": "アップロード者: {{name}}",
+    "statusAriaLabel": "ステータス: {{status}}",
+    "delete": "削除",
+    "deleting": "削除中...",
+    "deleteAriaLabel": "{{filename}} を削除",
+    "deleteConfirm": "「{{filename}}」を削除します。この操作は取り消せません。よろしいですか？",
+    "forceDeleteConfirm": "{{message}}\n\n進行中の校閲に影響します。それでも削除しますか？",
+    "deleteFailed": "「{{filename}}」の削除に失敗しました: {{message}}",
+    "status": {
+      "UPLOADING": "アップロード中",
+      "UPLOADED": "アップロード完了",
+      "PROCESSING": "処理中",
+      "COMPLETED": "完了",
+      "FAILED": "失敗"
+    }
+  },
+  "apiError": {
+    "uploadFailed": "アップロードに失敗しました ({{status}})",
+    "networkError": "ネットワークエラーが発生しました。接続を確認してください。",
+    "uploadProcessing": "アップロード処理中にエラーが発生しました。"
   }
 }

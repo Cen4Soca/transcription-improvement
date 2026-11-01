@@ -15,5 +15,32 @@
   "reviewerAnswers": "Reviewer の回答",
   "answerCandidatesAriaLabel": "セグメント {{segmentId}} の回答候補",
   "answerCount": "{{count}}名",
-  "resolveAction": "この回答で確定"
+  "resolveAction": "この回答で確定",
+  "conflictPanel": {
+    "status": {
+      "confirmed": "確定済み",
+      "undecided": "未確定",
+      "conflict": "競合解決待ち"
+    },
+    "loadingAriaLabel": "読み込み中",
+    "panelAriaLabel": "競合解決パネル",
+    "heading": "競合解決",
+    "segmentStatusListAriaLabel": "セグメント状態一覧",
+    "segmentStatusHeading": "セグメント状態",
+    "noConflicts": "競合解決待ちのセグメントはありません。",
+    "conflictListAriaLabel": "競合解決待ちセグメント一覧",
+    "conflictHeading": "競合解決待ち ({{count}}件)",
+    "badgeTitle": "セグメント {{segmentId}}: {{status}}",
+    "badgeLabel": "{{time}} - {{status}}",
+    "conflictPending": "競合解決待ち",
+    "originalText": "元テキスト:",
+    "reviewerAnswers": "レビュアーの回答:",
+    "answerSelectAriaLabel": "回答選択",
+    "answerOptionAriaLabel": "「{{text}}」({{count}}票)",
+    "emptyText": "(空文字)",
+    "voteCount": "{{count}}票",
+    "noAnswerData": "回答データがありません。",
+    "resolving": "確定中...",
+    "resolve": "選択した回答で確定"
+  }
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TranscriptionApi, DownloadFormat, TranscriptionJsonResponse } from '../services/transcription-api';
 
 export interface TranscriptionDownloadProps {
@@ -21,6 +22,7 @@ export function TranscriptionDownload({
   sessionId,
   sessionName,
 }: TranscriptionDownloadProps) {
+  const { t } = useTranslation('review');
   const [format, setFormat] = useState<DownloadFormat>('json');
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,14 +81,14 @@ export function TranscriptionDownload({
   }
 
   return (
-    <div className="space-y-4" aria-label="Transcription ダウンロード">
+    <div className="space-y-4" aria-label={t('download.sectionAriaLabel')}>
       <h3 className="text-base font-semibold text-gray-900">
-        修正後 Transcription ダウンロード
+        {t('download.heading')}
       </h3>
 
       <div className="flex items-center gap-4">
         <fieldset>
-          <legend className="sr-only">ダウンロード形式</legend>
+          <legend className="sr-only">{t('download.formatLegend')}</legend>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-1.5 cursor-pointer">
               <input
@@ -132,10 +134,10 @@ export function TranscriptionDownload({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              ダウンロード中...
+              {t('download.downloading')}
             </>
           ) : (
-            'ダウンロード'
+            t('download.download')
           )}
         </button>
       </div>

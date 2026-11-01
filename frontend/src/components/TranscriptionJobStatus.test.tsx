@@ -3,6 +3,9 @@ import { render, screen } from '@testing-library/react';
 import { TranscriptionJobStatusInner } from './TranscriptionJobStatus';
 import type { UseTranscriptionJobReturn } from '../hooks/useTranscriptionJob';
 import type { TranscriptionJob } from '../services/transcription-api';
+import i18n from '../i18n';
+
+const t = (key: string, vars?: Record<string, unknown>) => i18n.t(`transcriptionJob:${key}`, vars);
 
 function createMockHook(overrides: Partial<UseTranscriptionJobReturn> = {}): UseTranscriptionJobReturn {
   return {
@@ -37,8 +40,8 @@ describe('TranscriptionJobStatus', () => {
 
   it('shows loading state when job is null', () => {
     render(<TranscriptionJobStatusInner jobId="job-123" hook={mockHook} />);
-    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
-    expect(screen.getByText('ジョブ情報を取得中...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: t('status.loadingAriaLabel') })).toBeInTheDocument();
+    expect(screen.getByText(t('status.fetchingJob'))).toBeInTheDocument();
   });
 
   it('starts polling on mount with the given jobId', () => {
@@ -60,8 +63,8 @@ describe('TranscriptionJobStatus', () => {
 
     render(<TranscriptionJobStatusInner jobId="job-123" hook={hook} />);
 
-    expect(screen.getByText('処理中')).toBeInTheDocument();
-    expect(screen.getByText('自動更新中...')).toBeInTheDocument();
+    expect(screen.getByText(t('status.IN_PROGRESS'))).toBeInTheDocument();
+    expect(screen.getByText(t('status.autoUpdatingDots'))).toBeInTheDocument();
   });
 
   it('displays COMPLETED status correctly', () => {
@@ -72,8 +75,8 @@ describe('TranscriptionJobStatus', () => {
 
     render(<TranscriptionJobStatusInner jobId="job-123" hook={hook} />);
 
-    expect(screen.getByText('完了')).toBeInTheDocument();
-    expect(screen.queryByText('自動更新中...')).not.toBeInTheDocument();
+    expect(screen.getByText(t('status.COMPLETED'))).toBeInTheDocument();
+    expect(screen.queryByText(t('status.autoUpdatingDots'))).not.toBeInTheDocument();
   });
 
   it('displays FAILED status with error message', () => {
@@ -88,8 +91,8 @@ describe('TranscriptionJobStatus', () => {
 
     render(<TranscriptionJobStatusInner jobId="job-123" hook={hook} />);
 
-    expect(screen.getByText('失敗')).toBeInTheDocument();
-    expect(screen.getByText('エラー詳細')).toBeInTheDocument();
+    expect(screen.getByText(t('status.FAILED'))).toBeInTheDocument();
+    expect(screen.getByText(t('status.errorDetail'))).toBeInTheDocument();
     expect(screen.getByText('メディアファイルの形式がサポートされていません。')).toBeInTheDocument();
   });
 
@@ -126,7 +129,7 @@ describe('TranscriptionJobStatus', () => {
 
     render(<TranscriptionJobStatusInner jobId="job-123" hook={hook} />);
 
-    expect(screen.getByText('言語モデル')).toBeInTheDocument();
+    expect(screen.getByText(t('status.languageModel'))).toBeInTheDocument();
     expect(screen.getByText('custom-model-v1')).toBeInTheDocument();
   });
 
@@ -137,6 +140,6 @@ describe('TranscriptionJobStatus', () => {
 
     render(<TranscriptionJobStatusInner jobId="job-123" hook={hook} />);
 
-    expect(screen.queryByText('言語モデル')).not.toBeInTheDocument();
+    expect(screen.queryByText(t('status.languageModel'))).not.toBeInTheDocument();
   });
 });

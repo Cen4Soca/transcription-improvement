@@ -27,7 +27,11 @@
     "syncing": "同期中...",
     "completed": "同期完了",
     "failed": "同期失敗",
-    "retry": "再試行"
+    "retry": "再試行",
+    "queueOverflow": "キュー上限（{{max}}件）を超過したため、最古の{{discarded}}件を破棄しました。"
+  },
+  "auth": {
+    "tokenUnavailable": "認証トークンを取得できませんでした"
   },
   "sessionTimeout": {
     "title": "セッションがまもなく期限切れになります",
@@ -47,5 +51,40 @@
     "listAriaLabel": "未保存ドラフト一覧",
     "discard": "破棄する",
     "restore": "復元する"
+  },
+  "login": {
+    "appTitle": "Transcription Review App",
+    "signInFailed": "ログインに失敗しました",
+    "passwordChangeFailed": "パスワード変更に失敗しました",
+    "mfaFailed": "MFA認証に失敗しました",
+    "signOutFailed": "ログアウトに失敗しました",
+    "unsupportedStep": "未対応の認証ステップ: {{step}}",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "signingIn": "ログイン中...",
+    "signIn": "ログイン",
+    "newPasswordNotice": "初回ログインのため、新しいパスワードを設定してください。",
+    "newPassword": "新しいパスワード",
+    "passwordRule": "8文字以上、大文字・小文字・数字・記号を含む",
+    "settingPassword": "設定中...",
+    "setPassword": "パスワードを設定",
+    "totpNotice": "認証アプリに表示されている6桁のコードを入力してください。",
+    "mfaCode": "MFA コード",
+    "verifying": "認証中...",
+    "verify": "認証",
+    "totpSetupNotice": "MFAの初期設定が必要です。管理者に連絡してください。"
+  },
+  "errorBoundary": {
+    "ariaLabel": "エラーが発生しました",
+    "title": "予期しないエラーが発生しました",
+    "defaultMessage": "アプリケーションでエラーが発生しました。",
+    "reload": "再読み込み"
+  },
+  "authGuard": {
+    "checkingAriaLabel": "認証確認中",
+    "checking": "認証を確認しています...",
+    "deniedAriaLabel": "アクセス拒否",
+    "deniedTitle": "アクセス権限がありません",
+    "deniedDescription": "このページにアクセスするには適切な権限が必要です。"
   }
 }

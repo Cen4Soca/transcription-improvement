@@ -15,5 +15,32 @@
   "reviewerAnswers": "Reviewer answers",
   "answerCandidatesAriaLabel": "Answer candidates for segment {{segmentId}}",
   "answerCount": "{{count}} reviewer(s)",
-  "resolveAction": "Confirm this answer"
+  "resolveAction": "Confirm this answer",
+  "conflictPanel": {
+    "status": {
+      "confirmed": "Confirmed",
+      "undecided": "Undecided",
+      "conflict": "Awaiting conflict resolution"
+    },
+    "loadingAriaLabel": "Loading",
+    "panelAriaLabel": "Conflict resolution panel",
+    "heading": "Conflict resolution",
+    "segmentStatusListAriaLabel": "Segment status list",
+    "segmentStatusHeading": "Segment status",
+    "noConflicts": "There are no segments awaiting conflict resolution.",
+    "conflictListAriaLabel": "List of segments awaiting conflict resolution",
+    "conflictHeading": "Awaiting conflict resolution ({{count}})",
+    "badgeTitle": "Segment {{segmentId}}: {{status}}",
+    "badgeLabel": "{{time}} - {{status}}",
+    "conflictPending": "Awaiting conflict resolution",
+    "originalText": "Original text:",
+    "reviewerAnswers": "Reviewer answers:",
+    "answerSelectAriaLabel": "Answer selection",
+    "answerOptionAriaLabel": "\"{{text}}\" ({{count}} votes)",
+    "emptyText": "(empty)",
+    "voteCount": "{{count}} votes",
+    "noAnswerData": "No answer data.",
+    "resolving": "Confirming...",
+    "resolve": "Confirm this answer"
+  }
 }

@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { TranscriptionDownload } from './TranscriptionDownload';
 import type { TranscriptionApi, TranscriptionJsonResponse } from '../services/transcription-api';
 import type { Result, AppError } from '../types/api';
+import i18n from '../i18n';
+
+const t = (key: string, vars?: Record<string, unknown>) => i18n.t(`review:${key}`, vars);
+const downloadButtonName = () => i18n.t('review:download.download');
 
 function createMockTranscriptionApi(overrides?: Partial<TranscriptionApi>): TranscriptionApi {
   return {
@@ -48,10 +52,10 @@ describe('TranscriptionDownload', () => {
       />,
     );
 
-    expect(screen.getByText('修正後 Transcription ダウンロード')).toBeInTheDocument();
+    expect(screen.getByText(t('download.heading'))).toBeInTheDocument();
     expect(screen.getByLabelText('JSON')).toBeInTheDocument();
     expect(screen.getByLabelText('SRT')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ダウンロード' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: downloadButtonName() })).toBeInTheDocument();
   });
 
   it('defaults to JSON format', () => {
@@ -93,7 +97,7 @@ describe('TranscriptionDownload', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'ダウンロード' }));
+    await user.click(screen.getByRole('button', { name: downloadButtonName() }));
 
     await waitFor(() => {
       expect(mockApi.downloadJson).toHaveBeenCalledWith('session-1');
@@ -110,7 +114,7 @@ describe('TranscriptionDownload', () => {
     );
 
     await user.click(screen.getByLabelText('SRT'));
-    await user.click(screen.getByRole('button', { name: 'ダウンロード' }));
+    await user.click(screen.getByRole('button', { name: downloadButtonName() }));
 
     await waitFor(() => {
       expect(mockApi.downloadSrt).toHaveBeenCalledWith('session-1');
@@ -136,7 +140,7 @@ describe('TranscriptionDownload', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'ダウンロード' }));
+    await user.click(screen.getByRole('button', { name: downloadButtonName() }));
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -158,10 +162,10 @@ describe('TranscriptionDownload', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'ダウンロード' }));
+    await user.click(screen.getByRole('button', { name: downloadButtonName() }));
 
     await waitFor(() => {
-      expect(screen.getByText('ダウンロード中...')).toBeInTheDocument();
+      expect(screen.getByText(t('download.downloading'))).toBeInTheDocument();
     });
 
     const button = screen.getByRole('button');
@@ -177,7 +181,7 @@ describe('TranscriptionDownload', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'ダウンロード' }));
+    await user.click(screen.getByRole('button', { name: downloadButtonName() }));
 
     await waitFor(() => {
       expect(mockApi.downloadJson).toHaveBeenCalledWith('session-1');
@@ -201,7 +205,7 @@ describe('TranscriptionDownload', () => {
     );
 
     await user.click(screen.getByLabelText('SRT'));
-    await user.click(screen.getByRole('button', { name: 'ダウンロード' }));
+    await user.click(screen.getByRole('button', { name: downloadButtonName() }));
 
     await waitFor(() => {
       expect(mockApi.downloadSrt).toHaveBeenCalledWith('session-1');
@@ -244,13 +248,13 @@ describe('TranscriptionDownload', () => {
     );
 
     // First click - error
-    await user.click(screen.getByRole('button', { name: 'ダウンロード' }));
+    await user.click(screen.getByRole('button', { name: downloadButtonName() }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
 
     // Second click - success
-    await user.click(screen.getByRole('button', { name: 'ダウンロード' }));
+    await user.click(screen.getByRole('button', { name: downloadButtonName() }));
     await waitFor(() => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });

@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import i18n from '../i18n';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -47,7 +48,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div
           className="flex items-center justify-center min-h-screen bg-gray-50"
           role="alert"
-          aria-label="エラーが発生しました"
+          aria-label={i18n.t('common:errorBoundary.ariaLabel')}
         >
           <div className="text-center max-w-md px-6">
             <div className="mb-4">
@@ -67,17 +68,17 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </svg>
             </div>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              予期しないエラーが発生しました
+              {i18n.t('common:errorBoundary.title')}
             </h2>
             <p className="text-sm text-gray-600 mb-4">
-              {this.state.error?.message ?? 'アプリケーションでエラーが発生しました。'}
+              {this.state.error?.message ?? i18n.t('common:errorBoundary.defaultMessage')}
             </p>
             <button
               type="button"
               onClick={this.handleReload}
               className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              再読み込み
+              {i18n.t('common:errorBoundary.reload')}
             </button>
           </div>
         </div>

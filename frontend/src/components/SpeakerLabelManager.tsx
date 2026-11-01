@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Segment } from '../types/segment';
 import {
   countSegmentsWithLabel,
@@ -60,6 +61,7 @@ export function SpeakerLabelManager({
   isOpen,
   onClose,
 }: SpeakerLabelManagerProps) {
+  const { t } = useTranslation('review');
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
   const [newLabelName, setNewLabelName] = useState('');
   const [showMergeDialog, setShowMergeDialog] = useState(false);
@@ -150,12 +152,12 @@ export function SpeakerLabelManager({
     if (!onAddLabel) return;
     const trimmed = addLabelName.trim();
     if (trimmed.length === 0) {
-      setAddError('話者ラベルを入力してください。');
+      setAddError(t('speakerManager.addEmpty'));
       return;
     }
     // Client-side duplicate check (server is the source of truth).
     if (uniqueLabels.includes(trimmed)) {
-      setAddError('同じ名前の話者ラベルが既に存在します。');
+      setAddError(t('speakerManager.addDuplicate'));
       return;
     }
     setIsAdding(true);
@@ -213,18 +215,18 @@ export function SpeakerLabelManager({
   return (
     <div
       role="dialog"
-      aria-label="話者ラベル管理"
+      aria-label={t('speakerManager.dialogAriaLabel')}
       aria-modal="false"
       className="bg-white border border-gray-200 rounded-lg shadow-lg p-4"
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">
-          話者ラベル管理
+          {t('speakerManager.heading')}
         </h3>
         <button
           type="button"
           onClick={onClose}
-          aria-label="話者ラベル管理を閉じる"
+          aria-label={t('speakerManager.closeAriaLabel')}
           className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded p-1 transition-colors"
         >
           <svg
@@ -244,11 +246,11 @@ export function SpeakerLabelManager({
       </div>
 
       {uniqueLabels.length === 0 ? (
-        <p className="text-sm text-gray-500">話者ラベルがありません</p>
+        <p className="text-sm text-gray-500">{t('speakerManager.emptyState')}</p>
       ) : (
         <ul
           role="list"
-          aria-label="話者ラベル一覧"
+          aria-label={t('speakerManager.listAriaLabel')}
           className="space-y-2"
         >
           {uniqueLabels.map((label) => (
@@ -263,25 +265,25 @@ export function SpeakerLabelManager({
                     value={newLabelName}
                     onChange={(e) => setNewLabelName(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    aria-label={`${label} の新しいラベル名`}
+                    aria-label={t('speakerManager.newLabelNameAriaLabel', { label })}
                     autoFocus
                     className="flex-1 text-xs border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
                   <button
                     type="button"
                     onClick={handleConfirmRename}
-                    aria-label="ラベル名変更を確定"
+                    aria-label={t('speakerManager.confirmRenameAriaLabel')}
                     className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
                   >
-                    確定
+                    {t('speakerManager.confirm')}
                   </button>
                   <button
                     type="button"
                     onClick={handleCancelRename}
-                    aria-label="ラベル名変更をキャンセル"
+                    aria-label={t('speakerManager.cancelRenameAriaLabel')}
                     className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
                   >
-                    キャンセル
+                    {t('speakerManager.cancel')}
                   </button>
                 </div>
               ) : (
@@ -290,36 +292,36 @@ export function SpeakerLabelManager({
                     {label}
                   </span>
                   <span className="text-xs text-gray-400">
-                    ({countSegmentsWithLabel(segments, label)}件)
+                    {t('speakerManager.segmentCount', { count: countSegmentsWithLabel(segments, label) })}
                   </span>
                   <div className="ml-auto flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleStartRename(label)}
-                      aria-label={`${label} の名前変更`}
+                      aria-label={t('speakerManager.renameAriaLabel', { label })}
                       className="px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
                     >
-                      名前変更
+                      {t('speakerManager.rename')}
                     </button>
                     {onDeleteLabel &&
                       (countSegmentsWithLabel(segments, label) > 0 ? (
                         <button
                           type="button"
                           disabled
-                          title="このラベルは使用中のため削除できません"
-                          aria-label={`${label} を削除（使用中のため不可）`}
+                          title={t('speakerManager.deleteInUseTitle')}
+                          aria-label={t('speakerManager.deleteInUseAriaLabel', { label })}
                           className="px-2 py-1 text-xs font-medium text-gray-400 cursor-not-allowed"
                         >
-                          削除
+                          {t('speakerManager.delete')}
                         </button>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleDeleteLabel(label)}
-                          aria-label={`${label} を削除`}
+                          aria-label={t('speakerManager.deleteAriaLabel', { label })}
                           className="px-2 py-1 text-xs font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors"
                         >
-                          削除
+                          {t('speakerManager.delete')}
                         </button>
                       ))}
                   </div>
@@ -347,18 +349,18 @@ export function SpeakerLabelManager({
                 if (addError) setAddError(null);
               }}
               onKeyDown={handleAddKeyDown}
-              aria-label="追加する話者ラベル名"
-              placeholder="話者ラベルを追加"
+              aria-label={t('speakerManager.addLabelAriaLabel')}
+              placeholder={t('speakerManager.addLabelPlaceholder')}
               className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <button
               type="button"
               onClick={handleAddLabel}
               disabled={isAdding}
-              aria-label="話者ラベルを追加"
+              aria-label={t('speakerManager.addLabelButtonAriaLabel')}
               className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              追加
+              {t('speakerManager.add')}
             </button>
           </div>
           {addError && (
@@ -382,35 +384,34 @@ export function SpeakerLabelManager({
               id="merge-confirm-title"
               className="text-lg font-semibold text-gray-900 mb-2"
             >
-              ラベル統合の確認
+              {t('speakerManager.mergeDialogTitle')}
             </h3>
             <p
               id="merge-confirm-desc"
               className="text-sm text-gray-600 mb-4"
             >
-              「{mergeTarget.newLabel}」は既に存在します。「
-              {mergeTarget.oldLabel}」を「{mergeTarget.newLabel}
-              」に統合しますか？この操作により、「{mergeTarget.oldLabel}
-              」のすべてのセグメント（
-              {countSegmentsWithLabel(segments, mergeTarget.oldLabel)}
-              件）が「{mergeTarget.newLabel}」に変更されます。
+              {t('speakerManager.mergeDialogDescription', {
+                oldLabel: mergeTarget.oldLabel,
+                newLabel: mergeTarget.newLabel,
+                count: countSegmentsWithLabel(segments, mergeTarget.oldLabel),
+              })}
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={handleMergeCancel}
-                aria-label="統合をキャンセル"
+                aria-label={t('speakerManager.mergeCancelAriaLabel')}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
               >
-                キャンセル
+                {t('speakerManager.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleMergeConfirm}
-                aria-label="統合する（話者ラベルを統合して確定）"
+                aria-label={t('speakerManager.mergeConfirmAriaLabel')}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
               >
-                統合する
+                {t('speakerManager.merge')}
               </button>
             </div>
           </div>

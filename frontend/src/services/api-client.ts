@@ -1,4 +1,5 @@
 import type { Result, AppError } from '../types/api';
+import i18n from '../i18n';
 
 /**
  * ApiClient - 共通エラーハンドラ付き API クライアント
@@ -82,7 +83,7 @@ export class ApiClient {
           ok: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: '認証が必要です。ログイン画面にリダイレクトします。',
+            message: i18n.t('errors:fallback.unauthorized'),
             statusCode: 401,
           },
         };
@@ -100,7 +101,7 @@ export class ApiClient {
           ok: false,
           error: {
             code: 'RATE_LIMITED',
-            message: 'リクエスト回数の上限に達しました。しばらく待ってから再試行してください。',
+            message: i18n.t('errors:fallback.rateLimited'),
             statusCode: 429,
             retryAfterMs,
           } as RateLimitError,
@@ -150,20 +151,20 @@ export class ApiClient {
       if (body?.error) {
         return {
           code: body.error.code ?? 'UNKNOWN_ERROR',
-          message: body.error.message ?? 'エラーが発生しました',
+          message: body.error.message ?? i18n.t('errors:fallback.generic'),
           details: body.error.details,
           statusCode: response.status,
         };
       }
       return {
         code: 'UNKNOWN_ERROR',
-        message: `エラーが発生しました (${response.status})`,
+        message: i18n.t('errors:fallback.genericWithStatus', { status: response.status }),
         statusCode: response.status,
       };
     } catch {
       return {
         code: 'PARSE_ERROR',
-        message: `エラーレスポンスの解析に失敗しました (${response.status})`,
+        message: i18n.t('errors:fallback.parseError', { status: response.status }),
         statusCode: response.status,
       };
     }
@@ -173,11 +174,11 @@ export class ApiClient {
     if (error instanceof TypeError && error.message.includes('fetch')) {
       return {
         code: 'NETWORK_ERROR',
-        message: 'ネットワークに接続できません。接続を確認してください。',
+        message: i18n.t('errors:fallback.network'),
       };
     }
     const message =
-      error instanceof Error ? error.message : 'エラーが発生しました';
+      error instanceof Error ? error.message : i18n.t('errors:fallback.generic');
     return {
       code: 'NETWORK_ERROR',
       message,

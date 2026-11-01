@@ -2,6 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ConflictResolutionPanel } from './ConflictResolutionPanel';
 import type { ConsensusSegment } from './ConflictResolutionPanel';
+import i18n from '../i18n';
+
+const t = (key: string, vars?: Record<string, unknown>) => i18n.t(`consensus:${key}`, vars);
 
 const sampleSegments: ConsensusSegment[] = [
   {
@@ -40,19 +43,19 @@ describe('ConflictResolutionPanel', () => {
     it('displays 確定済み label for CONFIRMED segments', () => {
       render(<ConflictResolutionPanel segments={sampleSegments} />);
 
-      expect(screen.getByText(/確定済み/)).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(t('conflictPanel.status.confirmed')))).toBeInTheDocument();
     });
 
     it('displays 未確定 label for UNDECIDED segments', () => {
       render(<ConflictResolutionPanel segments={sampleSegments} />);
 
-      expect(screen.getByText(/未確定/)).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(t('conflictPanel.status.undecided')))).toBeInTheDocument();
     });
 
     it('displays 競合解決待ち label for CONFLICT segments', () => {
       render(<ConflictResolutionPanel segments={sampleSegments} />);
 
-      expect(screen.getAllByText(/競合解決待ち/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(new RegExp(t('conflictPanel.status.conflict'))).length).toBeGreaterThan(0);
     });
   });
 
@@ -62,14 +65,14 @@ describe('ConflictResolutionPanel', () => {
 
       expect(screen.getByText('Good morning everyone')).toBeInTheDocument();
       expect(screen.getByText('Good morning all')).toBeInTheDocument();
-      expect(screen.getByText('2票')).toBeInTheDocument();
-      expect(screen.getByText('1票')).toBeInTheDocument();
+      expect(screen.getByText(t('conflictPanel.voteCount', { count: 2 }))).toBeInTheDocument();
+      expect(screen.getByText(t('conflictPanel.voteCount', { count: 1 }))).toBeInTheDocument();
     });
 
     it('shows conflict count in section header', () => {
       render(<ConflictResolutionPanel segments={sampleSegments} />);
 
-      expect(screen.getByText(/競合解決待ち \(1件\)/)).toBeInTheDocument();
+      expect(screen.getByText(t('conflictPanel.conflictHeading', { count: 1 }))).toBeInTheDocument();
     });
 
     it('shows original text for conflict segments', () => {
@@ -83,7 +86,7 @@ describe('ConflictResolutionPanel', () => {
     it('allows selecting an answer via radio button', () => {
       render(<ConflictResolutionPanel segments={sampleSegments} />);
 
-      const radio = screen.getByLabelText('「Good morning everyone」(2票)');
+      const radio = screen.getByLabelText(t('conflictPanel.answerOptionAriaLabel', { text: 'Good morning everyone', count: 2 }));
       fireEvent.click(radio);
 
       expect(radio).toBeChecked();
@@ -96,11 +99,11 @@ describe('ConflictResolutionPanel', () => {
       );
 
       // Select an answer
-      const radio = screen.getByLabelText('「Good morning everyone」(2票)');
+      const radio = screen.getByLabelText(t('conflictPanel.answerOptionAriaLabel', { text: 'Good morning everyone', count: 2 }));
       fireEvent.click(radio);
 
       // Click resolve button
-      const resolveButton = screen.getByLabelText('選択した回答で確定');
+      const resolveButton = screen.getByLabelText(t('conflictPanel.resolve'));
       fireEvent.click(resolveButton);
 
       expect(onResolve).toHaveBeenCalledWith('seg-2', 'Good morning everyone');
@@ -109,7 +112,7 @@ describe('ConflictResolutionPanel', () => {
     it('disables resolve button when no answer is selected', () => {
       render(<ConflictResolutionPanel segments={sampleSegments} />);
 
-      const resolveButton = screen.getByLabelText('選択した回答で確定');
+      const resolveButton = screen.getByLabelText(t('conflictPanel.resolve'));
       expect(resolveButton).toBeDisabled();
     });
   });
@@ -118,7 +121,7 @@ describe('ConflictResolutionPanel', () => {
     it('shows loading indicator when isLoading is true', () => {
       render(<ConflictResolutionPanel segments={[]} isLoading={true} />);
 
-      expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
+      expect(screen.getByRole('status', { name: t('conflictPanel.loadingAriaLabel') })).toBeInTheDocument();
     });
   });
 
@@ -139,7 +142,7 @@ describe('ConflictResolutionPanel', () => {
       render(<ConflictResolutionPanel segments={noConflictSegments} />);
 
       expect(
-        screen.getByText('競合解決待ちのセグメントはありません。')
+        screen.getByText(t('conflictPanel.noConflicts'))
       ).toBeInTheDocument();
     });
   });
@@ -148,13 +151,13 @@ describe('ConflictResolutionPanel', () => {
     it('has proper aria-label on the panel', () => {
       render(<ConflictResolutionPanel segments={sampleSegments} />);
 
-      expect(screen.getByLabelText('競合解決パネル')).toBeInTheDocument();
+      expect(screen.getByLabelText(t('conflictPanel.panelAriaLabel'))).toBeInTheDocument();
     });
 
     it('has radiogroup role for answer selection', () => {
       render(<ConflictResolutionPanel segments={sampleSegments} />);
 
-      expect(screen.getByRole('radiogroup', { name: '回答選択' })).toBeInTheDocument();
+      expect(screen.getByRole('radiogroup', { name: t('conflictPanel.answerSelectAriaLabel') })).toBeInTheDocument();
     });
   });
 });

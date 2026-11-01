@@ -25,5 +25,32 @@
     "completed": "Upload complete",
     "uploading": "Uploading...",
     "ariaLabel": "Upload progress"
+  },
+  "fileList": {
+    "loadingAriaLabel": "Loading",
+    "emptyState": "No media files",
+    "ariaLabel": "Media file list",
+    "heading": "Media files",
+    "listAriaLabel": "Media file list",
+    "uploadedBy": "Uploaded by: {{name}}",
+    "statusAriaLabel": "Status: {{status}}",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deleteAriaLabel": "Delete {{filename}}",
+    "deleteConfirm": "Delete \"{{filename}}\". This action cannot be undone. Are you sure?",
+    "forceDeleteConfirm": "{{message}}\n\nThis affects reviews in progress. Delete anyway?",
+    "deleteFailed": "Failed to delete \"{{filename}}\": {{message}}",
+    "status": {
+      "UPLOADING": "Uploading",
+      "UPLOADED": "Upload complete",
+      "PROCESSING": "Processing",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed"
+    }
+  },
+  "apiError": {
+    "uploadFailed": "Upload failed ({{status}})",
+    "networkError": "A network error occurred. Please check your connection.",
+    "uploadProcessing": "An error occurred during upload processing."
   }
 }

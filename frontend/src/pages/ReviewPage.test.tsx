@@ -63,7 +63,7 @@ describe('ReviewPage - 修正前に戻す / 修正候補 (要件A/B)', () => {
       onRevertCorrection,
     });
 
-    fireEvent.click(screen.getByRole('button', { name: '修正前に戻す' }));
+    fireEvent.click(screen.getByRole('button', { name: t('segmentEditor.revert') }));
 
     await waitFor(() => {
       expect(onRevertCorrection).toHaveBeenCalledWith('seg-1');
@@ -96,7 +96,7 @@ describe('ReviewPage - 修正前に戻す / 修正候補 (要件A/B)', () => {
     });
 
     expect(
-      screen.queryByRole('button', { name: '修正前に戻す' })
+      screen.queryByRole('button', { name: t('segmentEditor.revert') })
     ).not.toBeInTheDocument();
   });
 
@@ -158,7 +158,7 @@ describe('ReviewPage - 完了セッションの読み取り専用化 (Req 2.18, 
       screen.queryByRole('button', { name: '修正候補を表示' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: '修正前に戻す' }),
+      screen.queryByRole('button', { name: t('segmentEditor.revert') }),
     ).not.toBeInTheDocument();
   });
 
@@ -188,7 +188,7 @@ describe('ReviewPage - 完了セッションの読み取り専用化 (Req 2.18, 
       screen.getByRole('button', { name: '修正候補を表示' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: '修正前に戻す' }),
+      screen.getByRole('button', { name: t('segmentEditor.revert') }),
     ).toBeInTheDocument();
     expect(
       screen.queryByText(t('page.readOnlyNotice')),

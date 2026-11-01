@@ -1,5 +1,6 @@
 import type { ApiClient } from './api-client';
 import type { Result, AppError } from '../types/api';
+import i18n from '../i18n';
 
 /**
  * MediaApi - メディアファイル関連 API クライアント
@@ -98,7 +99,7 @@ export class MediaApi {
               ok: false,
               error: {
                 code: 'UPLOAD_FAILED',
-                message: `アップロードに失敗しました (${xhr.status})`,
+                message: i18n.t('upload:apiError.uploadFailed', { status: xhr.status }),
                 statusCode: xhr.status,
               },
             });
@@ -110,7 +111,7 @@ export class MediaApi {
             ok: false,
             error: {
               code: 'NETWORK_ERROR',
-              message: 'ネットワークエラーが発生しました。接続を確認してください。',
+              message: i18n.t('upload:apiError.networkError'),
             },
           });
         });
@@ -126,7 +127,7 @@ export class MediaApi {
         ok: false,
         error: {
           code: 'UPLOAD_FAILED',
-          message: 'アップロード処理中にエラーが発生しました。',
+          message: i18n.t('upload:apiError.uploadProcessing'),
         },
       };
     }

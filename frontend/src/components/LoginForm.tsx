@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { signIn, confirmSignIn, type SignInOutput } from 'aws-amplify/auth';
 
 type LoginStep = 'SIGN_IN' | 'NEW_PASSWORD' | 'TOTP_SETUP' | 'TOTP_CODE';
@@ -11,6 +12,7 @@ type LoginStep = 'SIGN_IN' | 'NEW_PASSWORD' | 'TOTP_SETUP' | 'TOTP_CODE';
  * 共有 User Pool Client の OAuth 設定に影響されずに SRP 認証を行う。
  */
 export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) {
+  const { t } = useTranslation('common');
   const [step, setStep] = useState<LoginStep>('SIGN_IN');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +30,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
       const result = await signIn({ username: email, password });
       handleSignInResult(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ログインに失敗しました');
+      setError(err instanceof Error ? err.message : t('login.signInFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -43,7 +45,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
       const result = await confirmSignIn({ challengeResponse: newPassword });
       handleSignInResult(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'パスワード変更に失敗しました');
+      setError(err instanceof Error ? err.message : t('login.passwordChangeFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -58,7 +60,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
       const result = await confirmSignIn({ challengeResponse: totpCode });
       handleSignInResult(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'MFA認証に失敗しました');
+      setError(err instanceof Error ? err.message : t('login.mfaFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -82,7 +84,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
         setStep('TOTP_SETUP');
         break;
       default:
-        setError(`未対応の認証ステップ: ${nextStep}`);
+        setError(t('login.unsupportedStep', { step: nextStep }));
     }
   }
 
@@ -90,7 +92,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
         <h2 className="text-center text-2xl font-bold text-gray-900">
-          Transcription Review App
+          {t('login.appTitle')}
         </h2>
 
         {error && (
@@ -103,7 +105,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
           <form onSubmit={handleSignIn} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                メールアドレス
+                {t('login.email')}
               </label>
               <input
                 id="email"
@@ -117,7 +119,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                パスワード
+                {t('login.password')}
               </label>
               <input
                 id="password"
@@ -134,7 +136,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
               disabled={isSubmitting}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {isSubmitting ? 'ログイン中...' : 'ログイン'}
+              {isSubmitting ? t('login.signingIn') : t('login.signIn')}
             </button>
           </form>
         )}
@@ -142,11 +144,11 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
         {step === 'NEW_PASSWORD' && (
           <form onSubmit={handleNewPassword} className="space-y-4">
             <p className="text-sm text-gray-600">
-              初回ログインのため、新しいパスワードを設定してください。
+              {t('login.newPasswordNotice')}
             </p>
             <div>
               <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">
-                新しいパスワード
+                {t('login.newPassword')}
               </label>
               <input
                 id="new-password"
@@ -158,7 +160,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
                 autoComplete="new-password"
               />
               <p className="mt-1 text-xs text-gray-500">
-                8文字以上、大文字・小文字・数字・記号を含む
+                {t('login.passwordRule')}
               </p>
             </div>
             <button
@@ -166,7 +168,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
               disabled={isSubmitting}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {isSubmitting ? '設定中...' : 'パスワードを設定'}
+              {isSubmitting ? t('login.settingPassword') : t('login.setPassword')}
             </button>
           </form>
         )}
@@ -174,11 +176,11 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
         {step === 'TOTP_CODE' && (
           <form onSubmit={handleTotpCode} className="space-y-4">
             <p className="text-sm text-gray-600">
-              認証アプリに表示されている6桁のコードを入力してください。
+              {t('login.totpNotice')}
             </p>
             <div>
               <label htmlFor="totp-code" className="block text-sm font-medium text-gray-700">
-                MFA コード
+                {t('login.mfaCode')}
               </label>
               <input
                 id="totp-code"
@@ -198,7 +200,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
               disabled={isSubmitting}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {isSubmitting ? '認証中...' : '認証'}
+              {isSubmitting ? t('login.verifying') : t('login.verify')}
             </button>
           </form>
         )}
@@ -206,7 +208,7 @@ export function LoginForm({ onAuthenticated }: { onAuthenticated: () => void }) 
         {step === 'TOTP_SETUP' && (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              MFAの初期設定が必要です。管理者に連絡してください。
+              {t('login.totpSetupNotice')}
             </p>
           </div>
         )}

@@ -7,6 +7,13 @@ import type { TranscriptionApi } from '../services/transcription-api';
 import type { LanguageModelApi, LanguageModelListResponse } from '../services/language-model-api';
 import type { MediaFile } from '../services/media-api';
 import type { Result, AppError } from '../types/api';
+import i18n from '../i18n';
+
+const t = (key: string, vars?: Record<string, unknown>) => i18n.t(`transcriptionJob:${key}`, vars);
+// Labels are rendered via i18n; match them by current translation to stay language-agnostic.
+const re = (key: string) => new RegExp(i18n.t(`transcriptionJob:${key}`).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+const submitName = () => i18n.t('transcriptionJob:form.submit');
+const loadingModelsText = () => i18n.t('transcriptionJob:form.loadingModels');
 
 function createMockTranscriptionApi(overrides?: Partial<TranscriptionApi>): TranscriptionApi {
   return {
@@ -108,12 +115,12 @@ describe('TranscriptionJobForm', () => {
         />,
       );
 
-      expect(screen.getByRole('form', { name: 'Transcription ジョブ作成フォーム' })).toBeInTheDocument();
-      expect(screen.getByText('文字起こしジョブ作成')).toBeInTheDocument();
-      expect(screen.getByLabelText(/メディアファイル/)).toBeInTheDocument();
-      expect(screen.getByLabelText(/最大話者数/)).toBeInTheDocument();
-      expect(screen.getByLabelText(/言語/)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '文字起こしジョブを開始' })).toBeInTheDocument();
+      expect(screen.getByRole('form', { name: t('form.formAriaLabel') })).toBeInTheDocument();
+      expect(screen.getByText(t('form.title'))).toBeInTheDocument();
+      expect(screen.getByLabelText(re('form.mediaFile'))).toBeInTheDocument();
+      expect(screen.getByLabelText(re('form.maxSpeakers'))).toBeInTheDocument();
+      expect(screen.getByLabelText(re('form.language'))).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: submitName() })).toBeInTheDocument();
     });
 
     it('only shows UPLOADED and COMPLETED media files in the select', async () => {
@@ -125,7 +132,7 @@ describe('TranscriptionJobForm', () => {
         />,
       );
 
-      const select = screen.getByLabelText(/メディアファイル/) as HTMLSelectElement;
+      const select = screen.getByLabelText(re('form.mediaFile')) as HTMLSelectElement;
       const options = Array.from(select.options);
 
       // Placeholder + 2 valid files (UPLOADED and COMPLETED)
@@ -143,7 +150,7 @@ describe('TranscriptionJobForm', () => {
         />,
       );
 
-      const input = screen.getByLabelText(/最大話者数/) as HTMLInputElement;
+      const input = screen.getByLabelText(re('form.maxSpeakers')) as HTMLInputElement;
       expect(input.value).toBe('2');
     });
 
@@ -156,7 +163,7 @@ describe('TranscriptionJobForm', () => {
         />,
       );
 
-      const select = screen.getByLabelText(/言語/) as HTMLSelectElement;
+      const select = screen.getByLabelText(re('form.language')) as HTMLSelectElement;
       expect(select.value).toBe('ja-JP');
     });
   });
@@ -172,12 +179,12 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/カスタム言語モデル/)).toBeInTheDocument();
+        expect(screen.getByLabelText(re('form.customLanguageModel'))).toBeInTheDocument();
       });
 
-      const modelSelect = screen.getByLabelText(/カスタム言語モデル/) as HTMLSelectElement;
+      const modelSelect = screen.getByLabelText(re('form.customLanguageModel')) as HTMLSelectElement;
       const options = Array.from(modelSelect.options);
-      expect(options[0].textContent).toBe('モデルを使用しない');
+      expect(options[0].textContent).toBe(t('form.noModel'));
       // Option label is the human-readable displayName...
       expect(options[1].textContent).toBe('営業ドメイン v1');
       expect(options[2].textContent).toBe('医療ドメイン v2');
@@ -203,16 +210,16 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/カスタム言語モデル/)).toBeInTheDocument();
+        expect(screen.getByLabelText(re('form.customLanguageModel'))).toBeInTheDocument();
       });
 
-      const modelSelect = screen.getByLabelText(/カスタム言語モデル/) as HTMLSelectElement;
+      const modelSelect = screen.getByLabelText(re('form.customLanguageModel')) as HTMLSelectElement;
       const options = Array.from(modelSelect.options);
       expect(options[1].textContent).toBe('legacy-model');
       expect(options[1].value).toBe('legacy-model');
     });
 
-    it('shows "利用可能なモデルなし" when no models are available', async () => {
+    it('shows the no-models message when no models are available', async () => {
       const emptyModelApi = createMockLanguageModelApi({
         ok: true,
         value: { models: [] },
@@ -227,7 +234,7 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('利用可能なモデルなし')).toBeInTheDocument();
+        expect(screen.getByText(t('form.noAvailableModels'))).toBeInTheDocument();
       });
     });
   });
@@ -243,12 +250,12 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.queryByText('モデル一覧を読み込み中...')).not.toBeInTheDocument();
+        expect(screen.queryByText(loadingModelsText())).not.toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
+      await user.click(screen.getByRole('button', { name: submitName() }));
 
-      expect(screen.getByText('メディアファイルを選択してください')).toBeInTheDocument();
+      expect(screen.getByText(t('form.mediaFileRequired'))).toBeInTheDocument();
     });
 
     it('shows error when MaxSpeakerLabels is below 2', async () => {
@@ -261,20 +268,20 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.queryByText('モデル一覧を読み込み中...')).not.toBeInTheDocument();
+        expect(screen.queryByText(loadingModelsText())).not.toBeInTheDocument();
       });
 
       // Select a media file first
-      await user.selectOptions(screen.getByLabelText(/メディアファイル/), 'media-1');
+      await user.selectOptions(screen.getByLabelText(re('form.mediaFile')), 'media-1');
 
       // Set invalid speaker count
-      const speakerInput = screen.getByLabelText(/最大話者数/);
+      const speakerInput = screen.getByLabelText(re('form.maxSpeakers'));
       await user.clear(speakerInput);
       await user.type(speakerInput, '1');
 
-      await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
+      await user.click(screen.getByRole('button', { name: submitName() }));
 
-      expect(screen.getByText('話者数は2〜10の範囲で指定してください')).toBeInTheDocument();
+      expect(screen.getByText(t('form.speakerCountRange', { min: 2, max: 10 }))).toBeInTheDocument();
     });
 
     it('shows error when MaxSpeakerLabels exceeds 10', async () => {
@@ -287,18 +294,18 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.queryByText('モデル一覧を読み込み中...')).not.toBeInTheDocument();
+        expect(screen.queryByText(loadingModelsText())).not.toBeInTheDocument();
       });
 
-      await user.selectOptions(screen.getByLabelText(/メディアファイル/), 'media-1');
+      await user.selectOptions(screen.getByLabelText(re('form.mediaFile')), 'media-1');
 
-      const speakerInput = screen.getByLabelText(/最大話者数/);
+      const speakerInput = screen.getByLabelText(re('form.maxSpeakers'));
       await user.clear(speakerInput);
       await user.type(speakerInput, '11');
 
-      await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
+      await user.click(screen.getByRole('button', { name: submitName() }));
 
-      expect(screen.getByText('話者数は2〜10の範囲で指定してください')).toBeInTheDocument();
+      expect(screen.getByText(t('form.speakerCountRange', { min: 2, max: 10 }))).toBeInTheDocument();
     });
   });
 
@@ -313,16 +320,16 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.queryByText('モデル一覧を読み込み中...')).not.toBeInTheDocument();
+        expect(screen.queryByText(loadingModelsText())).not.toBeInTheDocument();
       });
 
-      await user.selectOptions(screen.getByLabelText(/メディアファイル/), 'media-1');
+      await user.selectOptions(screen.getByLabelText(re('form.mediaFile')), 'media-1');
 
-      const speakerInput = screen.getByLabelText(/最大話者数/);
+      const speakerInput = screen.getByLabelText(re('form.maxSpeakers'));
       await user.clear(speakerInput);
       await user.type(speakerInput, '5');
 
-      await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
+      await user.click(screen.getByRole('button', { name: submitName() }));
 
       await waitFor(() => {
         expect(mockTranscriptionApi.startJob).toHaveBeenCalledWith({
@@ -343,13 +350,13 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/カスタム言語モデル/)).toBeInTheDocument();
+        expect(screen.getByLabelText(re('form.customLanguageModel'))).toBeInTheDocument();
       });
 
-      await user.selectOptions(screen.getByLabelText(/メディアファイル/), 'media-1');
-      await user.selectOptions(screen.getByLabelText(/カスタム言語モデル/), 'custom-model-v1');
+      await user.selectOptions(screen.getByLabelText(re('form.mediaFile')), 'media-1');
+      await user.selectOptions(screen.getByLabelText(re('form.customLanguageModel')), 'custom-model-v1');
 
-      await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
+      await user.click(screen.getByRole('button', { name: submitName() }));
 
       await waitFor(() => {
         expect(mockTranscriptionApi.startJob).toHaveBeenCalledWith({
@@ -374,11 +381,11 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.queryByText('モデル一覧を読み込み中...')).not.toBeInTheDocument();
+        expect(screen.queryByText(loadingModelsText())).not.toBeInTheDocument();
       });
 
-      await user.selectOptions(screen.getByLabelText(/メディアファイル/), 'media-1');
-      await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
+      await user.selectOptions(screen.getByLabelText(re('form.mediaFile')), 'media-1');
+      await user.click(screen.getByRole('button', { name: submitName() }));
 
       await waitFor(() => {
         expect(onJobStarted).toHaveBeenCalledWith('job-123');
@@ -402,11 +409,11 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.queryByText('モデル一覧を読み込み中...')).not.toBeInTheDocument();
+        expect(screen.queryByText(loadingModelsText())).not.toBeInTheDocument();
       });
 
-      await user.selectOptions(screen.getByLabelText(/メディアファイル/), 'media-1');
-      await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
+      await user.selectOptions(screen.getByLabelText(re('form.mediaFile')), 'media-1');
+      await user.click(screen.getByRole('button', { name: submitName() }));
 
       await waitFor(() => {
         expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -428,14 +435,14 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.queryByText('モデル一覧を読み込み中...')).not.toBeInTheDocument();
+        expect(screen.queryByText(loadingModelsText())).not.toBeInTheDocument();
       });
 
-      await user.selectOptions(screen.getByLabelText(/メディアファイル/), 'media-1');
-      await user.click(screen.getByRole('button', { name: '文字起こしジョブを開始' }));
+      await user.selectOptions(screen.getByLabelText(re('form.mediaFile')), 'media-1');
+      await user.click(screen.getByRole('button', { name: submitName() }));
 
       await waitFor(() => {
-        expect(screen.getByText('作成中...')).toBeInTheDocument();
+        expect(screen.getByText(t('form.submitting'))).toBeInTheDocument();
       });
     });
   });
@@ -451,7 +458,7 @@ describe('TranscriptionJobForm', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/カスタム言語モデル/)).toBeInTheDocument();
+        expect(screen.getByLabelText(re('form.customLanguageModel'))).toBeInTheDocument();
       });
 
       const results = await axe(container);

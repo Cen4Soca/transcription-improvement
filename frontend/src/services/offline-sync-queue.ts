@@ -1,5 +1,6 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import type { Correction } from '../types/correction';
+import i18n from '../i18n';
 
 const DB_NAME = 'transcription-review-offline';
 const DB_VERSION = 1;
@@ -105,7 +106,7 @@ export class OfflineSyncQueue {
       const discarded = await this.discardOldest(count - MAX_QUEUE_SIZE);
       return {
         success: true,
-        warning: `キュー上限（${MAX_QUEUE_SIZE}件）を超過したため、最古の${discarded}件を破棄しました。`,
+        warning: i18n.t('common:sync.queueOverflow', { max: MAX_QUEUE_SIZE, discarded }),
       };
     }
 

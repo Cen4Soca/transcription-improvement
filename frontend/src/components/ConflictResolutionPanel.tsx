@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { ConsensusStatus } from '../types/segment';
 
 /**
@@ -32,19 +34,19 @@ export interface ConflictResolutionPanelProps {
 }
 
 /**
- * Status label configuration for each consensus status.
+ * Status styling and translation-key configuration for each consensus status.
  */
-const STATUS_LABELS: Record<ConsensusStatus, { text: string; className: string }> = {
+const STATUS_CONFIG: Record<ConsensusStatus, { labelKey: string; className: string }> = {
   CONFIRMED: {
-    text: '確定済み',
+    labelKey: 'conflictPanel.status.confirmed',
     className: 'bg-green-100 text-green-800',
   },
   UNDECIDED: {
-    text: '未確定',
+    labelKey: 'conflictPanel.status.undecided',
     className: 'bg-gray-100 text-gray-800',
   },
   CONFLICT: {
-    text: '競合解決待ち',
+    labelKey: 'conflictPanel.status.conflict',
     className: 'bg-yellow-100 text-yellow-800',
   },
 };
@@ -63,6 +65,7 @@ export function ConflictResolutionPanel({
   isLoading = false,
   onResolve,
 }: ConflictResolutionPanelProps) {
+  const { t } = useTranslation('consensus');
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [resolvingSegmentId, setResolvingSegmentId] = useState<string | null>(null);
 
@@ -83,7 +86,7 @@ export function ConflictResolutionPanel({
 
   if (isLoading) {
     return (
-      <div className="p-4" role="status" aria-label="読み込み中">
+      <div className="p-4" role="status" aria-label={t('conflictPanel.loadingAriaLabel')}>
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-gray-200 rounded w-3/4"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -93,17 +96,18 @@ export function ConflictResolutionPanel({
   }
 
   return (
-    <div className="space-y-6" aria-label="競合解決パネル">
-      <h2 className="text-lg font-semibold text-gray-900">競合解決</h2>
+    <div className="space-y-6" aria-label={t('conflictPanel.panelAriaLabel')}>
+      <h2 className="text-lg font-semibold text-gray-900">{t('conflictPanel.heading')}</h2>
 
       {/* Summary of all segments with status labels */}
-      <section aria-label="セグメント状態一覧">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">セグメント状態</h3>
+      <section aria-label={t('conflictPanel.segmentStatusListAriaLabel')}>
+        <h3 className="text-sm font-medium text-gray-700 mb-2">{t('conflictPanel.segmentStatusHeading')}</h3>
         <div className="flex flex-wrap gap-2 mb-4">
           {segments.map((segment) => (
             <SegmentStatusBadge
               key={segment.segmentId}
               segment={segment}
+              t={t}
             />
           ))}
         </div>
@@ -112,12 +116,12 @@ export function ConflictResolutionPanel({
       {/* Conflict segments requiring resolution */}
       {conflictSegments.length === 0 ? (
         <p className="text-gray-500 text-sm">
-          競合解決待ちのセグメントはありません。
+          {t('conflictPanel.noConflicts')}
         </p>
       ) : (
-        <section aria-label="競合解決待ちセグメント一覧">
+        <section aria-label={t('conflictPanel.conflictListAriaLabel')}>
           <h3 className="text-sm font-medium text-gray-700 mb-3">
-            競合解決待ち ({conflictSegments.length}件)
+            {t('conflictPanel.conflictHeading', { count: conflictSegments.length })}
           </h3>
           <ul className="space-y-4">
             {conflictSegments.map((segment) => (
@@ -133,6 +137,7 @@ export function ConflictResolutionPanel({
                     handleSelectAnswer(segment.segmentId, text)
                   }
                   onResolve={() => handleResolve(segment.segmentId)}
+                  t={t}
                 />
               </li>
             ))}
@@ -146,15 +151,16 @@ export function ConflictResolutionPanel({
 /**
  * Badge showing the consensus status of a segment.
  */
-function SegmentStatusBadge({ segment }: { segment: ConsensusSegment }) {
-  const { text, className } = STATUS_LABELS[segment.consensusStatus];
+function SegmentStatusBadge({ segment, t }: { segment: ConsensusSegment; t: TFunction }) {
+  const { labelKey, className } = STATUS_CONFIG[segment.consensusStatus];
+  const statusText = t(labelKey);
 
   return (
     <span
       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${className}`}
-      title={`セグメント ${segment.segmentId}: ${text}`}
+      title={t('conflictPanel.badgeTitle', { segmentId: segment.segmentId, status: statusText })}
     >
-      {formatTime(segment.startTime)} - {text}
+      {t('conflictPanel.badgeLabel', { time: formatTime(segment.startTime), status: statusText })}
     </span>
   );
 }
@@ -168,12 +174,14 @@ function ConflictSegmentCard({
   isResolving,
   onSelectAnswer,
   onResolve,
+  t,
 }: {
   segment: ConsensusSegment;
   selectedText?: string;
   isResolving: boolean;
   onSelectAnswer: (text: string) => void;
   onResolve: () => void;
+  t: TFunction;
 }) {
   return (
     <div>
@@ -185,19 +193,19 @@ function ConflictSegmentCard({
           )}
         </div>
         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          競合解決待ち
+          {t('conflictPanel.conflictPending')}
         </span>
       </div>
 
       <p className="text-sm text-gray-500 mb-3">
-        元テキスト: <span className="text-gray-700">{segment.originalText}</span>
+        {t('conflictPanel.originalText')} <span className="text-gray-700">{segment.originalText}</span>
       </p>
 
       {/* Reviewer answers */}
       {segment.reviewerAnswers && segment.reviewerAnswers.length > 0 ? (
         <div className="space-y-2 mb-3">
-          <p className="text-xs font-medium text-gray-600">レビュアーの回答:</p>
-          <ul className="space-y-1" role="radiogroup" aria-label="回答選択">
+          <p className="text-xs font-medium text-gray-600">{t('conflictPanel.reviewerAnswers')}</p>
+          <ul className="space-y-1" role="radiogroup" aria-label={t('conflictPanel.answerSelectAriaLabel')}>
             {segment.reviewerAnswers.map((answer, index) => (
               <li key={index}>
                 <label
@@ -214,13 +222,13 @@ function ConflictSegmentCard({
                     checked={selectedText === answer.text}
                     onChange={() => onSelectAnswer(answer.text)}
                     className="text-blue-600 focus:ring-blue-500"
-                    aria-label={`「${answer.text}」(${answer.count}票)`}
+                    aria-label={t('conflictPanel.answerOptionAriaLabel', { text: answer.text, count: answer.count })}
                   />
                   <span className="flex-1 text-sm text-gray-900">
-                    {answer.text || <em className="text-gray-400">(空文字)</em>}
+                    {answer.text || <em className="text-gray-400">{t('conflictPanel.emptyText')}</em>}
                   </span>
                   <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                    {answer.count}票
+                    {t('conflictPanel.voteCount', { count: answer.count })}
                   </span>
                 </label>
               </li>
@@ -228,7 +236,7 @@ function ConflictSegmentCard({
           </ul>
         </div>
       ) : (
-        <p className="text-sm text-gray-400 mb-3">回答データがありません。</p>
+        <p className="text-sm text-gray-400 mb-3">{t('conflictPanel.noAnswerData')}</p>
       )}
 
       {/* Resolve button */}
@@ -237,9 +245,9 @@ function ConflictSegmentCard({
         onClick={onResolve}
         disabled={selectedText === undefined || isResolving}
         className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        aria-label="選択した回答で確定"
+        aria-label={t('conflictPanel.resolve')}
       >
-        {isResolving ? '確定中...' : '選択した回答で確定'}
+        {isResolving ? t('conflictPanel.resolving') : t('conflictPanel.resolve')}
       </button>
     </div>
   );

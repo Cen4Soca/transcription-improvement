@@ -27,7 +27,11 @@
     "syncing": "Syncing...",
     "completed": "Sync complete",
     "failed": "Sync failed",
-    "retry": "Retry"
+    "retry": "Retry",
+    "queueOverflow": "The queue limit ({{max}}) was exceeded, so the oldest {{discarded}} item(s) were discarded."
+  },
+  "auth": {
+    "tokenUnavailable": "Failed to obtain an authentication token"
   },
   "sessionTimeout": {
     "title": "Your session is about to expire",
@@ -47,5 +51,40 @@
     "listAriaLabel": "Unsaved drafts",
     "discard": "Discard",
     "restore": "Restore"
+  },
+  "login": {
+    "appTitle": "Transcription Review App",
+    "signInFailed": "Failed to sign in",
+    "passwordChangeFailed": "Failed to change password",
+    "mfaFailed": "MFA verification failed",
+    "signOutFailed": "Failed to sign out",
+    "unsupportedStep": "Unsupported authentication step: {{step}}",
+    "email": "Email address",
+    "password": "Password",
+    "signingIn": "Signing in...",
+    "signIn": "Sign in",
+    "newPasswordNotice": "This is your first sign-in. Please set a new password.",
+    "newPassword": "New password",
+    "passwordRule": "At least 8 characters, including uppercase, lowercase, numbers, and symbols",
+    "settingPassword": "Setting...",
+    "setPassword": "Set password",
+    "totpNotice": "Enter the 6-digit code shown in your authenticator app.",
+    "mfaCode": "MFA code",
+    "verifying": "Verifying...",
+    "verify": "Verify",
+    "totpSetupNotice": "MFA setup is required. Please contact your administrator."
+  },
+  "errorBoundary": {
+    "ariaLabel": "An error occurred",
+    "title": "An unexpected error occurred",
+    "defaultMessage": "An error occurred in the application.",
+    "reload": "Reload"
+  },
+  "authGuard": {
+    "checkingAriaLabel": "Checking authentication",
+    "checking": "Checking authentication...",
+    "deniedAriaLabel": "Access denied",
+    "deniedTitle": "You do not have access",
+    "deniedDescription": "You need the appropriate permissions to access this page."
   }
 }

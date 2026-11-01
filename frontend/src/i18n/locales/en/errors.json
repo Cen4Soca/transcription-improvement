@@ -1,1 +1,10 @@
-{}
+{
+  "fallback": {
+    "unauthorized": "Authentication is required. Redirecting to the sign-in screen.",
+    "rateLimited": "You have reached the request limit. Please wait a moment and try again.",
+    "generic": "An error occurred",
+    "genericWithStatus": "An error occurred ({{status}})",
+    "parseError": "Failed to parse the error response ({{status}})",
+    "network": "Cannot connect to the network. Please check your connection."
+  }
+}

@@ -12,6 +12,7 @@ import {
 import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
 import type { AuthProvider, AuthUser } from '../types/auth';
 import type { UserRole } from '../types/user';
+import i18n from '../i18n';
 
 export interface CognitoConfig {
   userPoolId: string;
@@ -123,7 +124,7 @@ export class CognitoAuthProvider implements AuthProvider {
     const session = await fetchAuthSession();
     const token = session.tokens?.idToken?.toString();
     if (!token) {
-      throw new Error('認証トークンを取得できませんでした');
+      throw new Error(i18n.t('common:auth.tokenUnavailable'));
     }
     return token;
   }
@@ -156,6 +157,9 @@ export class CognitoAuthProvider implements AuthProvider {
           email: data.email ?? email,
           displayName: data.displayName ?? email,
           role: data.role as UserRole,
+          ...(data.preferredLanguage === 'ja' || data.preferredLanguage === 'en'
+            ? { preferredLanguage: data.preferredLanguage }
+            : {}),
         };
       }
     } catch {

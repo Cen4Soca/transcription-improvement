@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TranscriptionApi, TranscriptionJobStatus as JobStatus } from '../services/transcription-api';
 import type { UseTranscriptionJobReturn } from '../hooks/useTranscriptionJob';
 import { useTranscriptionJob } from '../hooks/useTranscriptionJob';
@@ -12,12 +13,6 @@ export interface TranscriptionJobStatusWithHookProps {
   jobId: string;
   hook: UseTranscriptionJobReturn;
 }
-
-const STATUS_LABELS: Record<JobStatus, string> = {
-  IN_PROGRESS: '処理中',
-  COMPLETED: '完了',
-  FAILED: '失敗',
-};
 
 const STATUS_STYLES: Record<JobStatus, string> = {
   IN_PROGRESS: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -49,6 +44,7 @@ export function TranscriptionJobStatus({ jobId, transcriptionApi }: Transcriptio
  * TranscriptionJobStatusInner - hook を外部から注入可能なバージョン（テスト用）
  */
 export function TranscriptionJobStatusInner({ jobId, hook }: TranscriptionJobStatusWithHookProps) {
+  const { t } = useTranslation('transcriptionJob');
   const { job, isPolling, error, startPolling, stopPolling } = hook;
 
   useEffect(() => {
@@ -62,7 +58,7 @@ export function TranscriptionJobStatusInner({ jobId, hook }: TranscriptionJobSta
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
         <p className="text-sm text-red-700">
-          ステータスの取得に失敗しました: {error.message}
+          {t('status.fetchFailed', { message: error.message })}
         </p>
       </div>
     );
@@ -73,21 +69,21 @@ export function TranscriptionJobStatusInner({ jobId, hook }: TranscriptionJobSta
       <div
         className="flex items-center justify-center h-24"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('status.loadingAriaLabel')}
       >
         <div className="w-5 h-5 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-        <span className="ml-2 text-sm text-gray-500">ジョブ情報を取得中...</span>
+        <span className="ml-2 text-sm text-gray-500">{t('status.fetchingJob')}</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3" aria-label="Transcription ジョブステータス">
+    <div className="space-y-3" aria-label={t('status.transcriptionJobStatusAriaLabel')}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900">ジョブステータス</h3>
+        <h3 className="text-sm font-semibold text-gray-900">{t('status.jobStatus')}</h3>
         {isPolling && (
-          <span className="text-xs text-gray-400" aria-label="ポーリング中">
-            自動更新中...
+          <span className="text-xs text-gray-400" aria-label={t('status.pollingAriaLabel')}>
+            {t('status.autoUpdatingDots')}
           </span>
         )}
       </div>
@@ -96,13 +92,13 @@ export function TranscriptionJobStatusInner({ jobId, hook }: TranscriptionJobSta
         className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${STATUS_STYLES[job.status]}`}
         role="status"
         aria-live="polite"
-        aria-label={`ジョブステータス: ${STATUS_LABELS[job.status]}`}
+        aria-label={t('status.jobStatusAnnounce', { status: t(`status.${job.status}`) })}
       >
         <span className="text-base" aria-hidden="true">
           {STATUS_ICONS[job.status]}
         </span>
         <span className="text-sm font-medium">
-          {STATUS_LABELS[job.status]}
+          {t(`status.${job.status}`)}
         </span>
         {job.status === 'IN_PROGRESS' && (
           <div
@@ -114,27 +110,27 @@ export function TranscriptionJobStatusInner({ jobId, hook }: TranscriptionJobSta
 
       {job.status === 'FAILED' && job.failureReason && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg" role="alert">
-          <p className="text-xs font-medium text-red-800 mb-1">エラー詳細</p>
+          <p className="text-xs font-medium text-red-800 mb-1">{t('status.errorDetail')}</p>
           <p className="text-sm text-red-700">{job.failureReason}</p>
         </div>
       )}
 
       <dl className="text-xs text-gray-500 space-y-1">
         <div className="flex justify-between">
-          <dt>ジョブ ID</dt>
+          <dt>{t('status.jobId')}</dt>
           <dd className="font-mono text-gray-700">{job.jobId}</dd>
         </div>
         <div className="flex justify-between">
-          <dt>言語</dt>
+          <dt>{t('status.language')}</dt>
           <dd className="text-gray-700">{job.languageCode}</dd>
         </div>
         <div className="flex justify-between">
-          <dt>最大話者数</dt>
+          <dt>{t('status.maxSpeakers')}</dt>
           <dd className="text-gray-700">{job.maxSpeakerLabels}</dd>
         </div>
         {job.languageModelName && (
           <div className="flex justify-between">
-            <dt>言語モデル</dt>
+            <dt>{t('status.languageModel')}</dt>
             <dd className="text-gray-700">{job.languageModelName}</dd>
           </div>
         )}

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthGuard } from './AuthGuard';
 import type { AuthState } from '../services/auth-context-value';
+import i18n from '../i18n';
 
 // Mock useAuth hook
 vi.mock('../hooks/useAuth', () => ({
@@ -39,7 +40,7 @@ describe('AuthGuard', () => {
     );
 
     expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.getByText('認証を確認しています...')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:authGuard.checking'))).toBeInTheDocument();
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 
@@ -126,7 +127,7 @@ describe('AuthGuard', () => {
 
       expect(screen.queryByText('Admin Content')).not.toBeInTheDocument();
       expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(screen.getByText('アクセス権限がありません')).toBeInTheDocument();
+      expect(screen.getByText(i18n.t('common:authGuard.deniedTitle'))).toBeInTheDocument();
     });
 
     it('allows access when user has one of multiple required roles', () => {

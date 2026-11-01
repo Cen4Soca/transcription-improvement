@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Segment } from '../types/segment';
 import { sortSegmentsByTimestamp } from '../utils/segments';
 import { getUniqueSpeakerLabels } from '../utils/speaker-labels';
@@ -86,11 +87,13 @@ export function TranscriptionEditor({
   onSegmentHoverEnd,
   suggestion,
 }: TranscriptionEditorProps) {
+  const { t } = useTranslation('review');
+
   if (isLoading) {
     return (
       <div
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('editor.loadingAriaLabel')}
         className="flex items-center justify-center h-full p-8"
       >
         <div className="flex flex-col items-center gap-3">
@@ -98,7 +101,7 @@ export function TranscriptionEditor({
             className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"
             aria-hidden="true"
           />
-          <span className="text-sm text-gray-600">読み込み中...</span>
+          <span className="text-sm text-gray-600">{t('editor.loading')}</span>
         </div>
       </div>
     );
@@ -108,12 +111,12 @@ export function TranscriptionEditor({
     return (
       <div
         role="alert"
-        aria-label="エラー"
+        aria-label={t('editor.errorAriaLabel')}
         className="flex items-center justify-center h-full p-8"
       >
         <div className="text-center max-w-md">
           <p className="text-red-600 font-medium mb-1">
-            データの取得に失敗しました
+            {t('editor.loadFailed')}
           </p>
           <p className="text-sm text-red-500">{error.message}</p>
         </div>
@@ -125,10 +128,10 @@ export function TranscriptionEditor({
     return (
       <div
         role="status"
-        aria-label="空の文字起こし"
+        aria-label={t('editor.emptyAriaLabel')}
         className="flex items-center justify-center h-full p-8"
       >
-        <p className="text-gray-500">文字起こし結果がありません</p>
+        <p className="text-gray-500">{t('editor.emptyState')}</p>
       </div>
     );
   }
@@ -140,7 +143,7 @@ export function TranscriptionEditor({
   return (
     <div
       role="list"
-      aria-label="文字起こしセグメント一覧"
+      aria-label={t('editor.listAriaLabel')}
       data-scroll-container
       className="overflow-y-auto h-full"
     >

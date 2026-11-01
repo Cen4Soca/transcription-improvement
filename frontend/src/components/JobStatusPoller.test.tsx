@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { JobStatusPoller } from './JobStatusPoller';
 import type { TranscriptionApi, TranscriptionJob } from '../services/transcription-api';
+import i18n from '../i18n';
+
+const t = (key: string, vars?: Record<string, unknown>) => i18n.t(`transcriptionJob:${key}`, vars);
 
 function createMockTranscriptionApi(overrides?: Partial<TranscriptionApi>): TranscriptionApi {
   return {
@@ -54,8 +57,8 @@ describe('JobStatusPoller', () => {
 
     render(<JobStatusPoller jobId="job-123" transcriptionApi={api} />);
 
-    expect(screen.getByRole('status', { name: 'ジョブステータス読み込み中' })).toBeInTheDocument();
-    expect(screen.getByText('ジョブ情報を取得中...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: t('status.loadingAriaLabel') })).toBeInTheDocument();
+    expect(screen.getByText(t('status.fetchingJob'))).toBeInTheDocument();
   });
 
   it('fetches job status immediately on mount', async () => {
@@ -74,11 +77,11 @@ describe('JobStatusPoller', () => {
     render(<JobStatusPoller jobId="job-123" transcriptionApi={api} />);
 
     await waitFor(() => {
-      expect(screen.getByText('処理中')).toBeInTheDocument();
+      expect(screen.getByText(t('status.IN_PROGRESS'))).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText('ポーリング中')).toBeInTheDocument();
-    expect(screen.getByText('自動更新中')).toBeInTheDocument();
+    expect(screen.getByLabelText(t('status.pollingAriaLabel'))).toBeInTheDocument();
+    expect(screen.getByText(t('status.autoUpdating'))).toBeInTheDocument();
   });
 
   it('displays COMPLETED status and stops polling', async () => {
@@ -92,10 +95,10 @@ describe('JobStatusPoller', () => {
     render(<JobStatusPoller jobId="job-123" transcriptionApi={api} />);
 
     await waitFor(() => {
-      expect(screen.getByText('完了')).toBeInTheDocument();
+      expect(screen.getByText(t('status.COMPLETED'))).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('自動更新中')).not.toBeInTheDocument();
+    expect(screen.queryByText(t('status.autoUpdating'))).not.toBeInTheDocument();
   });
 
   it('displays FAILED status with failure reason', async () => {
@@ -113,10 +116,10 @@ describe('JobStatusPoller', () => {
     render(<JobStatusPoller jobId="job-123" transcriptionApi={api} />);
 
     await waitFor(() => {
-      expect(screen.getByText('失敗')).toBeInTheDocument();
+      expect(screen.getByText(t('status.FAILED'))).toBeInTheDocument();
     });
 
-    expect(screen.getByText('エラー詳細')).toBeInTheDocument();
+    expect(screen.getByText(t('status.errorDetail'))).toBeInTheDocument();
     expect(screen.getByText('メディアファイルの形式がサポートされていません。')).toBeInTheDocument();
   });
 
@@ -190,7 +193,7 @@ describe('JobStatusPoller', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('完了')).toBeInTheDocument();
+      expect(screen.getByText(t('status.COMPLETED'))).toBeInTheDocument();
     });
 
     // Advance more - should not poll again
@@ -227,7 +230,7 @@ describe('JobStatusPoller', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('失敗')).toBeInTheDocument();
+      expect(screen.getByText(t('status.FAILED'))).toBeInTheDocument();
     });
 
     // Should not poll again
@@ -307,7 +310,7 @@ describe('JobStatusPoller', () => {
     render(<JobStatusPoller jobId="job-123" transcriptionApi={api} />);
 
     await waitFor(() => {
-      expect(screen.getByText('言語モデル')).toBeInTheDocument();
+      expect(screen.getByText(t('status.languageModel'))).toBeInTheDocument();
       expect(screen.getByText('custom-model-v1')).toBeInTheDocument();
     });
   });

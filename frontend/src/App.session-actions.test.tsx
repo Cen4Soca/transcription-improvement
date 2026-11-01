@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { SessionListPageWrapper } from './App';
+import i18n from './i18n';
+
+const assignUserName = () => i18n.t('review:assignment.assignUser');
 
 // --- Mock the API clients used by the wrapper ---
 
@@ -68,7 +71,7 @@ describe('SessionListPageWrapper - assignment actions rendering', () => {
 
     expect(await screen.findByText('セッションA')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: '担当者を割り当て' })
+      screen.getByRole('button', { name: assignUserName() })
     ).toBeInTheDocument();
   });
 
@@ -81,7 +84,7 @@ describe('SessionListPageWrapper - assignment actions rendering', () => {
 
     expect(await screen.findByText('セッションA')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: '担当者を割り当て' })
+      screen.getByRole('button', { name: assignUserName() })
     ).toBeInTheDocument();
   });
 
@@ -95,7 +98,7 @@ describe('SessionListPageWrapper - assignment actions rendering', () => {
     expect(await screen.findByText('セッションA')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '引き受ける' })).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: '担当者を割り当て' })
+      screen.queryByRole('button', { name: assignUserName() })
     ).not.toBeInTheDocument();
   });
 
@@ -108,6 +111,6 @@ describe('SessionListPageWrapper - assignment actions rendering', () => {
 
     expect(await screen.findByText('セッションA')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '引き受ける' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '担当者を割り当て' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: assignUserName() })).not.toBeInTheDocument();
   });
 });

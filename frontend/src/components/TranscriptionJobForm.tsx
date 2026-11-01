@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TranscriptionApi, StartTranscriptionJobRequest } from '../services/transcription-api';
 import type { LanguageModelApi, LanguageModelSummary } from '../services/language-model-api';
 import type { MediaFile } from '../services/media-api';
@@ -18,15 +19,15 @@ interface FormErrors {
 }
 
 const LANGUAGE_CODES = [
-  { code: 'ja-JP', label: '日本語' },
-  { code: 'en-US', label: '英語 (US)' },
-  { code: 'en-GB', label: '英語 (UK)' },
-  { code: 'zh-CN', label: '中国語 (簡体字)' },
-  { code: 'ko-KR', label: '韓国語' },
-  { code: 'fr-FR', label: 'フランス語' },
-  { code: 'de-DE', label: 'ドイツ語' },
-  { code: 'es-ES', label: 'スペイン語' },
-];
+  'ja-JP',
+  'en-US',
+  'en-GB',
+  'zh-CN',
+  'ko-KR',
+  'fr-FR',
+  'de-DE',
+  'es-ES',
+] as const;
 
 const MIN_SPEAKERS = 2;
 const MAX_SPEAKERS = 10;
@@ -50,6 +51,7 @@ export function TranscriptionJobForm({
   mediaFiles,
   onJobStarted,
 }: TranscriptionJobFormProps) {
+  const { t } = useTranslation('transcriptionJob');
   const [mediaFileId, setMediaFileId] = useState('');
   const [maxSpeakerLabels, setMaxSpeakerLabels] = useState<string>(String(DEFAULT_SPEAKERS));
   const [languageCode, setLanguageCode] = useState(DEFAULT_LANGUAGE_CODE);
@@ -85,22 +87,22 @@ export function TranscriptionJobForm({
     const newErrors: FormErrors = {};
 
     if (!mediaFileId) {
-      newErrors.mediaFileId = 'メディアファイルを選択してください';
+      newErrors.mediaFileId = t('form.mediaFileRequired');
     }
 
     const speakerCount = parseInt(maxSpeakerLabels, 10);
     if (isNaN(speakerCount)) {
-      newErrors.maxSpeakerLabels = '話者数を入力してください';
+      newErrors.maxSpeakerLabels = t('form.speakerCountRequired');
     } else if (speakerCount < MIN_SPEAKERS || speakerCount > MAX_SPEAKERS) {
-      newErrors.maxSpeakerLabels = `話者数は${MIN_SPEAKERS}〜${MAX_SPEAKERS}の範囲で指定してください`;
+      newErrors.maxSpeakerLabels = t('form.speakerCountRange', { min: MIN_SPEAKERS, max: MAX_SPEAKERS });
     }
 
     if (!languageCode) {
-      newErrors.languageCode = '言語を選択してください';
+      newErrors.languageCode = t('form.languageRequired');
     }
 
     return newErrors;
-  }, [mediaFileId, maxSpeakerLabels, languageCode]);
+  }, [mediaFileId, maxSpeakerLabels, languageCode, t]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -152,15 +154,15 @@ export function TranscriptionJobForm({
     <form
       onSubmit={handleSubmit}
       className="space-y-5 bg-white border border-gray-200 rounded-lg p-6"
-      aria-label="Transcription ジョブ作成フォーム"
+      aria-label={t('form.formAriaLabel')}
       noValidate
     >
-      <h2 className="text-lg font-semibold text-gray-900">文字起こしジョブ作成</h2>
+      <h2 className="text-lg font-semibold text-gray-900">{t('form.title')}</h2>
 
       {/* Media file selection */}
       <div>
         <label htmlFor="media-file-select" className="block text-sm font-medium text-gray-700">
-          メディアファイル <span className="text-red-500">*</span>
+          {t('form.mediaFile')} <span className="text-red-500">*</span>
         </label>
         <select
           id="media-file-select"
@@ -176,7 +178,7 @@ export function TranscriptionJobForm({
           aria-describedby={errors.mediaFileId ? 'media-file-error' : undefined}
           disabled={isSubmitting}
         >
-          <option value="">ファイルを選択...</option>
+          <option value="">{t('form.selectFile')}</option>
           {uploadedFiles.map((file) => (
             <option key={file.mediaFileId} value={file.mediaFileId}>
               {file.filename}
@@ -193,7 +195,7 @@ export function TranscriptionJobForm({
       {/* MaxSpeakerLabels input */}
       <div>
         <label htmlFor="max-speaker-labels" className="block text-sm font-medium text-gray-700">
-          最大話者数 <span className="text-red-500">*</span>
+          {t('form.maxSpeakers')} <span className="text-red-500">*</span>
         </label>
         <input
           id="max-speaker-labels"
@@ -213,7 +215,7 @@ export function TranscriptionJobForm({
           disabled={isSubmitting}
         />
         <p id="max-speaker-labels-help" className="mt-1 text-xs text-gray-500">
-          音声内の話者数を指定します（{MIN_SPEAKERS}〜{MAX_SPEAKERS}）
+          {t('form.speakerCountHelp', { min: MIN_SPEAKERS, max: MAX_SPEAKERS })}
         </p>
         {errors.maxSpeakerLabels && (
           <p id="max-speaker-labels-error" className="mt-1 text-xs text-red-600" role="alert">
@@ -225,7 +227,7 @@ export function TranscriptionJobForm({
       {/* Language code selection */}
       <div>
         <label htmlFor="language-code-select" className="block text-sm font-medium text-gray-700">
-          言語 <span className="text-red-500">*</span>
+          {t('form.language')} <span className="text-red-500">*</span>
         </label>
         <select
           id="language-code-select"
@@ -241,9 +243,9 @@ export function TranscriptionJobForm({
           aria-describedby={errors.languageCode ? 'language-code-error' : undefined}
           disabled={isSubmitting}
         >
-          {LANGUAGE_CODES.map((lang) => (
-            <option key={lang.code} value={lang.code}>
-              {lang.label} ({lang.code})
+          {LANGUAGE_CODES.map((code) => (
+            <option key={code} value={code}>
+              {t(`form.languageCode.${code}`)} ({code})
             </option>
           ))}
         </select>
@@ -257,15 +259,15 @@ export function TranscriptionJobForm({
       {/* Custom language model selection */}
       <div>
         <label htmlFor="language-model-select" className="block text-sm font-medium text-gray-700">
-          カスタム言語モデル（オプション）
+          {t('form.customLanguageModel')}
         </label>
         {isLoadingModels ? (
           <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
             <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-            <span>モデル一覧を読み込み中...</span>
+            <span>{t('form.loadingModels')}</span>
           </div>
         ) : models.length === 0 ? (
-          <p className="mt-1 text-sm text-gray-500 italic">利用可能なモデルなし</p>
+          <p className="mt-1 text-sm text-gray-500 italic">{t('form.noAvailableModels')}</p>
         ) : (
           <select
             id="language-model-select"
@@ -274,7 +276,7 @@ export function TranscriptionJobForm({
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             disabled={isSubmitting}
           >
-            <option value="">モデルを使用しない</option>
+            <option value="">{t('form.noModel')}</option>
             {models.map((model) => (
               <option key={model.modelName} value={model.modelName}>
                 {model.displayName ?? model.modelName}
@@ -297,7 +299,7 @@ export function TranscriptionJobForm({
         disabled={isSubmitting}
         className="w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {isSubmitting ? '作成中...' : '文字起こしジョブを開始'}
+        {isSubmitting ? t('form.submitting') : t('form.submit')}
       </button>
     </form>
   );
