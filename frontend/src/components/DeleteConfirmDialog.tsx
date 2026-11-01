@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface DeleteConfirmDialogProps {
   isOpen: boolean;
@@ -24,10 +25,12 @@ export function DeleteConfirmDialog({
   isOpen,
   title,
   resourceName,
-  warningMessage = 'この操作は取り消せません。削除されたデータは復元できません。',
+  warningMessage,
   onConfirm,
   onCancel,
 }: DeleteConfirmDialogProps) {
+  const { t } = useTranslation('common');
+  const resolvedWarning = warningMessage ?? t('deleteDialog.defaultWarning');
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
@@ -92,7 +95,7 @@ export function DeleteConfirmDialog({
     try {
       await onConfirm();
     } catch (e) {
-      const message = e instanceof Error ? e.message : '削除に失敗しました';
+      const message = e instanceof Error ? e.message : t('deleteDialog.failed');
       setError(message);
     } finally {
       setIsDeleting(false);
@@ -128,7 +131,7 @@ export function DeleteConfirmDialog({
 
         <div className="space-y-3 mb-6">
           <p id="delete-dialog-description" className="text-sm text-gray-700">
-            以下のリソースを削除しようとしています：
+            {t('deleteDialog.description')}
           </p>
           <p className="text-sm font-medium text-gray-900 bg-gray-100 px-3 py-2 rounded">
             {resourceName}
@@ -147,7 +150,7 @@ export function DeleteConfirmDialog({
                 clipRule="evenodd"
               />
             </svg>
-            <span>{warningMessage}</span>
+            <span>{resolvedWarning}</span>
           </p>
         </div>
 
@@ -165,7 +168,7 @@ export function DeleteConfirmDialog({
             disabled={isDeleting}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
           >
-            キャンセル
+            {t('cancel')}
           </button>
           <button
             type="button"
@@ -174,7 +177,7 @@ export function DeleteConfirmDialog({
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-busy={isDeleting}
           >
-            {isDeleting ? '削除中...' : '削除する'}
+            {isDeleting ? t('deleteDialog.deleting') : t('deleteDialog.confirm')}
           </button>
         </div>
       </div>

@@ -7,20 +7,23 @@
  * Requirements: 11.6
  */
 
+import { useTranslation } from 'react-i18next';
+
 export function MobileUnsupported() {
+  const { t } = useTranslation('common');
   return (
     <div
       className="flex md:hidden items-center justify-center min-h-screen bg-gray-50 p-6"
       role="alert"
-      aria-label="モバイルデバイス非対応"
+      aria-label={t('mobileUnsupported.ariaLabel')}
     >
       <div className="text-center max-w-sm">
         <DeviceIcon />
         <h1 className="mt-4 text-lg font-semibold text-gray-900">
-          デスクトップブラウザをご利用ください
+          {t('mobileUnsupported.title')}
         </h1>
         <p className="mt-2 text-sm text-gray-600">
-          本アプリケーションはデスクトップブラウザ（横幅1024px以上）での利用を推奨しています。タブレット（横幅768px以上）では簡易編集が可能です。
+          {t('mobileUnsupported.description')}
         </p>
       </div>
     </div>

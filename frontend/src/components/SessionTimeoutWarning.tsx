@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 /**
  * SessionTimeoutWarning - アイドルタイムアウト残り5分前に警告通知を表示するコンポーネント
  *
@@ -30,6 +32,8 @@ export function SessionTimeoutWarning({
   remainingMs,
   onContinue,
 }: SessionTimeoutWarningProps) {
+  const { t } = useTranslation('common');
+
   if (!visible) {
     return null;
   }
@@ -47,16 +51,16 @@ export function SessionTimeoutWarning({
           id="session-timeout-title"
           className="text-lg font-semibold text-gray-900 mb-2"
         >
-          セッションがまもなく期限切れになります
+          {t('sessionTimeout.title')}
         </h2>
         <p
           id="session-timeout-description"
           className="text-gray-600 mb-4"
         >
-          セッションがまもなく期限切れになります。続行しますか？
+          {t('sessionTimeout.description')}
         </p>
         <p className="text-2xl font-mono text-center text-red-600 mb-6" aria-live="polite">
-          残り {formatRemainingTime(remainingMs)}
+          {t('sessionTimeout.remaining', { time: formatRemainingTime(remainingMs) })}
         </p>
         <div className="flex justify-center">
           <button
@@ -65,7 +69,7 @@ export function SessionTimeoutWarning({
             className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             autoFocus
           >
-            続行
+            {t('sessionTimeout.continue')}
           </button>
         </div>
       </div>

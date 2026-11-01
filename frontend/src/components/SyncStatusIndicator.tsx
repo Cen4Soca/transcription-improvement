@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { SyncStatus } from '../services/offline-sync-manager';
 
 /**
@@ -17,6 +18,8 @@ interface SyncStatusIndicatorProps {
 }
 
 export function SyncStatusIndicator({ status, onRetry }: SyncStatusIndicatorProps) {
+  const { t } = useTranslation('common');
+
   if (status === 'idle') {
     return null;
   }
@@ -32,26 +35,26 @@ export function SyncStatusIndicator({ status, onRetry }: SyncStatusIndicatorProp
       {status === 'syncing' && (
         <>
           <span className="inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-          <span>同期中...</span>
+          <span>{t('sync.syncing')}</span>
         </>
       )}
       {status === 'completed' && (
         <>
           <span aria-hidden="true">✓</span>
-          <span>同期完了</span>
+          <span>{t('sync.completed')}</span>
         </>
       )}
       {status === 'failed' && (
         <>
           <span aria-hidden="true">✗</span>
-          <span>同期失敗</span>
+          <span>{t('sync.failed')}</span>
           {onRetry && (
             <button
               type="button"
               onClick={onRetry}
               className="ml-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
             >
-              再試行
+              {t('sync.retry')}
             </button>
           )}
         </>

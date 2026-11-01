@@ -89,5 +89,9 @@
     "modelStatus": "Model \"{{modelName}}\": {{status}}",
     "statusError": "Status fetch error: {{message}}",
     "close": "Close"
+  },
+  "error": {
+    "quotaExceeded": "You have reached the limit for creating custom language models. Delete an existing model or request a limit increase.",
+    "generic": "An error occurred. Please try again later."
   }
 }

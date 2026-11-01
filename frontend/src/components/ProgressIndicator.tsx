@@ -9,6 +9,8 @@
  * Requirements: 10.11
  */
 
+import { useTranslation } from 'react-i18next';
+
 export interface ProgressIndicatorProps {
   /** 割り当てReviewer総数 */
   totalReviewers: number;
@@ -23,6 +25,8 @@ export function ProgressIndicator({
   completedCount,
   visible = true,
 }: ProgressIndicatorProps) {
+  const { t } = useTranslation('common');
+
   if (!visible) {
     return null;
   }
@@ -31,14 +35,15 @@ export function ProgressIndicator({
 
   // All reviewers have completed
   if (remaining <= 0) {
+    const label = t('progress.allCompleted');
     return (
       <div
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
         role="status"
-        aria-label="全員回答済み"
+        aria-label={label}
       >
         <CheckIcon />
-        <span>全員回答済み</span>
+        <span>{label}</span>
       </div>
     );
   }
@@ -46,27 +51,29 @@ export function ProgressIndicator({
   // Privacy-preserving display logic
   if (totalReviewers >= 5) {
     // 5名以上: show specific remaining count
+    const label = t('progress.remainingCount', { count: remaining });
     return (
       <div
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
         role="status"
-        aria-label={`あと${remaining}人が回答待ち`}
+        aria-label={label}
       >
         <ClockIcon />
-        <span>あと{remaining}人が回答待ち</span>
+        <span>{label}</span>
       </div>
     );
   }
 
   // 5名未満: generic message to prevent individual identification
+  const label = t('progress.stillCollecting');
   return (
     <div
       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
       role="status"
-      aria-label="まだ回答が集まっています"
+      aria-label={label}
     >
       <ClockIcon />
-      <span>まだ回答が集まっています</span>
+      <span>{label}</span>
     </div>
   );
 }

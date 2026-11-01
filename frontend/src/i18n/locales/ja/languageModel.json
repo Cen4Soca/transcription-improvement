@@ -89,5 +89,9 @@
     "modelStatus": "モデル「{{modelName}}」: {{status}}",
     "statusError": "ステータス取得エラー: {{message}}",
     "close": "閉じる"
+  },
+  "error": {
+    "quotaExceeded": "カスタム言語モデルの作成上限に達しています。既存のモデルを削除するか、上限緩和を申請してください。",
+    "generic": "エラーが発生しました。しばらくしてからもう一度お試しください。"
   }
 }

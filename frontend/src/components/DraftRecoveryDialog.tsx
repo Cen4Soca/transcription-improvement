@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DraftInfo } from '../services/draft-storage';
 
 export interface DraftRecoveryDialogProps {
@@ -25,6 +26,7 @@ export function DraftRecoveryDialog({
   onRestore,
   onDiscard,
 }: DraftRecoveryDialogProps) {
+  const { t } = useTranslation('common');
   const restoreButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -100,21 +102,21 @@ export function DraftRecoveryDialog({
           id="draft-recovery-dialog-title"
           className="text-lg font-semibold text-gray-900 mb-2"
         >
-          未保存の編集内容があります
+          {t('draftRecovery.title')}
         </h2>
 
         <p
           id="draft-recovery-dialog-description"
           className="text-sm text-gray-700 mb-4"
         >
-          前回のセッションで保存されていない編集内容が見つかりました。復元しますか？
+          {t('draftRecovery.description')}
         </p>
 
         <div className="mb-6">
           <p className="text-sm font-medium text-gray-700 mb-2">
-            対象セグメント（{drafts.length}件）:
+            {t('draftRecovery.targetSegments', { count: drafts.length })}
           </p>
-          <ul className="max-h-40 overflow-y-auto space-y-1" aria-label="未保存ドラフト一覧">
+          <ul className="max-h-40 overflow-y-auto space-y-1" aria-label={t('draftRecovery.listAriaLabel')}>
             {drafts.map((draft) => (
               <li
                 key={draft.segmentId}
@@ -139,7 +141,7 @@ export function DraftRecoveryDialog({
             onClick={handleDiscard}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            破棄する
+            {t('draftRecovery.discard')}
           </button>
           <button
             ref={restoreButtonRef}
@@ -147,7 +149,7 @@ export function DraftRecoveryDialog({
             onClick={handleRestore}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            復元する
+            {t('draftRecovery.restore')}
           </button>
         </div>
       </div>

@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import i18n from '../i18n';
 import { MediaFileList } from './MediaFileList';
 import type { MediaApi, MediaFile, MediaFileListResponse } from '../services/media-api';
 import type { Result, AppError } from '../types/api';
+
+const tfl = (key: string) => i18n.t(`upload:fileList.${key}`);
 
 function createMockMediaApi(
   response: Result<MediaFileListResponse, AppError>,
@@ -80,7 +83,7 @@ describe('MediaFileList', () => {
     } as unknown as MediaApi;
 
     render(<MediaFileList mediaApi={api} />);
-    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: tfl('loadingAriaLabel') })).toBeInTheDocument();
   });
 
   it('renders media file list after loading', async () => {
@@ -98,12 +101,12 @@ describe('MediaFileList', () => {
     render(<MediaFileList mediaApi={mockApi} />);
 
     await waitFor(() => {
-      expect(screen.getByText('完了')).toBeInTheDocument();
+      expect(screen.getByText(tfl('status.COMPLETED'))).toBeInTheDocument();
     });
 
-    expect(screen.getByText('処理中')).toBeInTheDocument();
-    expect(screen.getByText('アップロード中')).toBeInTheDocument();
-    expect(screen.getByText('失敗')).toBeInTheDocument();
+    expect(screen.getByText(tfl('status.PROCESSING'))).toBeInTheDocument();
+    expect(screen.getByText(tfl('status.UPLOADING'))).toBeInTheDocument();
+    expect(screen.getByText(tfl('status.FAILED'))).toBeInTheDocument();
   });
 
   it('displays file sizes in human-readable format', async () => {
@@ -127,7 +130,7 @@ describe('MediaFileList', () => {
     render(<MediaFileList mediaApi={emptyApi} />);
 
     await waitFor(() => {
-      expect(screen.getByText('メディアファイルがありません')).toBeInTheDocument();
+      expect(screen.getByText(tfl('emptyState'))).toBeInTheDocument();
     });
   });
 
