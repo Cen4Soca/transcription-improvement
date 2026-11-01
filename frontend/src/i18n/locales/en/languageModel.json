@@ -1,0 +1,93 @@
+{
+  "pageTitle": "Custom language models",
+  "pageDescription": "Create and manage custom language models based on corrected transcriptions",
+  "accessDenied": "You do not have permission",
+  "accessDeniedDescription": "This feature is available only to Admin or TeamLeader.",
+  "baseModel": {
+    "narrowBandDescription": "For telephone audio (8kHz)",
+    "wideBandDescription": "For high-quality audio (16kHz)"
+  },
+  "status": {
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "failed": "Failed"
+  },
+  "sessionStatus": {
+    "PENDING": "Not started",
+    "IN_PROGRESS": "In progress",
+    "COMPLETED": "Completed"
+  },
+  "validation": {
+    "modelNameRequired": "Please enter a model name.",
+    "modelNameFormat": "The model name may contain only letters, numbers, hyphens, and underscores.",
+    "modelNameDuplicate": "A model with the same name already exists. Please choose a different name.",
+    "displayNameRequired": "Please enter a display name.",
+    "teamRequired": "Please select a team.",
+    "sessionRequired": "Please select at least one target review session."
+  },
+  "createSuccess": "Started creating model \"{{name}}\".",
+  "form": {
+    "title": "Create a new model",
+    "modelName": "Model name",
+    "modelNamePlaceholder": "e.g. my-custom-model",
+    "modelNameHint": "Only letters, numbers, hyphens, and underscores are allowed",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "e.g. Sales domain v1",
+    "displayNameHint": "A human-friendly name shown in the list (unique within the team)",
+    "team": "Team",
+    "teamLoading": "Loading teams...",
+    "noTeams": "You do not belong to any team.",
+    "teamSelectPlaceholder": "Select a team...",
+    "teamHintAdmin": "You can select from all teams.",
+    "teamHintMember": "You can select from the teams you belong to.",
+    "baseModel": "Base model",
+    "targetSessions": "Target review sessions",
+    "assignmentLoadingAriaLabel": "Loading assignments",
+    "sessionLoadingAriaLabel": "Loading sessions",
+    "assignmentLoading": "Loading assignments...",
+    "sessionLoading": "Loading sessions...",
+    "selectTeamFirst": "Please select a team.",
+    "noAssignedSessions": "There are no review sessions assigned to the selected team.",
+    "selectedCount": "{{count}} selected",
+    "creating": "Creating...",
+    "submit": "Create model"
+  },
+  "list": {
+    "title": "Model list",
+    "refreshAriaLabel": "Refresh model list",
+    "loading": "Loading...",
+    "loadingAriaLabel": "Loading",
+    "refresh": "Refresh",
+    "empty": "No custom language models",
+    "ariaLabel": "Custom language model list",
+    "modelName": "Model name: {{modelName}}",
+    "team": "Team: {{team}}",
+    "changeTeam": "Change team",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "deleteConfirmAriaLabel": "Confirm model deletion",
+    "deleteConfirmPrompt": "Delete \"{{name}}\"?",
+    "deleteConfirm": "Delete",
+    "deleteAriaLabel": "Delete model \"{{name}}\"",
+    "delete": "Delete"
+  },
+  "action": {
+    "deleteSuccess": "Deleted model \"{{name}}\".",
+    "deleteFailure": "Failed to delete model \"{{name}}\". You can retry from the pending-deletion models.",
+    "reDeleteSuccess": "Deleted pending model \"{{name}}\".",
+    "reDeleteFailure": "Failed to re-delete model \"{{name}}\". Please try again later."
+  },
+  "pending": {
+    "sectionAriaLabel": "Pending-deletion models",
+    "title": "Pending-deletion models",
+    "description": "These models failed to finish deleting. You can resume by re-deleting them.",
+    "listAriaLabel": "Pending-deletion model list",
+    "reDelete": "Re-delete"
+  },
+  "banner": {
+    "modelStatus": "Model \"{{modelName}}\": {{status}}",
+    "statusError": "Status fetch error: {{message}}",
+    "close": "Close"
+  }
+}

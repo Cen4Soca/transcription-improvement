@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type {
   LanguageModelApi,
   CreateLanguageModelRequest,
@@ -36,16 +38,27 @@ export interface LanguageModelPageProps {
   isLoadingSessions?: boolean;
 }
 
-const BASE_MODEL_OPTIONS: { value: 'NarrowBand' | 'WideBand'; label: string; description: string }[] = [
-  { value: 'NarrowBand', label: 'NarrowBand', description: '電話音声（8kHz）向け' },
-  { value: 'WideBand', label: 'WideBand', description: '高品質音声（16kHz）向け' },
+const BASE_MODEL_OPTIONS: {
+  value: 'NarrowBand' | 'WideBand';
+  label: string;
+  descriptionKey: string;
+}[] = [
+  { value: 'NarrowBand', label: 'NarrowBand', descriptionKey: 'baseModel.narrowBandDescription' },
+  { value: 'WideBand', label: 'WideBand', descriptionKey: 'baseModel.wideBandDescription' },
 ];
 
-const MODEL_STATUS_LABELS: Record<string, string> = {
-  IN_PROGRESS: '作成中',
-  COMPLETED: '完了',
-  FAILED: '失敗',
+/** Translation key (in the languageModel namespace) for each model status. */
+const MODEL_STATUS_LABEL_KEYS: Record<string, string> = {
+  IN_PROGRESS: 'status.inProgress',
+  COMPLETED: 'status.completed',
+  FAILED: 'status.failed',
 };
+
+/** Resolve a model status label via i18n, falling back to the raw status. */
+function modelStatusLabel(t: TFunction, status: string): string {
+  const key = MODEL_STATUS_LABEL_KEYS[status];
+  return key ? t(key) : status;
+}
 
 /**
  * LanguageModelPage - カスタム言語モデル管理ページ
@@ -69,6 +82,7 @@ export function LanguageModelPage({
   userRole,
   isLoadingSessions = false,
 }: LanguageModelPageProps) {
+  const { t } = useTranslation('languageModel');
   const {
     models,
     isLoadingModels,
@@ -202,40 +216,40 @@ export function LanguageModelPage({
 
   const validateForm = useCallback((): boolean => {
     if (!modelName.trim()) {
-      setValidationError('モデル名を入力してください。');
+      setValidationError(t('validation.modelNameRequired'));
       return false;
     }
 
     if (!/^[a-zA-Z0-9_-]+$/.test(modelName.trim())) {
-      setValidationError('モデル名は英数字、ハイフン、アンダースコアのみ使用できます。');
+      setValidationError(t('validation.modelNameFormat'));
       return false;
     }
 
     // Check for duplicate model name
     const existingNames = models.map((m) => m.modelName);
     if (existingNames.includes(modelName.trim())) {
-      setValidationError('同じ名前のモデルが既に存在します。別の名前を指定してください。');
+      setValidationError(t('validation.modelNameDuplicate'));
       return false;
     }
 
     if (!displayName.trim()) {
-      setValidationError('表示名を入力してください。');
+      setValidationError(t('validation.displayNameRequired'));
       return false;
     }
 
     if (!teamId) {
-      setValidationError('チームを選択してください。');
+      setValidationError(t('validation.teamRequired'));
       return false;
     }
 
     if (selectedSessionIds.length === 0) {
-      setValidationError('対象の校閲セッションを1つ以上選択してください。');
+      setValidationError(t('validation.sessionRequired'));
       return false;
     }
 
     setValidationError(null);
     return true;
-  }, [modelName, displayName, teamId, models, selectedSessionIds]);
+  }, [modelName, displayName, teamId, models, selectedSessionIds, t]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,14 +267,14 @@ export function LanguageModelPage({
 
     const result = await createModel(params);
     if (result) {
-      setCreateSuccess(`モデル「${result.displayName ?? result.modelName}」の作成を開始しました。`);
+      setCreateSuccess(t('createSuccess', { name: result.displayName ?? result.modelName }));
       setModelName('');
       setDisplayName('');
       setSelectedSessionIds([]);
       startStatusPolling(result.modelName);
       loadModels();
     }
-  }, [validateForm, modelName, displayName, teamId, baseModelName, selectedSessionIds, createModel, startStatusPolling, loadModels]);
+  }, [validateForm, modelName, displayName, teamId, baseModelName, selectedSessionIds, createModel, startStatusPolling, loadModels, t]);
 
   // --- Row actions ---
 
@@ -277,20 +291,20 @@ export function LanguageModelPage({
       setActionError(null);
       const ok = await deleteModel(model.modelName);
       if (ok) {
-        setActionMessage(`モデル「${model.displayName ?? model.modelName}」を削除しました。`);
+        setActionMessage(t('action.deleteSuccess', { name: model.displayName ?? model.modelName }));
         setPendingModels((prev) => prev.filter((m) => m.modelName !== model.modelName));
       } else {
         // Delete failed mid-teardown: the model is now PENDING. Track it so the
         // ADMIN management view can offer a re-delete.
         setActionError(
-          `モデル「${model.displayName ?? model.modelName}」の削除に失敗しました。削除保留中のモデルから再試行できます。`
+          t('action.deleteFailure', { name: model.displayName ?? model.modelName })
         );
         setPendingModels((prev) =>
           prev.some((m) => m.modelName === model.modelName) ? prev : [...prev, model]
         );
       }
     },
-    [deleteModel]
+    [deleteModel, t]
   );
 
   const handleReDelete = useCallback(
@@ -299,15 +313,15 @@ export function LanguageModelPage({
       setActionError(null);
       const ok = await reDelete(model.modelName);
       if (ok) {
-        setActionMessage(`削除保留中のモデル「${model.displayName ?? model.modelName}」を削除しました。`);
+        setActionMessage(t('action.reDeleteSuccess', { name: model.displayName ?? model.modelName }));
         setPendingModels((prev) => prev.filter((m) => m.modelName !== model.modelName));
       } else {
         setActionError(
-          `モデル「${model.displayName ?? model.modelName}」の再削除に失敗しました。しばらくしてからもう一度お試しください。`
+          t('action.reDeleteFailure', { name: model.displayName ?? model.modelName })
         );
       }
     },
-    [reDelete]
+    [reDelete, t]
   );
 
   const handleChangeTeam = useCallback(
@@ -320,15 +334,15 @@ export function LanguageModelPage({
   // Access denied for Reviewer
   if (!hasAccess) {
     return (
-      <div className="flex flex-col h-full" role="main" aria-label="カスタム言語モデル管理">
+      <div className="flex flex-col h-full" role="main" aria-label={t('pageTitle')}>
         <div className="px-4 py-3 border-b border-gray-200 bg-white">
-          <h1 className="text-lg font-semibold text-gray-900">カスタム言語モデル管理</h1>
+          <h1 className="text-lg font-semibold text-gray-900">{t('pageTitle')}</h1>
         </div>
         <div className="flex items-center justify-center h-64" role="alert">
           <div className="text-center">
-            <p className="text-red-600 font-medium">アクセス権限がありません</p>
+            <p className="text-red-600 font-medium">{t('accessDenied')}</p>
             <p className="text-sm text-gray-500 mt-1">
-              この機能は Admin または TeamLeader のみ利用できます。
+              {t('accessDeniedDescription')}
             </p>
           </div>
         </div>
@@ -337,12 +351,12 @@ export function LanguageModelPage({
   }
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label="カスタム言語モデル管理">
+    <div className="flex flex-col h-full" role="main" aria-label={t('pageTitle')}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 bg-white">
-        <h1 className="text-lg font-semibold text-gray-900">カスタム言語モデル管理</h1>
+        <h1 className="text-lg font-semibold text-gray-900">{t('pageTitle')}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          修正後の Transcription に基づいてカスタム言語モデルを作成・管理します
+          {t('pageDescription')}
         </p>
       </div>
 
@@ -355,17 +369,18 @@ export function LanguageModelPage({
               modelStatus={modelStatus}
               statusError={statusError}
               onStopPolling={stopStatusPolling}
+              t={t}
             />
           )}
 
           {/* Model creation form */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">新規モデル作成</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('form.title')}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Model name */}
               <div>
                 <label htmlFor="model-name" className="block text-sm font-medium text-gray-700 mb-1">
-                  モデル名 <span className="text-red-500">*</span>
+                  {t('form.modelName')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="model-name"
@@ -375,20 +390,20 @@ export function LanguageModelPage({
                     setModelName(e.target.value);
                     setValidationError(null);
                   }}
-                  placeholder="例: my-custom-model"
+                  placeholder={t('form.modelNamePlaceholder')}
                   disabled={isCreating}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100"
                   aria-describedby="model-name-hint"
                 />
                 <p id="model-name-hint" className="mt-1 text-xs text-gray-500">
-                  英数字、ハイフン、アンダースコアのみ使用可能
+                  {t('form.modelNameHint')}
                 </p>
               </div>
 
               {/* Display name (required) */}
               <div>
                 <label htmlFor="display-name" className="block text-sm font-medium text-gray-700 mb-1">
-                  表示名 <span className="text-red-500">*</span>
+                  {t('form.displayName')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="display-name"
@@ -398,28 +413,28 @@ export function LanguageModelPage({
                     setDisplayName(e.target.value);
                     setValidationError(null);
                   }}
-                  placeholder="例: 営業ドメイン v1"
+                  placeholder={t('form.displayNamePlaceholder')}
                   disabled={isCreating}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100"
                   aria-describedby="display-name-hint"
                 />
                 <p id="display-name-hint" className="mt-1 text-xs text-gray-500">
-                  一覧に表示される人間が判別しやすい名前（チーム内で一意）
+                  {t('form.displayNameHint')}
                 </p>
               </div>
 
               {/* Team selection (required) */}
               <div>
                 <label htmlFor="team-select" className="block text-sm font-medium text-gray-700 mb-1">
-                  チーム <span className="text-red-500">*</span>
+                  {t('form.team')} <span className="text-red-500">*</span>
                 </label>
                 {isLoadingTeams ? (
                   <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
                     <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                    <span>チーム読み込み中...</span>
+                    <span>{t('form.teamLoading')}</span>
                   </div>
                 ) : teams.length === 0 ? (
-                  <p className="text-sm text-gray-500 py-2">所属しているチームがありません。</p>
+                  <p className="text-sm text-gray-500 py-2">{t('form.noTeams')}</p>
                 ) : (
                   <select
                     id="team-select"
@@ -432,7 +447,7 @@ export function LanguageModelPage({
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100"
                     aria-describedby="team-select-hint"
                   >
-                    <option value="">チームを選択...</option>
+                    <option value="">{t('form.teamSelectPlaceholder')}</option>
                     {teams.map((team) => (
                       <option key={team.teamId} value={team.teamId}>
                         {team.name}
@@ -442,8 +457,8 @@ export function LanguageModelPage({
                 )}
                 <p id="team-select-hint" className="mt-1 text-xs text-gray-500">
                   {isAdmin
-                    ? '全チームから選択できます。'
-                    : '所属しているチームから選択できます。'}
+                    ? t('form.teamHintAdmin')
+                    : t('form.teamHintMember')}
                 </p>
               </div>
 
@@ -451,7 +466,7 @@ export function LanguageModelPage({
               <div>
                 <fieldset>
                   <legend className="block text-sm font-medium text-gray-700 mb-2">
-                    ベースモデル
+                    {t('form.baseModel')}
                   </legend>
                   <div className="grid grid-cols-2 gap-3">
                     {BASE_MODEL_OPTIONS.map((option) => (
@@ -474,7 +489,7 @@ export function LanguageModelPage({
                         />
                         <div className="ml-3">
                           <span className="text-sm font-medium text-gray-900">{option.label}</span>
-                          <p className="text-xs text-gray-500 mt-0.5">{option.description}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{t(option.descriptionKey)}</p>
                         </div>
                       </label>
                     ))}
@@ -485,22 +500,22 @@ export function LanguageModelPage({
               {/* Session selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  対象校閲セッション
+                  {t('form.targetSessions')}
                 </label>
                 {isLoadingSessions || isLoadingAssignments ? (
                   <div
                     className="flex items-center gap-2 text-sm text-gray-500 py-2"
                     role="status"
-                    aria-label={isLoadingAssignments ? '割り当て読み込み中' : 'セッション読み込み中'}
+                    aria-label={isLoadingAssignments ? t('form.assignmentLoadingAriaLabel') : t('form.sessionLoadingAriaLabel')}
                   >
                     <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                    <span>{isLoadingAssignments ? '割り当て読み込み中...' : 'セッション読み込み中...'}</span>
+                    <span>{isLoadingAssignments ? t('form.assignmentLoading') : t('form.sessionLoading')}</span>
                   </div>
                 ) : !teamId ? (
-                  <p className="text-sm text-gray-500 py-2">チームを選択してください。</p>
+                  <p className="text-sm text-gray-500 py-2">{t('form.selectTeamFirst')}</p>
                 ) : candidateSessions.length === 0 ? (
                   <p className="text-sm text-gray-500 py-2">
-                    選択中のチームに割り当てられた校閲セッションがありません。
+                    {t('form.noAssignedSessions')}
                   </p>
                 ) : (
                   <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
@@ -520,7 +535,7 @@ export function LanguageModelPage({
                         />
                         <div className="ml-3 min-w-0">
                           <span className="text-sm text-gray-900 truncate block">{session.name}</span>
-                          <span className="text-xs text-gray-500">{session.status === 'COMPLETED' ? '完了' : session.status === 'IN_PROGRESS' ? '進行中' : '未着手'}</span>
+                          <span className="text-xs text-gray-500">{t(`sessionStatus.${session.status}`)}</span>
                         </div>
                       </label>
                     ))}
@@ -528,7 +543,7 @@ export function LanguageModelPage({
                 )}
                 {selectedSessionIds.length > 0 && (
                   <p className="mt-1 text-xs text-gray-500">
-                    {selectedSessionIds.length} 件選択中
+                    {t('form.selectedCount', { count: selectedSessionIds.length })}
                   </p>
                 )}
               </div>
@@ -573,10 +588,10 @@ export function LanguageModelPage({
                 {isCreating ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    作成中...
+                    {t('form.creating')}
                   </span>
                 ) : (
-                  'モデルを作成'
+                  t('form.submit')
                 )}
               </button>
             </form>
@@ -597,15 +612,15 @@ export function LanguageModelPage({
           {/* Model list */}
           <div className="bg-white border border-gray-200 rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900">モデル一覧</h2>
+              <h2 className="text-base font-semibold text-gray-900">{t('list.title')}</h2>
               <button
                 type="button"
                 onClick={loadModels}
                 disabled={isLoadingModels}
                 className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 disabled:opacity-50"
-                aria-label="モデル一覧を更新"
+                aria-label={t('list.refreshAriaLabel')}
               >
-                {isLoadingModels ? '読み込み中...' : '更新'}
+                {isLoadingModels ? t('list.loading') : t('list.refresh')}
               </button>
             </div>
 
@@ -616,18 +631,18 @@ export function LanguageModelPage({
             )}
 
             {isLoadingModels ? (
-              <div className="flex items-center justify-center py-12" role="status" aria-label="読み込み中">
+              <div className="flex items-center justify-center py-12" role="status" aria-label={t('list.loadingAriaLabel')}>
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                  <span className="text-sm text-gray-500">読み込み中...</span>
+                  <span className="text-sm text-gray-500">{t('list.loading')}</span>
                 </div>
               </div>
             ) : models.length === 0 ? (
               <div className="flex items-center justify-center py-12">
-                <p className="text-sm text-gray-500">カスタム言語モデルがありません</p>
+                <p className="text-sm text-gray-500">{t('list.empty')}</p>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-100" aria-label="カスタム言語モデル一覧">
+              <ul className="divide-y divide-gray-100" aria-label={t('list.ariaLabel')}>
                 {models.map((model) => (
                   <ModelListItem
                     key={model.modelName}
@@ -637,6 +652,7 @@ export function LanguageModelPage({
                     onRename={handleRename}
                     onChangeTeam={handleChangeTeam}
                     onDelete={handleDelete}
+                    t={t}
                   />
                 ))}
               </ul>
@@ -645,14 +661,14 @@ export function LanguageModelPage({
 
           {/* ADMIN: PENDING (soft-deleted) models management view */}
           {isAdmin && pendingModels.length > 0 && (
-            <div className="bg-white border border-amber-200 rounded-lg" aria-label="削除保留中のモデル">
+            <div className="bg-white border border-amber-200 rounded-lg" aria-label={t('pending.sectionAriaLabel')}>
               <div className="px-6 py-4 border-b border-amber-200">
-                <h2 className="text-base font-semibold text-amber-800">削除保留中のモデル</h2>
+                <h2 className="text-base font-semibold text-amber-800">{t('pending.title')}</h2>
                 <p className="mt-1 text-xs text-amber-700">
-                  削除処理が途中で失敗したモデルです。再削除で処理を再開できます。
+                  {t('pending.description')}
                 </p>
               </div>
-              <ul className="divide-y divide-amber-100" aria-label="削除保留中のモデル一覧">
+              <ul className="divide-y divide-amber-100" aria-label={t('pending.listAriaLabel')}>
                 {pendingModels.map((model) => (
                   <li key={model.modelName} className="px-6 py-4 flex items-center justify-between">
                     <div className="min-w-0">
@@ -666,7 +682,7 @@ export function LanguageModelPage({
                       onClick={() => handleReDelete(model)}
                       className="px-3 py-1 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
-                      再削除
+                      {t('pending.reDelete')}
                     </button>
                   </li>
                 ))}
@@ -690,6 +706,7 @@ function ModelListItem({
   onRename,
   onChangeTeam,
   onDelete,
+  t,
 }: {
   model: LanguageModelSummary;
   teams: Team[];
@@ -697,6 +714,7 @@ function ModelListItem({
   onRename: (modelName: string, name: string) => Promise<AppError | null>;
   onChangeTeam: (modelName: string, teamId: string) => Promise<AppError | null>;
   onDelete: (model: LanguageModelSummary) => Promise<void>;
+  t: TFunction;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isEditingTeam, setIsEditingTeam] = useState(false);
@@ -730,9 +748,9 @@ function ModelListItem({
             name={model.displayName ?? model.modelName}
             onSave={(name) => onRename(model.modelName, name)}
           />
-          <p className="text-xs text-gray-500 truncate">モデル名: {model.modelName}</p>
+          <p className="text-xs text-gray-500 truncate">{t('list.modelName', { modelName: model.modelName })}</p>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500">チーム: {teamName}</span>
+            <span className="text-xs text-gray-500">{t('list.team', { team: teamName })}</span>
             {model.baseModelName && (
               <span className="text-xs text-gray-500">{model.baseModelName}</span>
             )}
@@ -750,7 +768,7 @@ function ModelListItem({
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <label htmlFor={`team-edit-${model.modelName}`} className="text-xs text-gray-600">
-                      チームを変更
+                      {t('list.changeTeam')}
                     </label>
                     <select
                       id={`team-edit-${model.modelName}`}
@@ -759,7 +777,7 @@ function ModelListItem({
                       disabled={isSavingTeam}
                       className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     >
-                      <option value="">チームを選択...</option>
+                      <option value="">{t('form.teamSelectPlaceholder')}</option>
                       {teams.map((team) => (
                         <option key={team.teamId} value={team.teamId}>
                           {team.name}
@@ -772,7 +790,7 @@ function ModelListItem({
                       disabled={isSavingTeam || !teamDraft}
                       className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     >
-                      {isSavingTeam ? '保存中...' : '保存'}
+                      {isSavingTeam ? t('list.saving') : t('list.save')}
                     </button>
                     <button
                       type="button"
@@ -784,7 +802,7 @@ function ModelListItem({
                       disabled={isSavingTeam}
                       className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50"
                     >
-                      キャンセル
+                      {t('list.cancel')}
                     </button>
                   </div>
                   {teamError && (
@@ -799,7 +817,7 @@ function ModelListItem({
                   onClick={() => setIsEditingTeam(true)}
                   className="text-xs text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1"
                 >
-                  チームを変更
+                  {t('list.changeTeam')}
                 </button>
               )}
             </div>
@@ -807,10 +825,10 @@ function ModelListItem({
         </div>
 
         <div className="flex flex-col items-end gap-2 shrink-0">
-          <ModelStatusBadge status={model.modelStatus} />
+          <ModelStatusBadge status={model.modelStatus} t={t} />
           {confirmingDelete ? (
-            <div className="flex flex-col items-end gap-2" role="alertdialog" aria-label="モデル削除の確認">
-              <p className="text-xs text-gray-700">「{model.displayName ?? model.modelName}」を削除しますか？</p>
+            <div className="flex flex-col items-end gap-2" role="alertdialog" aria-label={t('list.deleteConfirmAriaLabel')}>
+              <p className="text-xs text-gray-700">{t('list.deleteConfirmPrompt', { name: model.displayName ?? model.modelName })}</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -820,14 +838,14 @@ function ModelListItem({
                   }}
                   className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
-                  削除する
+                  {t('list.deleteConfirm')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
                   className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
                 >
-                  キャンセル
+                  {t('list.cancel')}
                 </button>
               </div>
             </div>
@@ -835,10 +853,10 @@ function ModelListItem({
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              aria-label={`モデル「${model.displayName ?? model.modelName}」を削除`}
+              aria-label={t('list.deleteAriaLabel', { name: model.displayName ?? model.modelName })}
               className="px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
             >
-              削除
+              {t('list.delete')}
             </button>
           )}
         </div>
@@ -850,7 +868,7 @@ function ModelListItem({
 /**
  * ModelStatusBadge - モデルステータスバッジ
  */
-function ModelStatusBadge({ status }: { status: string }) {
+function ModelStatusBadge({ status, t }: { status: string; t: TFunction }) {
   const colorClasses: Record<string, string> = {
     IN_PROGRESS: 'bg-yellow-100 text-yellow-700',
     COMPLETED: 'bg-green-100 text-green-700',
@@ -858,7 +876,7 @@ function ModelStatusBadge({ status }: { status: string }) {
   };
 
   const classes = colorClasses[status] || 'bg-gray-100 text-gray-700';
-  const label = MODEL_STATUS_LABELS[status] || status;
+  const label = modelStatusLabel(t, status);
 
   return (
     <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${classes}`}>
@@ -874,10 +892,12 @@ function ModelStatusBanner({
   modelStatus,
   statusError,
   onStopPolling,
+  t,
 }: {
   modelStatus: { modelName: string; modelStatus: string; failureReason?: string };
   statusError: { message: string } | null;
   onStopPolling: () => void;
+  t: TFunction;
 }) {
   const isTerminal = modelStatus.modelStatus === 'COMPLETED' || modelStatus.modelStatus === 'FAILED';
 
@@ -910,13 +930,16 @@ function ModelStatusBanner({
           )}
           <div>
             <p className="text-sm font-medium text-gray-900">
-              モデル「{modelStatus.modelName}」: {MODEL_STATUS_LABELS[modelStatus.modelStatus] || modelStatus.modelStatus}
+              {t('banner.modelStatus', {
+                modelName: modelStatus.modelName,
+                status: modelStatusLabel(t, modelStatus.modelStatus),
+              })}
             </p>
             {modelStatus.failureReason && (
               <p className="text-xs text-red-600 mt-0.5">{modelStatus.failureReason}</p>
             )}
             {statusError && (
-              <p className="text-xs text-red-600 mt-0.5">ステータス取得エラー: {statusError.message}</p>
+              <p className="text-xs text-red-600 mt-0.5">{t('banner.statusError', { message: statusError.message })}</p>
             )}
           </div>
         </div>
@@ -926,7 +949,7 @@ function ModelStatusBanner({
             onClick={onStopPolling}
             className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
           >
-            閉じる
+            {t('banner.close')}
           </button>
         )}
       </div>

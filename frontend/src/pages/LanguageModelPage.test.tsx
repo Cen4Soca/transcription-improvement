@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { LanguageModelPage } from './LanguageModelPage';
+
+const t = (key: string, opts?: Record<string, unknown>) => i18n.t(`languageModel:${key}`, opts);
 import type { LanguageModelApi, TeamAssignmentRecord } from '../services/language-model-api';
 import type { UseLanguageModelsReturn } from '../hooks/useLanguageModels';
 import type { ReviewSession } from '../types/session';
@@ -118,9 +121,9 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByText('アクセス権限がありません')).toBeInTheDocument();
+      expect(screen.getByText(t('accessDenied'))).toBeInTheDocument();
       expect(
-        screen.getByText('この機能は Admin または TeamLeader のみ利用できます。'),
+        screen.getByText(t('accessDeniedDescription')),
       ).toBeInTheDocument();
     });
 
@@ -134,8 +137,8 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByText('カスタム言語モデル管理')).toBeInTheDocument();
-      expect(screen.getByText('新規モデル作成')).toBeInTheDocument();
+      expect(screen.getByText(t('pageTitle'))).toBeInTheDocument();
+      expect(screen.getByText(t('form.title'))).toBeInTheDocument();
     });
 
     it('renders the page for TeamLeader role', () => {
@@ -148,8 +151,8 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByText('カスタム言語モデル管理')).toBeInTheDocument();
-      expect(screen.getByText('新規モデル作成')).toBeInTheDocument();
+      expect(screen.getByText(t('pageTitle'))).toBeInTheDocument();
+      expect(screen.getByText(t('form.title'))).toBeInTheDocument();
     });
 
     it('loads the caller teams via getMyTeams for the selector', async () => {
@@ -185,7 +188,7 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
+      expect(screen.getByRole('status', { name: t('list.loadingAriaLabel') })).toBeInTheDocument();
     });
 
     it('shows empty message when no models exist', () => {
@@ -198,7 +201,7 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByText('カスタム言語モデルがありません')).toBeInTheDocument();
+      expect(screen.getByText(t('list.empty'))).toBeInTheDocument();
     });
 
     it('displays displayName and team column in the list', async () => {
@@ -223,7 +226,7 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      const modelList = screen.getByRole('list', { name: 'カスタム言語モデル一覧' });
+      const modelList = screen.getByRole('list', { name: t('list.ariaLabel') });
       // displayName shown as the primary (editable) label.
       expect(within(modelList).getByText('営業ドメイン')).toBeInTheDocument();
       // The raw Transcribe modelName is still visible.
@@ -264,16 +267,16 @@ describe('LanguageModelPage', () => {
       );
 
       expect(screen.getByLabelText(/モデル名/)).toBeInTheDocument();
-      expect(screen.getByLabelText('表示名 *')).toBeInTheDocument();
+      expect(screen.getByLabelText(`${t('form.displayName')} *`)).toBeInTheDocument();
       await screen.findByLabelText(/チーム/);
-      expect(screen.getByText('ベースモデル')).toBeInTheDocument();
+      expect(screen.getByText(t('form.baseModel'))).toBeInTheDocument();
       expect(screen.getByText('NarrowBand')).toBeInTheDocument();
       expect(screen.getByText('WideBand')).toBeInTheDocument();
-      expect(screen.getByText('対象校閲セッション')).toBeInTheDocument();
+      expect(screen.getByText(t('form.targetSessions'))).toBeInTheDocument();
 
       // Before a team is selected there are no session candidates — the form
       // prompts the user to pick a team first (Req 2.1).
-      expect(screen.getByText('チームを選択してください。')).toBeInTheDocument();
+      expect(screen.getByText(t('form.selectTeamFirst'))).toBeInTheDocument();
       expect(screen.queryByText('会議セッション A')).not.toBeInTheDocument();
 
       // Selecting チームA loads its TeamAssignment set and reveals session-1.
@@ -291,9 +294,9 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: 'モデルを作成' }));
+      await user.click(screen.getByRole('button', { name: t('form.submit') }));
 
-      expect(screen.getByText('モデル名を入力してください。')).toBeInTheDocument();
+      expect(screen.getByText(t('validation.modelNameRequired'))).toBeInTheDocument();
     });
 
     it('shows validation error when display name is empty', async () => {
@@ -307,9 +310,9 @@ describe('LanguageModelPage', () => {
       );
 
       await user.type(screen.getByLabelText(/モデル名/), 'valid-model');
-      await user.click(screen.getByRole('button', { name: 'モデルを作成' }));
+      await user.click(screen.getByRole('button', { name: t('form.submit') }));
 
-      expect(screen.getByText('表示名を入力してください。')).toBeInTheDocument();
+      expect(screen.getByText(t('validation.displayNameRequired'))).toBeInTheDocument();
     });
 
     it('shows validation error when no team is selected', async () => {
@@ -324,13 +327,13 @@ describe('LanguageModelPage', () => {
 
       await screen.findByLabelText(/チーム/);
       await user.type(screen.getByLabelText(/モデル名/), 'valid-model');
-      await user.type(screen.getByLabelText('表示名 *'), '営業ドメイン');
-      await user.click(screen.getByRole('button', { name: 'モデルを作成' }));
+      await user.type(screen.getByLabelText(`${t('form.displayName')} *`), '営業ドメイン');
+      await user.click(screen.getByRole('button', { name: t('form.submit') }));
 
       // The empty-state session hint shares the same copy, so scope the
       // assertion to the validation alert to disambiguate.
       expect(
-        within(screen.getByRole('alert')).getByText('チームを選択してください。'),
+        within(screen.getByRole('alert')).getByText(t('form.selectTeamFirst')),
       ).toBeInTheDocument();
     });
 
@@ -346,12 +349,12 @@ describe('LanguageModelPage', () => {
 
       await screen.findByLabelText(/チーム/);
       await user.type(screen.getByLabelText(/モデル名/), 'valid-model');
-      await user.type(screen.getByLabelText('表示名 *'), '営業ドメイン');
+      await user.type(screen.getByLabelText(`${t('form.displayName')} *`), '営業ドメイン');
       await user.selectOptions(screen.getByLabelText(/チーム/), 'team-1');
-      await user.click(screen.getByRole('button', { name: 'モデルを作成' }));
+      await user.click(screen.getByRole('button', { name: t('form.submit') }));
 
       expect(
-        screen.getByText('対象の校閲セッションを1つ以上選択してください。'),
+        screen.getByText(t('validation.sessionRequired')),
       ).toBeInTheDocument();
     });
 
@@ -379,11 +382,11 @@ describe('LanguageModelPage', () => {
 
       await screen.findByLabelText(/チーム/);
       await user.type(screen.getByLabelText(/モデル名/), 'new-model');
-      await user.type(screen.getByLabelText('表示名 *'), '営業ドメイン');
+      await user.type(screen.getByLabelText(`${t('form.displayName')} *`), '営業ドメイン');
       await user.selectOptions(screen.getByLabelText(/チーム/), 'team-1');
       // Candidate checkbox appears only after team-1's TeamAssignment set resolves.
       await user.click(await screen.findByRole('checkbox', { name: /会議セッション A/ }));
-      await user.click(screen.getByRole('button', { name: 'モデルを作成' }));
+      await user.click(screen.getByRole('button', { name: t('form.submit') }));
 
       await waitFor(() => {
         expect(createModel).toHaveBeenCalledWith({
@@ -420,13 +423,13 @@ describe('LanguageModelPage', () => {
 
       await screen.findByLabelText(/チーム/);
       await user.type(screen.getByLabelText(/モデル名/), 'new-model');
-      await user.type(screen.getByLabelText('表示名 *'), '営業ドメイン');
+      await user.type(screen.getByLabelText(`${t('form.displayName')} *`), '営業ドメイン');
       await user.selectOptions(screen.getByLabelText(/チーム/), 'team-1');
       await user.click(await screen.findByRole('checkbox', { name: /会議セッション A/ }));
-      await user.click(screen.getByRole('button', { name: 'モデルを作成' }));
+      await user.click(screen.getByRole('button', { name: t('form.submit') }));
 
       await waitFor(() => {
-        expect(screen.getByText(/モデル「営業ドメイン」の作成を開始しました/)).toBeInTheDocument();
+        expect(screen.getByText(t('createSuccess', { name: '営業ドメイン' }))).toBeInTheDocument();
       });
     });
 
@@ -534,7 +537,7 @@ describe('LanguageModelPage', () => {
         name: /会議セッション A/,
       });
       await user.click(sessionACheckbox);
-      expect(screen.getByText('1 件選択中')).toBeInTheDocument();
+      expect(screen.getByText(t('form.selectedCount', { count: 1 }))).toBeInTheDocument();
 
       // Switch to team-2, which is not assigned session-1 -> selection is reset.
       await user.selectOptions(screen.getByLabelText(/チーム/), 'team-2');
@@ -581,10 +584,10 @@ describe('LanguageModelPage', () => {
       // Empty candidate set -> the "no assigned sessions" message is shown and
       // no session checkboxes are rendered. The page is still intact.
       expect(
-        await screen.findByText('選択中のチームに割り当てられた校閲セッションがありません。'),
+        await screen.findByText(t('form.noAssignedSessions')),
       ).toBeInTheDocument();
       expect(screen.queryByRole('checkbox', { name: /会議セッション A/ })).not.toBeInTheDocument();
-      expect(screen.getByRole('main', { name: 'カスタム言語モデル管理' })).toBeInTheDocument();
+      expect(screen.getByRole('main', { name: t('pageTitle') })).toBeInTheDocument();
 
       const results = await axe(container);
       expect(results).toHaveNoViolations();
@@ -613,7 +616,7 @@ describe('LanguageModelPage', () => {
 
       // Loading indicator exposed as role="status" with an accessible name.
       expect(
-        await screen.findByRole('status', { name: '割り当て読み込み中' }),
+        await screen.findByRole('status', { name: t('form.assignmentLoadingAriaLabel') }),
       ).toBeInTheDocument();
 
       const results = await axe(container);
@@ -632,7 +635,7 @@ describe('LanguageModelPage', () => {
       );
 
       await screen.findByLabelText(/チーム/);
-      expect(screen.getByText('チームを選択してください。')).toBeInTheDocument();
+      expect(screen.getByText(t('form.selectTeamFirst'))).toBeInTheDocument();
 
       const results = await axe(container);
       expect(results).toHaveNoViolations();
@@ -657,9 +660,9 @@ describe('LanguageModelPage', () => {
           />,
         );
 
-        expect(screen.getByText('新規モデル作成')).toBeInTheDocument();
+        expect(screen.getByText(t('form.title'))).toBeInTheDocument();
         await screen.findByLabelText(/チーム/);
-        expect(screen.queryByText('アクセス権限がありません')).not.toBeInTheDocument();
+        expect(screen.queryByText(t('accessDenied'))).not.toBeInTheDocument();
 
         const results = await axe(container);
         expect(results).toHaveNoViolations();
@@ -676,8 +679,8 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByText('アクセス権限がありません')).toBeInTheDocument();
-      expect(screen.queryByText('新規モデル作成')).not.toBeInTheDocument();
+      expect(screen.getByText(t('accessDenied'))).toBeInTheDocument();
+      expect(screen.queryByText(t('form.title'))).not.toBeInTheDocument();
       // No team/assignment lookups happen for a denied role.
       expect(mockApi.listTeamAssignments).not.toHaveBeenCalled();
 
@@ -710,15 +713,15 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /モデル「営業ドメイン」を削除/ }));
+      await user.click(screen.getByRole('button', { name: t('list.deleteAriaLabel', { name: '営業ドメイン' }) }));
       // Confirm dialog appears
-      expect(screen.getByRole('alertdialog', { name: 'モデル削除の確認' })).toBeInTheDocument();
-      await user.click(screen.getByRole('button', { name: '削除する' }));
+      expect(screen.getByRole('alertdialog', { name: t('list.deleteConfirmAriaLabel') })).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: t('list.deleteConfirm') }));
 
       await waitFor(() => {
         expect(deleteModel).toHaveBeenCalledWith('model-alpha');
       });
-      expect(screen.getByText(/モデル「営業ドメイン」を削除しました/)).toBeInTheDocument();
+      expect(screen.getByText(t('action.deleteSuccess', { name: '営業ドメイン' }))).toBeInTheDocument();
     });
 
     it('cancels deletion when the confirm dialog is dismissed', async () => {
@@ -734,8 +737,8 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /モデル「営業ドメイン」を削除/ }));
-      await user.click(screen.getByRole('button', { name: 'キャンセル' }));
+      await user.click(screen.getByRole('button', { name: t('list.deleteAriaLabel', { name: '営業ドメイン' }) }));
+      await user.click(screen.getByRole('button', { name: t('list.cancel') }));
 
       expect(deleteModel).not.toHaveBeenCalled();
     });
@@ -778,9 +781,9 @@ describe('LanguageModelPage', () => {
       );
 
       await screen.findByLabelText(/チーム/);
-      await user.click(screen.getByRole('button', { name: 'チームを変更' }));
-      await user.selectOptions(screen.getByLabelText('チームを変更'), 'team-2');
-      await user.click(within(screen.getByRole('list', { name: 'カスタム言語モデル一覧' })).getByRole('button', { name: '保存' }));
+      await user.click(screen.getByRole('button', { name: t('list.changeTeam') }));
+      await user.selectOptions(screen.getByLabelText(t('list.changeTeam')), 'team-2');
+      await user.click(within(screen.getByRole('list', { name: t('list.ariaLabel') })).getByRole('button', { name: t('list.save') }));
 
       await waitFor(() => {
         expect(changeModelTeam).toHaveBeenCalledWith('model-alpha', 'team-2');
@@ -799,7 +802,7 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.queryByRole('button', { name: 'チームを変更' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: t('list.changeTeam') })).not.toBeInTheDocument();
     });
 
     it('surfaces a PENDING re-delete affordance for ADMIN when delete fails', async () => {
@@ -816,15 +819,15 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /モデル「営業ドメイン」を削除/ }));
-      await user.click(screen.getByRole('button', { name: '削除する' }));
+      await user.click(screen.getByRole('button', { name: t('list.deleteAriaLabel', { name: '営業ドメイン' }) }));
+      await user.click(screen.getByRole('button', { name: t('list.deleteConfirm') }));
 
       // Management view appears with a re-delete button.
       await waitFor(() => {
-        expect(screen.getByText('削除保留中のモデル')).toBeInTheDocument();
+        expect(screen.getByText(t('pending.title'))).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: '再削除' }));
+      await user.click(screen.getByRole('button', { name: t('pending.reDelete') }));
 
       await waitFor(() => {
         expect(reDelete).toHaveBeenCalledWith('model-alpha');
@@ -848,7 +851,11 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByText(/モデル「my-model」: 作成中/)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          t('banner.modelStatus', { modelName: 'my-model', status: t('status.inProgress') })
+        )
+      ).toBeInTheDocument();
     });
 
     it('shows failure reason in banner when model creation fails', () => {
@@ -885,7 +892,7 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByRole('main', { name: 'カスタム言語モデル管理' })).toBeInTheDocument();
+      expect(screen.getByRole('main', { name: t('pageTitle') })).toBeInTheDocument();
     });
 
     it('has no axe violations when rendered for ADMIN with models', async () => {
@@ -926,7 +933,7 @@ describe('LanguageModelPage', () => {
         />,
       );
 
-      expect(screen.getByRole('main', { name: 'カスタム言語モデル管理' })).toBeInTheDocument();
+      expect(screen.getByRole('main', { name: t('pageTitle') })).toBeInTheDocument();
       expect(screen.getByRole('alert')).toBeInTheDocument();
 
       const results = await axe(container);

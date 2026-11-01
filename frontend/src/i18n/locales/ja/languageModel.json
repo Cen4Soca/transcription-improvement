@@ -1,0 +1,93 @@
+{
+  "pageTitle": "カスタム言語モデル管理",
+  "pageDescription": "修正後の Transcription に基づいてカスタム言語モデルを作成・管理します",
+  "accessDenied": "アクセス権限がありません",
+  "accessDeniedDescription": "この機能は Admin または TeamLeader のみ利用できます。",
+  "baseModel": {
+    "narrowBandDescription": "電話音声（8kHz）向け",
+    "wideBandDescription": "高品質音声（16kHz）向け"
+  },
+  "status": {
+    "inProgress": "作成中",
+    "completed": "完了",
+    "failed": "失敗"
+  },
+  "sessionStatus": {
+    "PENDING": "未着手",
+    "IN_PROGRESS": "進行中",
+    "COMPLETED": "完了"
+  },
+  "validation": {
+    "modelNameRequired": "モデル名を入力してください。",
+    "modelNameFormat": "モデル名は英数字、ハイフン、アンダースコアのみ使用できます。",
+    "modelNameDuplicate": "同じ名前のモデルが既に存在します。別の名前を指定してください。",
+    "displayNameRequired": "表示名を入力してください。",
+    "teamRequired": "チームを選択してください。",
+    "sessionRequired": "対象の校閲セッションを1つ以上選択してください。"
+  },
+  "createSuccess": "モデル「{{name}}」の作成を開始しました。",
+  "form": {
+    "title": "新規モデル作成",
+    "modelName": "モデル名",
+    "modelNamePlaceholder": "例: my-custom-model",
+    "modelNameHint": "英数字、ハイフン、アンダースコアのみ使用可能",
+    "displayName": "表示名",
+    "displayNamePlaceholder": "例: 営業ドメイン v1",
+    "displayNameHint": "一覧に表示される人間が判別しやすい名前（チーム内で一意）",
+    "team": "チーム",
+    "teamLoading": "チーム読み込み中...",
+    "noTeams": "所属しているチームがありません。",
+    "teamSelectPlaceholder": "チームを選択...",
+    "teamHintAdmin": "全チームから選択できます。",
+    "teamHintMember": "所属しているチームから選択できます。",
+    "baseModel": "ベースモデル",
+    "targetSessions": "対象校閲セッション",
+    "assignmentLoadingAriaLabel": "割り当て読み込み中",
+    "sessionLoadingAriaLabel": "セッション読み込み中",
+    "assignmentLoading": "割り当て読み込み中...",
+    "sessionLoading": "セッション読み込み中...",
+    "selectTeamFirst": "チームを選択してください。",
+    "noAssignedSessions": "選択中のチームに割り当てられた校閲セッションがありません。",
+    "selectedCount": "{{count}} 件選択中",
+    "creating": "作成中...",
+    "submit": "モデルを作成"
+  },
+  "list": {
+    "title": "モデル一覧",
+    "refreshAriaLabel": "モデル一覧を更新",
+    "loading": "読み込み中...",
+    "loadingAriaLabel": "読み込み中",
+    "refresh": "更新",
+    "empty": "カスタム言語モデルがありません",
+    "ariaLabel": "カスタム言語モデル一覧",
+    "modelName": "モデル名: {{modelName}}",
+    "team": "チーム: {{team}}",
+    "changeTeam": "チームを変更",
+    "save": "保存",
+    "saving": "保存中...",
+    "cancel": "キャンセル",
+    "deleteConfirmAriaLabel": "モデル削除の確認",
+    "deleteConfirmPrompt": "「{{name}}」を削除しますか？",
+    "deleteConfirm": "削除する",
+    "deleteAriaLabel": "モデル「{{name}}」を削除",
+    "delete": "削除"
+  },
+  "action": {
+    "deleteSuccess": "モデル「{{name}}」を削除しました。",
+    "deleteFailure": "モデル「{{name}}」の削除に失敗しました。削除保留中のモデルから再試行できます。",
+    "reDeleteSuccess": "削除保留中のモデル「{{name}}」を削除しました。",
+    "reDeleteFailure": "モデル「{{name}}」の再削除に失敗しました。しばらくしてからもう一度お試しください。"
+  },
+  "pending": {
+    "sectionAriaLabel": "削除保留中のモデル",
+    "title": "削除保留中のモデル",
+    "description": "削除処理が途中で失敗したモデルです。再削除で処理を再開できます。",
+    "listAriaLabel": "削除保留中のモデル一覧",
+    "reDelete": "再削除"
+  },
+  "banner": {
+    "modelStatus": "モデル「{{modelName}}」: {{status}}",
+    "statusError": "ステータス取得エラー: {{message}}",
+    "close": "閉じる"
+  }
+}
