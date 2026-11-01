@@ -1124,10 +1124,12 @@ function ProfilePageWrapper({
   user,
   getToken,
   onRefresh,
+  onLanguageChange,
 }: {
   user: AuthUser | null;
   getToken: () => Promise<string>;
   onRefresh: () => Promise<void>;
+  onLanguageChange?: (lng: 'ja' | 'en') => void;
 }) {
   const profileApi = useMemo(() => {
     const client = new ApiClient({ baseUrl: getApiBaseUrl(), getToken });
@@ -1156,6 +1158,7 @@ function ProfilePageWrapper({
       displayName={user.displayName}
       email={user.email}
       onSave={handleSave}
+      onLanguageChange={onLanguageChange}
     />
   );
 }
@@ -1257,7 +1260,6 @@ function AppRoutes() {
     userRole: auth.user?.role,
     displayName: auth.user?.displayName,
     onLogout: handleLogout,
-    onLanguageChange: handleLanguageChange,
   };
 
   return (
@@ -1379,6 +1381,7 @@ function AppRoutes() {
                 user={auth.user}
                 getToken={auth.getToken}
                 onRefresh={auth.refreshUser}
+                onLanguageChange={handleLanguageChange}
               />
             </>
           }

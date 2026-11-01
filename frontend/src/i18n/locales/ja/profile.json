@@ -4,5 +4,7 @@
   "displayName": "表示名",
   "email": "メールアドレス",
   "emailHint": "メールアドレスを変更すると、次回以降のログインに使用するアドレスが変わります。",
-  "updateSuccess": "プロファイルを更新しました。"
+  "updateSuccess": "プロファイルを更新しました。",
+  "languageSection": "表示言語",
+  "languageHint": "選択した言語はこのアカウントに保存され、次回以降のログインにも引き継がれます。"
 }

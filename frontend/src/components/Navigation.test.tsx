@@ -111,23 +111,9 @@ describe('Navigation', () => {
     expect(onLogout).toHaveBeenCalledTimes(1);
   });
 
-  test('言語セレクタが表示される（ログイン状態に依存しない）', () => {
+  test('言語セレクタはナビゲーションに表示されない（プロファイル画面へ移動）', () => {
     renderNavigation('REVIEWER');
-    expect(screen.getByRole('combobox', { name: common('language') })).toBeInTheDocument();
-  });
-
-  test('言語を切り替えると onLanguageChange が呼ばれる', () => {
-    const onLanguageChange = vi.fn();
-    render(
-      <MemoryRouter>
-        <Navigation userRole="REVIEWER" onLanguageChange={onLanguageChange} />
-      </MemoryRouter>,
-    );
-
-    fireEvent.change(screen.getByRole('combobox', { name: common('language') }), {
-      target: { value: 'en' },
-    });
-    expect(onLanguageChange).toHaveBeenCalledWith('en');
+    expect(screen.queryByRole('combobox', { name: common('language') })).not.toBeInTheDocument();
   });
 
   test('英語に切り替えるとリンクラベルが英語になる', async () => {

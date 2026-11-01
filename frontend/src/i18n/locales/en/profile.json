@@ -4,5 +4,7 @@
   "displayName": "Display name",
   "email": "Email address",
   "emailHint": "If you change your email address, it will be used for future logins.",
-  "updateSuccess": "Your profile has been updated."
+  "updateSuccess": "Your profile has been updated.",
+  "languageSection": "Display language",
+  "languageHint": "The selected language is saved to this account and will carry over to future logins."
 }

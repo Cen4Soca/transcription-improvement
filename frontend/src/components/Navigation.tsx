@@ -1,8 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { UserRole } from '../types/user';
-import { LanguageSelector } from './LanguageSelector';
-import type { SupportedLanguage } from '../i18n';
 
 interface NavItem {
   to: string;
@@ -28,11 +26,6 @@ export interface NavigationProps {
   displayName?: string;
   /** Called when the user clicks the logout button */
   onLogout?: () => void;
-  /**
-   * 言語セレクタで言語が変更されたときに呼ばれる。
-   * ログイン時のみプロファイルへ永続化するために使用する。
-   */
-  onLanguageChange?: (lng: SupportedLanguage) => void;
 }
 
 /**
@@ -45,7 +38,7 @@ export interface NavigationProps {
  *
  * Requirements: 2.1, 6.1, 7.1
  */
-export function Navigation({ userRole, displayName, onLogout, onLanguageChange }: NavigationProps) {
+export function Navigation({ userRole, displayName, onLogout }: NavigationProps) {
   const { t } = useTranslation('common');
   const { t: tNav } = useTranslation('navigation');
   const visibleItems = NAV_ITEMS.filter((item) => {
@@ -81,35 +74,32 @@ export function Navigation({ userRole, displayName, onLogout, onLanguageChange }
               </li>
             ))}
           </ul>
-          <div className="ml-auto flex items-center gap-3">
-            <LanguageSelector onChange={onLanguageChange} />
-            {onLogout && (
-              <>
-                {displayName && (
-                  <NavLink
-                    to="/profile"
-                    className={({ isActive }) =>
-                      `text-sm rounded-md px-2 py-1 transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                      }`
-                    }
-                    data-testid="nav-display-name"
-                  >
-                    {displayName}
-                  </NavLink>
-                )}
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="px-3 py-2 text-sm rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+          {onLogout && (
+            <div className="ml-auto flex items-center gap-3">
+              {displayName && (
+                <NavLink
+                  to="/profile"
+                  className={({ isActive }) =>
+                    `text-sm rounded-md px-2 py-1 transition-colors ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`
+                  }
+                  data-testid="nav-display-name"
                 >
-                  {t('logout')}
-                </button>
-              </>
-            )}
-          </div>
+                  {displayName}
+                </NavLink>
+              )}
+              <button
+                type="button"
+                onClick={onLogout}
+                className="px-3 py-2 text-sm rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              >
+                {t('logout')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </nav>

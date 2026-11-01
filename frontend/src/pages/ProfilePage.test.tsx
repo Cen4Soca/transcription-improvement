@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
-import i18n from '../i18n';
+import i18n, { DEFAULT_LANGUAGE } from '../i18n';
 import { ProfilePage } from './ProfilePage';
 
 const t = (key: string) => i18n.t(`profile:${key}`);
@@ -11,8 +11,15 @@ const tCommon = (key: string) => i18n.t(`common:${key}`);
 describe('ProfilePage', () => {
   let user: ReturnType<typeof userEvent.setup>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    window.localStorage.clear();
+    await i18n.changeLanguage(DEFAULT_LANGUAGE);
     user = userEvent.setup();
+  });
+
+  afterEach(async () => {
+    await i18n.changeLanguage(DEFAULT_LANGUAGE);
+    window.localStorage.clear();
   });
 
   it('renders current display name and email', () => {
@@ -63,6 +70,32 @@ describe('ProfilePage', () => {
     await user.click(screen.getByRole('button', { name: tCommon('save') }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('このメールアドレスは既に使用されています。');
+  });
+
+  it('shows the display-language section with a language selector', () => {
+    render(<ProfilePage displayName="山田太郎" email="taro@example.com" onSave={vi.fn()} />);
+
+    expect(screen.getByRole('heading', { name: t('languageSection') })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: tCommon('language') })).toBeInTheDocument();
+  });
+
+  it('calls onLanguageChange and switches UI language when a language is selected', async () => {
+    const onLanguageChange = vi.fn();
+    render(
+      <ProfilePage
+        displayName="山田太郎"
+        email="taro@example.com"
+        onSave={vi.fn()}
+        onLanguageChange={onLanguageChange}
+      />
+    );
+
+    fireEvent.change(screen.getByRole('combobox', { name: tCommon('language') }), {
+      target: { value: 'en' },
+    });
+
+    expect(onLanguageChange).toHaveBeenCalledWith('en');
+    await vi.waitFor(() => expect(i18n.language).toBe('en'));
   });
 
   it('has no accessibility violations', async () => {

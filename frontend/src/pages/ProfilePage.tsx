@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppError } from '../types/api';
 import { translateError } from '../utils/translateError';
+import { LanguageSelector } from '../components/LanguageSelector';
+import type { SupportedLanguage } from '../i18n';
 
 export interface ProfilePageProps {
   /** 現在の表示名 */
@@ -14,6 +16,11 @@ export interface ProfilePageProps {
    * 成功時は null、失敗時は AppError を返す。
    */
   onSave: (data: { displayName?: string; email?: string }) => Promise<AppError | null>;
+  /**
+   * 表示言語が変更されたときに呼ばれる。
+   * ログイン時のみプロファイル（PATCH /me）へ永続化するために使用する。
+   */
+  onLanguageChange?: (lng: SupportedLanguage) => void;
 }
 
 /**
@@ -22,7 +29,7 @@ export interface ProfilePageProps {
  * - 変更があったフィールドのみをバックエンド（PATCH /me）へ送信する
  * - 保存成功・失敗をユーザーに通知する
  */
-export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
+export function ProfilePage({ displayName, email, onSave, onLanguageChange }: ProfilePageProps) {
   const { t } = useTranslation('profile');
   const { t: tCommon } = useTranslation('common');
   const [nameInput, setNameInput] = useState(displayName);
@@ -125,6 +132,14 @@ export function ProfilePage({ displayName, email, onSave }: ProfilePageProps) {
           </button>
         </div>
       </form>
+
+      <section className="mt-8 border-t border-gray-200 pt-6" aria-labelledby="profile-language-heading">
+        <h2 id="profile-language-heading" className="text-sm font-medium text-gray-700 mb-2">
+          {t('languageSection')}
+        </h2>
+        <LanguageSelector onChange={onLanguageChange} />
+        <p className="mt-2 text-xs text-gray-500">{t('languageHint')}</p>
+      </section>
     </main>
   );
 }
