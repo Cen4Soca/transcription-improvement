@@ -23,6 +23,9 @@ export async function handler(
         email: user.email,
         displayName: user.displayName,
         role: user.role,
+        ...(user.preferredLanguage
+          ? { preferredLanguage: user.preferredLanguage }
+          : {}),
       },
     });
   } catch (error: unknown) {

@@ -8,6 +8,8 @@ export interface AuthUser {
   email: string;
   displayName: string;
   role: UserRole;
+  /** ユーザーの優先表示言語（'ja' | 'en'）。未設定の場合は undefined。 */
+  preferredLanguage?: 'ja' | 'en';
 }
 
 /**

@@ -13,6 +13,7 @@ import type { User } from '../types/user';
 export interface UpdateProfileRequest {
   displayName?: string;
   email?: string;
+  preferredLanguage?: 'ja' | 'en';
 }
 
 export interface ProfileResponse {
