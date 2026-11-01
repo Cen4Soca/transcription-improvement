@@ -1,0 +1,29 @@
+{
+  "sessionList": {
+    "loading": "Loading...",
+    "loadingAriaLabel": "Loading",
+    "defaultTitle": "Review sessions",
+    "statusFilterAriaLabel": "Status filter",
+    "filter": {
+      "all": "All",
+      "pending": "Not started",
+      "inProgress": "In progress",
+      "completed": "Completed"
+    },
+    "status": {
+      "pending": "Not started",
+      "inProgress": "In progress",
+      "completed": "Completed"
+    },
+    "emptyState": "No review sessions",
+    "listAriaLabel": "Session list",
+    "openReviewAriaLabel": "Open review screen ({{name}} - {{status}})",
+    "openReview": "Open review screen",
+    "paginationAriaLabel": "Pagination",
+    "itemRange": "Showing {{start}}–{{end}} of {{totalItems}}",
+    "previous": "Previous",
+    "previousAriaLabel": "Previous (previous page)",
+    "next": "Next",
+    "nextAriaLabel": "Next (next page)"
+  }
+}

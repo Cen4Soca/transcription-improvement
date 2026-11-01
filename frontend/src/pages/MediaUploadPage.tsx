@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MediaApi, UploadUrlResponse } from '../services/media-api';
 import { UploadProgress } from '../components/UploadProgress';
 
@@ -25,7 +26,8 @@ type UploadStatus = 'idle' | 'validating' | 'requesting-url' | 'uploading' | 'co
 
 interface ValidationError {
   type: 'format' | 'size';
-  message: string;
+  /** Interpolation value for the i18n error message (formats list or formatted size). */
+  value: string;
 }
 
 export interface MediaUploadPageProps {
@@ -60,14 +62,14 @@ function validateFile(file: File): ValidationError | null {
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
     return {
       type: 'format',
-      message: `サポートされていないファイル形式です。サポートされる形式: ${ALLOWED_EXTENSIONS.join(', ')}`,
+      value: ALLOWED_EXTENSIONS.join(', '),
     };
   }
 
   if (file.size > MAX_FILE_SIZE) {
     return {
       type: 'size',
-      message: `ファイルサイズが上限（2GB）を超えています。選択されたファイル: ${formatFileSize(file.size)}`,
+      value: formatFileSize(file.size),
     };
   }
 
@@ -85,6 +87,7 @@ function validateFile(file: File): ValidationError | null {
  * Requirements: 2.1, 2.3, 2.4, 2.5, 2.6
  */
 export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageProps) {
+  const { t } = useTranslation('upload');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -111,7 +114,11 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
 
     const validationError = validateFile(file);
     if (validationError) {
-      setError(validationError.message);
+      const message =
+        validationError.type === 'format'
+          ? t('unsupportedFormat', { formats: validationError.value })
+          : t('fileTooLarge', { size: validationError.value });
+      setError(message);
       setUploadStatus('error');
       setSelectedFile(null);
       return;
@@ -119,7 +126,7 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
 
     setSelectedFile(file);
     setUploadStatus('idle');
-  }, []);
+  }, [t]);
 
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,12 +215,12 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
   const isUploading = uploadStatus === 'requesting-url' || uploadStatus === 'uploading';
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label="メディアアップロード">
+    <div className="flex flex-col h-full" role="main" aria-label={t('pageTitle')}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 bg-white">
-        <h1 className="text-lg font-semibold text-gray-900">メディアアップロード</h1>
+        <h1 className="text-lg font-semibold text-gray-900">{t('pageTitle')}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          音声・動画ファイルをアップロードして文字起こしを作成します
+          {t('pageDescription')}
         </p>
       </div>
 
@@ -229,7 +236,7 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
             className="sr-only"
             tabIndex={-1}
             disabled={isUploading}
-            aria-label="ファイルを選択"
+            aria-label={t('selectFileAriaLabel')}
           />
 
           {/* Drop zone */}
@@ -253,7 +260,7 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
             <div
               role="button"
               tabIndex={0}
-              aria-label="ファイルを選択 またはドラッグ＆ドロップ"
+              aria-label={t('dropZoneAriaLabel')}
               onClick={handleClickDropZone}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -278,18 +285,18 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
                 />
               </svg>
               <p className="text-sm text-gray-600">
-                <span className="font-medium text-blue-600">ファイルを選択</span>
-                {' '}またはドラッグ＆ドロップ
+                <span className="font-medium text-blue-600">{t('selectFile')}</span>
+                {' '}{t('orDragAndDrop')}
               </p>
             </div>
             <p className="mt-2 text-xs text-gray-500">
-              対応形式: {ALLOWED_EXTENSIONS.join(', ')} / 最大 2GB
+              {t('supportedFormatsHint', { formats: ALLOWED_EXTENSIONS.join(', ') })}
             </p>
           </div>
 
           {/* Selected file info */}
           {selectedFile && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4" aria-label="選択されたファイル">
+            <div className="bg-white border border-gray-200 rounded-lg p-4" aria-label={t('selectedFileAriaLabel')}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
                   <svg
@@ -320,9 +327,9 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
                     type="button"
                     onClick={resetState}
                     className="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                    aria-label="ファイル選択を解除"
+                    aria-label={t('clearSelectionAriaLabel')}
                   >
-                    取消
+                    {t('clear')}
                   </button>
                 )}
               </div>
@@ -338,7 +345,7 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
               {uploadStatus === 'requesting-url' && (
                 <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
                   <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                  <span>アップロード準備中...</span>
+                  <span>{t('preparingUpload')}</span>
                 </div>
               )}
             </div>
@@ -395,10 +402,10 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
                 </svg>
                 <div>
                   <p className="text-sm font-medium text-green-700">
-                    アップロードが完了しました
+                    {t('uploadCompleted')}
                   </p>
                   <p className="text-xs text-green-600 mt-1">
-                    メディアファイルID: {uploadResult.mediaFileId}
+                    {t('mediaFileId', { mediaFileId: uploadResult.mediaFileId })}
                   </p>
                 </div>
               </div>
@@ -413,7 +420,7 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
               disabled={!selectedFile || isUploading || uploadStatus === 'completed'}
               className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isUploading ? 'アップロード中...' : 'アップロード開始'}
+              {isUploading ? t('uploading') : t('startUpload')}
             </button>
 
             {uploadStatus === 'completed' && (
@@ -422,25 +429,25 @@ export function MediaUploadPage({ mediaApi, onUploadComplete }: MediaUploadPageP
                 onClick={resetState}
                 className="px-4 py-2.5 bg-white text-gray-700 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
-                別のファイルをアップロード
+                {t('uploadAnother')}
               </button>
             )}
           </div>
 
           {/* Supported formats info */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h2 className="text-sm font-medium text-gray-700 mb-2">対応ファイル形式</h2>
+            <h2 className="text-sm font-medium text-gray-700 mb-2">{t('supportedFormatsTitle')}</h2>
             <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
               <div>
-                <p className="font-medium text-gray-700 mb-1">音声</p>
+                <p className="font-medium text-gray-700 mb-1">{t('audio')}</p>
                 <p>mp3, wav, flac, ogg, m4a, amr, webm</p>
               </div>
               <div>
-                <p className="font-medium text-gray-700 mb-1">動画</p>
+                <p className="font-medium text-gray-700 mb-1">{t('video')}</p>
                 <p>mp4, webm, mkv, avi, mov</p>
               </div>
             </div>
-            <p className="mt-2 text-xs text-gray-500">最大ファイルサイズ: 2GB</p>
+            <p className="mt-2 text-xs text-gray-500">{t('maxFileSize')}</p>
           </div>
         </div>
       </div>

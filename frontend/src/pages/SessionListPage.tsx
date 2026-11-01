@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { ReviewSession, ReviewSessionStatus } from '../types/session';
 import type { AppError } from '../types/api';
 import { SessionNameEditor } from '../components/SessionNameEditor';
@@ -48,17 +50,17 @@ export interface SessionListPageProps {
   onPageChange?: (page: number) => void;
 }
 
-const STATUS_LABELS: Record<ReviewSessionStatus, string> = {
-  PENDING: '未着手',
-  IN_PROGRESS: '進行中',
-  COMPLETED: '完了',
+const STATUS_LABEL_KEYS: Record<ReviewSessionStatus, string> = {
+  PENDING: 'sessionList.status.pending',
+  IN_PROGRESS: 'sessionList.status.inProgress',
+  COMPLETED: 'sessionList.status.completed',
 };
 
-const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
-  { value: 'ALL', label: '全て' },
-  { value: 'PENDING', label: '未着手' },
-  { value: 'IN_PROGRESS', label: '進行中' },
-  { value: 'COMPLETED', label: '完了' },
+const FILTER_OPTIONS: { value: FilterStatus; labelKey: string }[] = [
+  { value: 'ALL', labelKey: 'sessionList.filter.all' },
+  { value: 'PENDING', labelKey: 'sessionList.filter.pending' },
+  { value: 'IN_PROGRESS', labelKey: 'sessionList.filter.inProgress' },
+  { value: 'COMPLETED', labelKey: 'sessionList.filter.completed' },
 ];
 
 /**
@@ -74,7 +76,7 @@ export function SessionListPage({
   isLoading = false,
   error,
   onSessionSelect,
-  title = '校閲セッション一覧',
+  title,
   renderSessionActions,
   onRenameSession,
   selectedStatus = 'ALL',
@@ -82,6 +84,8 @@ export function SessionListPage({
   pagination,
   onPageChange,
 }: SessionListPageProps) {
+  const { t } = useTranslation('review');
+  const resolvedTitle = title ?? t('sessionList.defaultTitle');
   // onStatusChange が渡された場合は制御（サーバー駆動）フィルターモード。
   const isControlledFilter = !!onStatusChange;
   const [localFilter, setLocalFilter] = useState<FilterStatus>('ALL');
@@ -118,11 +122,11 @@ export function SessionListPage({
       <div
         className="flex items-center justify-center h-64"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('sessionList.loadingAriaLabel')}
       >
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-          <span className="text-sm text-gray-500">読み込み中...</span>
+          <span className="text-sm text-gray-500">{t('sessionList.loading')}</span>
         </div>
       </div>
     );
@@ -140,17 +144,17 @@ export function SessionListPage({
   }
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label={title}>
+    <div className="flex flex-col h-full" role="main" aria-label={resolvedTitle}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 bg-white">
-        <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+        <h1 className="text-lg font-semibold text-gray-900">{resolvedTitle}</h1>
       </div>
 
       {/* Filter tabs */}
       <div
         className="flex gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50"
         role="tablist"
-        aria-label="ステータスフィルター"
+        aria-label={t('sessionList.statusFilterAriaLabel')}
       >
         {FILTER_OPTIONS.map((option) => (
           <button
@@ -165,7 +169,7 @@ export function SessionListPage({
                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
             }`}
           >
-            {option.label}
+            {t(option.labelKey)}
           </button>
         ))}
       </div>
@@ -174,11 +178,11 @@ export function SessionListPage({
       <div className="flex-1 overflow-auto px-4 py-3" role="tabpanel">
         {displayedSessions.length === 0 ? (
           <div className="flex items-center justify-center h-48">
-            <p className="text-gray-500">校閲セッションがありません</p>
+            <p className="text-gray-500">{t('sessionList.emptyState')}</p>
           </div>
         ) : (
           <>
-            <ul className="space-y-2" aria-label="セッション一覧">
+            <ul className="space-y-2" aria-label={t('sessionList.listAriaLabel')}>
               {displayedSessions.map((session) => (
                 <li
                   key={session.sessionId}
@@ -197,17 +201,20 @@ export function SessionListPage({
                     type="button"
                     onClick={() => onSessionSelect?.(session.sessionId)}
                     className="w-full text-left rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                    aria-label={`校閲画面を開く（${session.name} - ${STATUS_LABELS[session.status]}）`}
+                    aria-label={t('sessionList.openReviewAriaLabel', {
+                      name: session.name,
+                      status: t(STATUS_LABEL_KEYS[session.status]),
+                    })}
                   >
                     <div className="flex items-center justify-between">
                       {onRenameSession ? (
-                        <span className="text-sm text-blue-600">校閲画面を開く</span>
+                        <span className="text-sm text-blue-600">{t('sessionList.openReview')}</span>
                       ) : (
                         <span className="font-medium text-gray-900">
                           {session.name}
                         </span>
                       )}
-                      <StatusBadge status={session.status} />
+                      <StatusBadge status={session.status} t={t} />
                     </div>
                     <div className="mt-1 text-sm text-gray-500">
                       <time dateTime={session.createdAt}>
@@ -224,16 +231,17 @@ export function SessionListPage({
             {pagination && pagination.totalPages > 1 && (
               <nav
                 className="flex items-center justify-between px-2 py-3 mt-4 border-t border-gray-200"
-                aria-label="ページネーション"
+                aria-label={t('sessionList.paginationAriaLabel')}
               >
                 <p className="text-sm text-gray-600">
-                  {pagination.totalItems}件中{' '}
-                  {(pagination.currentPage - 1) * pagination.pageSize + 1}〜
-                  {Math.min(
-                    pagination.currentPage * pagination.pageSize,
-                    pagination.totalItems
-                  )}
-                  件を表示
+                  {t('sessionList.itemRange', {
+                    totalItems: pagination.totalItems,
+                    start: (pagination.currentPage - 1) * pagination.pageSize + 1,
+                    end: Math.min(
+                      pagination.currentPage * pagination.pageSize,
+                      pagination.totalItems
+                    ),
+                  })}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -241,9 +249,9 @@ export function SessionListPage({
                     onClick={() => onPageChange?.(pagination.currentPage - 1)}
                     disabled={!pagination.hasPreviousPage}
                     className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-                    aria-label="前へ（前のページ）"
+                    aria-label={t('sessionList.previousAriaLabel')}
                   >
-                    前へ
+                    {t('sessionList.previous')}
                   </button>
                   <span className="flex items-center px-2 text-sm text-gray-600">
                     {pagination.currentPage} / {pagination.totalPages}
@@ -253,9 +261,9 @@ export function SessionListPage({
                     onClick={() => onPageChange?.(pagination.currentPage + 1)}
                     disabled={!pagination.hasNextPage}
                     className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-                    aria-label="次へ（次のページ）"
+                    aria-label={t('sessionList.nextAriaLabel')}
                   >
-                    次へ
+                    {t('sessionList.next')}
                   </button>
                 </div>
               </nav>
@@ -267,7 +275,7 @@ export function SessionListPage({
   );
 }
 
-function StatusBadge({ status }: { status: ReviewSessionStatus }) {
+function StatusBadge({ status, t }: { status: ReviewSessionStatus; t: TFunction }) {
   const colorClasses: Record<ReviewSessionStatus, string> = {
     PENDING: 'bg-gray-100 text-gray-700',
     IN_PROGRESS: 'bg-blue-100 text-blue-700',
@@ -278,7 +286,7 @@ function StatusBadge({ status }: { status: ReviewSessionStatus }) {
     <span
       className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${colorClasses[status]}`}
     >
-      {STATUS_LABELS[status]}
+      {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
 }

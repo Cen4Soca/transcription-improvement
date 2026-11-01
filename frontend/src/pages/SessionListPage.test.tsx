@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { SessionListPage } from './SessionListPage';
+
+const t = (key: string, opts?: Record<string, unknown>) => i18n.t(`review:${key}`, opts);
 import type { PaginationInfo } from './SessionListPage';
 import { formatSessionDate } from '../utils/session-format';
 import type { ReviewSession } from '../types/session';
@@ -72,8 +75,8 @@ describe('SessionListPage', () => {
   it('renders loading state', () => {
     render(<SessionListPage sessions={[]} isLoading={true} />);
 
-    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
-    expect(screen.getByText('読み込み中...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: t('sessionList.loadingAriaLabel') })).toBeInTheDocument();
+    expect(screen.getByText(t('sessionList.loading'))).toBeInTheDocument();
   });
 
   it('renders error state with message', () => {
@@ -91,7 +94,7 @@ describe('SessionListPage', () => {
   it('renders empty state message when no sessions', () => {
     render(<SessionListPage sessions={[]} />);
 
-    expect(screen.getByText('校閲セッションがありません')).toBeInTheDocument();
+    expect(screen.getByText(t('sessionList.emptyState'))).toBeInTheDocument();
   });
 
   it('renders session list with name, status, and date', () => {
@@ -108,7 +111,7 @@ describe('SessionListPage', () => {
 
     expect(screen.getByText('会議録A')).toBeInTheDocument();
     // The status badge inside the session item
-    const sessionButton = screen.getByRole('button', { name: '校閲画面を開く（会議録A - 進行中）' });
+    const sessionButton = screen.getByRole('button', { name: t('sessionList.openReviewAriaLabel', { name: '会議録A', status: t('sessionList.status.inProgress') }) });
     expect(sessionButton).toBeInTheDocument();
     expect(screen.getByText('2024-06-15 14:30')).toBeInTheDocument();
   });
@@ -238,7 +241,7 @@ describe('SessionListPage', () => {
         <SessionListPage sessions={sessions} selectedStatus="ALL" onStatusChange={onStatusChange} />
       );
 
-      await user.click(screen.getByRole('tab', { name: '未着手' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.pending') }));
 
       expect(onStatusChange).toHaveBeenCalledWith('PENDING');
     });
@@ -250,7 +253,7 @@ describe('SessionListPage', () => {
         <SessionListPage sessions={sessions} selectedStatus="ALL" onStatusChange={onStatusChange} />
       );
 
-      await user.click(screen.getByRole('tab', { name: '進行中' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.inProgress') }));
 
       expect(onStatusChange).toHaveBeenCalledWith('IN_PROGRESS');
     });
@@ -262,7 +265,7 @@ describe('SessionListPage', () => {
         <SessionListPage sessions={sessions} selectedStatus="ALL" onStatusChange={onStatusChange} />
       );
 
-      await user.click(screen.getByRole('tab', { name: '完了' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.completed') }));
 
       expect(onStatusChange).toHaveBeenCalledWith('COMPLETED');
     });
@@ -274,7 +277,7 @@ describe('SessionListPage', () => {
         <SessionListPage sessions={sessions} selectedStatus="PENDING" onStatusChange={onStatusChange} />
       );
 
-      await user.click(screen.getByRole('tab', { name: '全て' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.all') }));
 
       expect(onStatusChange).toHaveBeenCalledWith('ALL');
     });
@@ -284,9 +287,9 @@ describe('SessionListPage', () => {
         <SessionListPage sessions={sessions} selectedStatus="IN_PROGRESS" onStatusChange={vi.fn()} />
       );
 
-      expect(screen.getByRole('tab', { name: '進行中' })).toHaveAttribute('aria-selected', 'true');
-      expect(screen.getByRole('tab', { name: '全て' })).toHaveAttribute('aria-selected', 'false');
-      expect(screen.getByRole('tab', { name: '未着手' })).toHaveAttribute('aria-selected', 'false');
+      expect(screen.getByRole('tab', { name: t('sessionList.filter.inProgress') })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('tab', { name: t('sessionList.filter.all') })).toHaveAttribute('aria-selected', 'false');
+      expect(screen.getByRole('tab', { name: t('sessionList.filter.pending') })).toHaveAttribute('aria-selected', 'false');
 
       // All passed sessions remain rendered: the component does not filter in controlled mode
       // (the server already filtered). The input array is rendered verbatim.
@@ -318,7 +321,7 @@ describe('SessionListPage', () => {
       const user = userEvent.setup();
       render(<SessionListPage sessions={sessions} />);
 
-      await user.click(screen.getByRole('tab', { name: '未着手' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.pending') }));
 
       expect(screen.getByText('未着手A')).toBeInTheDocument();
       expect(screen.getByText('未着手B')).toBeInTheDocument();
@@ -330,7 +333,7 @@ describe('SessionListPage', () => {
       const user = userEvent.setup();
       render(<SessionListPage sessions={sessions} />);
 
-      await user.click(screen.getByRole('tab', { name: '進行中' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.inProgress') }));
 
       expect(screen.getByText('進行中A')).toBeInTheDocument();
       expect(screen.queryByText('未着手A')).not.toBeInTheDocument();
@@ -341,7 +344,7 @@ describe('SessionListPage', () => {
       const user = userEvent.setup();
       render(<SessionListPage sessions={sessions} />);
 
-      await user.click(screen.getByRole('tab', { name: '完了' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.completed') }));
 
       expect(screen.getByText('完了A')).toBeInTheDocument();
       expect(screen.queryByText('未着手A')).not.toBeInTheDocument();
@@ -356,22 +359,22 @@ describe('SessionListPage', () => {
 
       render(<SessionListPage sessions={pendingOnly} />);
 
-      await user.click(screen.getByRole('tab', { name: '完了' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.completed') }));
 
-      expect(screen.getByText('校閲セッションがありません')).toBeInTheDocument();
+      expect(screen.getByText(t('sessionList.emptyState'))).toBeInTheDocument();
     });
 
     it('marks active filter tab with aria-selected (local state)', async () => {
       const user = userEvent.setup();
       render(<SessionListPage sessions={sessions} />);
 
-      const allTab = screen.getByRole('tab', { name: '全て' });
+      const allTab = screen.getByRole('tab', { name: t('sessionList.filter.all') });
       expect(allTab).toHaveAttribute('aria-selected', 'true');
 
-      await user.click(screen.getByRole('tab', { name: '進行中' }));
+      await user.click(screen.getByRole('tab', { name: t('sessionList.filter.inProgress') }));
 
       expect(allTab).toHaveAttribute('aria-selected', 'false');
-      expect(screen.getByRole('tab', { name: '進行中' })).toHaveAttribute(
+      expect(screen.getByRole('tab', { name: t('sessionList.filter.inProgress') })).toHaveAttribute(
         'aria-selected',
         'true'
       );
@@ -381,7 +384,7 @@ describe('SessionListPage', () => {
       render(<SessionListPage sessions={sessions} />);
 
       expect(
-        screen.queryByRole('navigation', { name: 'ページネーション' })
+        screen.queryByRole('navigation', { name: t('sessionList.paginationAriaLabel') })
       ).not.toBeInTheDocument();
     });
   });
@@ -391,10 +394,10 @@ describe('SessionListPage', () => {
       render(<SessionListPage sessions={[]} />);
 
       expect(
-        screen.getByRole('main', { name: '校閲セッション一覧' })
+        screen.getByRole('main', { name: t('sessionList.defaultTitle') })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole('tablist', { name: 'ステータスフィルター' })
+        screen.getByRole('tablist', { name: t('sessionList.statusFilterAriaLabel') })
       ).toBeInTheDocument();
     });
 
@@ -406,7 +409,7 @@ describe('SessionListPage', () => {
       render(<SessionListPage sessions={sessions} />);
 
       expect(
-        screen.getByRole('button', { name: '校閲画面を開く（会議録 - 進行中）' })
+        screen.getByRole('button', { name: t('sessionList.openReviewAriaLabel', { name: '会議録', status: t('sessionList.status.inProgress') }) })
       ).toBeInTheDocument();
     });
 
@@ -458,7 +461,7 @@ describe('SessionListPage', () => {
       );
 
       expect(
-        screen.queryByRole('navigation', { name: 'ページネーション' })
+        screen.queryByRole('navigation', { name: t('sessionList.paginationAriaLabel') })
       ).not.toBeInTheDocument();
     });
 
@@ -475,7 +478,7 @@ describe('SessionListPage', () => {
       );
 
       expect(
-        screen.getByRole('navigation', { name: 'ページネーション' })
+        screen.getByRole('navigation', { name: t('sessionList.paginationAriaLabel') })
       ).toBeInTheDocument();
     });
 
@@ -510,7 +513,7 @@ describe('SessionListPage', () => {
         />
       );
 
-      await user.click(screen.getByRole('button', { name: '次へ（次のページ）' }));
+      await user.click(screen.getByRole('button', { name: t('sessionList.nextAriaLabel') }));
 
       expect(onPageChange).toHaveBeenCalledWith(2);
     });
@@ -529,7 +532,7 @@ describe('SessionListPage', () => {
         />
       );
 
-      await user.click(screen.getByRole('button', { name: '前へ（前のページ）' }));
+      await user.click(screen.getByRole('button', { name: t('sessionList.previousAriaLabel') }));
 
       expect(onPageChange).toHaveBeenCalledWith(1);
     });
@@ -546,7 +549,7 @@ describe('SessionListPage', () => {
         />
       );
 
-      expect(screen.getByRole('button', { name: '前へ（前のページ）' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: t('sessionList.previousAriaLabel') })).toBeDisabled();
     });
 
     it('disables next button when hasNextPage is false', () => {
@@ -561,7 +564,7 @@ describe('SessionListPage', () => {
         />
       );
 
-      expect(screen.getByRole('button', { name: '次へ（次のページ）' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: t('sessionList.nextAriaLabel') })).toBeDisabled();
     });
 
     it('displays page info text derived from the pagination prop', () => {
@@ -576,8 +579,9 @@ describe('SessionListPage', () => {
         />
       );
 
-      expect(screen.getByText(/75件中/)).toBeInTheDocument();
-      expect(screen.getByText(/1〜50件を表示/)).toBeInTheDocument();
+      expect(
+        screen.getByText(t('sessionList.itemRange', { totalItems: 75, start: 1, end: 50 }))
+      ).toBeInTheDocument();
     });
 
     it('displays current page / total pages from the pagination prop', () => {
@@ -608,7 +612,9 @@ describe('SessionListPage', () => {
       );
 
       expect(screen.getByText('2 / 2')).toBeInTheDocument();
-      expect(screen.getByText(/51〜75件を表示/)).toBeInTheDocument();
+      expect(
+        screen.getByText(t('sessionList.itemRange', { totalItems: 75, start: 51, end: 75 }))
+      ).toBeInTheDocument();
     });
   });
 

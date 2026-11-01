@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { MediaUploadPage } from './MediaUploadPage';
 import { checkA11y } from '../test-utils/axe-setup';
 import type { MediaApi } from '../services/media-api';
+
+const t = (key: string, opts?: Record<string, unknown>) => i18n.t(`upload:${key}`, opts);
 
 function createMockMediaApi(overrides: Partial<MediaApi> = {}): MediaApi {
   return {
@@ -40,25 +43,25 @@ describe('MediaUploadPage', () => {
     it('renders the page header and drop zone', () => {
       render(<MediaUploadPage mediaApi={mockApi} />);
 
-      expect(screen.getByRole('main', { name: 'メディアアップロード' })).toBeInTheDocument();
-      expect(screen.getByText('メディアアップロード')).toBeInTheDocument();
-      expect(screen.getByText(/ファイルを選択/)).toBeInTheDocument();
-      expect(screen.getByText(/ドラッグ＆ドロップ/)).toBeInTheDocument();
+      expect(screen.getByRole('main', { name: t('pageTitle') })).toBeInTheDocument();
+      expect(screen.getByText(t('pageTitle'))).toBeInTheDocument();
+      expect(screen.getByText(t('selectFile'))).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(t('orDragAndDrop')))).toBeInTheDocument();
     });
 
     it('displays supported formats information', () => {
       render(<MediaUploadPage mediaApi={mockApi} />);
 
-      expect(screen.getByText('対応ファイル形式')).toBeInTheDocument();
-      expect(screen.getByText('音声')).toBeInTheDocument();
-      expect(screen.getByText('動画')).toBeInTheDocument();
-      expect(screen.getByText(/最大ファイルサイズ: 2GB/)).toBeInTheDocument();
+      expect(screen.getByText(t('supportedFormatsTitle'))).toBeInTheDocument();
+      expect(screen.getByText(t('audio'))).toBeInTheDocument();
+      expect(screen.getByText(t('video'))).toBeInTheDocument();
+      expect(screen.getByText(t('maxFileSize'))).toBeInTheDocument();
     });
 
     it('renders upload button as disabled when no file is selected', () => {
       render(<MediaUploadPage mediaApi={mockApi} />);
 
-      const uploadButton = screen.getByRole('button', { name: 'アップロード開始' });
+      const uploadButton = screen.getByRole('button', { name: t('startUpload') });
       expect(uploadButton).toBeDisabled();
     });
   });
@@ -84,7 +87,7 @@ describe('MediaUploadPage', () => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
 
-      const uploadButton = screen.getByRole('button', { name: 'アップロード開始' });
+      const uploadButton = screen.getByRole('button', { name: t('startUpload') });
       expect(uploadButton).not.toBeDisabled();
     });
   });
@@ -99,7 +102,13 @@ describe('MediaUploadPage', () => {
       fireEvent.change(input, { target: { files: [file] } });
 
       expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(screen.getByText(/サポートされていないファイル形式です/)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          t('unsupportedFormat', {
+            formats: 'mp3, wav, flac, ogg, m4a, amr, webm, mp4, mkv, avi, mov',
+          })
+        )
+      ).toBeInTheDocument();
     });
 
     it('shows error for file exceeding 2GB', async () => {
@@ -111,7 +120,9 @@ describe('MediaUploadPage', () => {
       fireEvent.change(input, { target: { files: [oversizedFile] } });
 
       expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(screen.getByText(/ファイルサイズが上限（2GB）を超えています/)).toBeInTheDocument();
+      expect(
+        screen.getByText(t('fileTooLarge', { size: '2.50 GB' }))
+      ).toBeInTheDocument();
     });
 
     it('accepts all supported audio formats', async () => {
@@ -167,7 +178,7 @@ describe('MediaUploadPage', () => {
       const file = createFile('recording.mp3', 2048, 'audio/mpeg');
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
-      await user.click(screen.getByRole('button', { name: 'アップロード開始' }));
+      await user.click(screen.getByRole('button', { name: t('startUpload') }));
 
       await waitFor(() => {
         expect(mockApi.getUploadUrl).toHaveBeenCalledWith({
@@ -185,7 +196,7 @@ describe('MediaUploadPage', () => {
       const file = createFile('recording.mp3', 2048, 'audio/mpeg');
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
-      await user.click(screen.getByRole('button', { name: 'アップロード開始' }));
+      await user.click(screen.getByRole('button', { name: t('startUpload') }));
 
       await waitFor(() => {
         expect(mockApi.uploadFileToS3).toHaveBeenCalledWith(
@@ -203,10 +214,10 @@ describe('MediaUploadPage', () => {
       const file = createFile('recording.mp3', 2048, 'audio/mpeg');
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
-      await user.click(screen.getByRole('button', { name: 'アップロード開始' }));
+      await user.click(screen.getByRole('button', { name: t('startUpload') }));
 
       await waitFor(() => {
-        expect(screen.getByText('アップロードが完了しました')).toBeInTheDocument();
+        expect(screen.getByText(t('uploadCompleted'))).toBeInTheDocument();
         expect(screen.getByText(/media-123/)).toBeInTheDocument();
       });
     });
@@ -219,7 +230,7 @@ describe('MediaUploadPage', () => {
       const file = createFile('recording.mp3', 2048, 'audio/mpeg');
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
-      await user.click(screen.getByRole('button', { name: 'アップロード開始' }));
+      await user.click(screen.getByRole('button', { name: t('startUpload') }));
 
       await waitFor(() => {
         expect(onUploadComplete).toHaveBeenCalledWith('media-123');
@@ -239,7 +250,7 @@ describe('MediaUploadPage', () => {
       const file = createFile('recording.mp3', 2048, 'audio/mpeg');
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
-      await user.click(screen.getByRole('button', { name: 'アップロード開始' }));
+      await user.click(screen.getByRole('button', { name: t('startUpload') }));
 
       await waitFor(() => {
         expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -260,7 +271,7 @@ describe('MediaUploadPage', () => {
       const file = createFile('recording.mp3', 2048, 'audio/mpeg');
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
-      await user.click(screen.getByRole('button', { name: 'アップロード開始' }));
+      await user.click(screen.getByRole('button', { name: t('startUpload') }));
 
       await waitFor(() => {
         expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -277,15 +288,15 @@ describe('MediaUploadPage', () => {
       const file = createFile('recording.mp3', 2048, 'audio/mpeg');
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
-      await user.click(screen.getByRole('button', { name: 'アップロード開始' }));
+      await user.click(screen.getByRole('button', { name: t('startUpload') }));
 
       await waitFor(() => {
-        expect(screen.getByText('アップロードが完了しました')).toBeInTheDocument();
+        expect(screen.getByText(t('uploadCompleted'))).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: '別のファイルをアップロード' }));
+      await user.click(screen.getByRole('button', { name: t('uploadAnother') }));
 
-      expect(screen.queryByText('アップロードが完了しました')).not.toBeInTheDocument();
+      expect(screen.queryByText(t('uploadCompleted'))).not.toBeInTheDocument();
       expect(screen.queryByText('recording.mp3')).not.toBeInTheDocument();
     });
   });
@@ -294,13 +305,13 @@ describe('MediaUploadPage', () => {
     it('has proper ARIA landmarks', () => {
       render(<MediaUploadPage mediaApi={mockApi} />);
 
-      expect(screen.getByRole('main', { name: 'メディアアップロード' })).toBeInTheDocument();
+      expect(screen.getByRole('main', { name: t('pageTitle') })).toBeInTheDocument();
     });
 
     it('drop zone is keyboard accessible', () => {
       render(<MediaUploadPage mediaApi={mockApi} />);
 
-      const dropZone = screen.getByRole('button', { name: 'ファイルを選択 またはドラッグ＆ドロップ' });
+      const dropZone = screen.getByRole('button', { name: t('dropZoneAriaLabel') });
       expect(dropZone).toHaveAttribute('tabIndex', '0');
     });
 
@@ -310,13 +321,14 @@ describe('MediaUploadPage', () => {
     it('drop zone button contains no visible text beyond its accessible name', () => {
       render(<MediaUploadPage mediaApi={mockApi} />);
 
-      const dropZone = screen.getByRole('button', { name: 'ファイルを選択 またはドラッグ＆ドロップ' });
+      const dropZone = screen.getByRole('button', { name: t('dropZoneAriaLabel') });
       const visibleText = dropZone.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
       // All visible text inside the button is included in the accessible name.
-      expect('ファイルを選択 またはドラッグ＆ドロップ').toContain(visibleText);
+      expect(t('dropZoneAriaLabel')).toContain(visibleText);
       // The format hint must not be inside the button node.
-      expect(dropZone.textContent).not.toMatch(/対応形式/);
+      const hintText = t('supportedFormatsHint', { formats: 'mp3' });
+      expect(dropZone.textContent ?? '').not.toContain(hintText);
     });
 
     it('has no accessibility violations (catches label-content-name-mismatch)', async () => {
@@ -338,7 +350,7 @@ describe('MediaUploadPage', () => {
       const file = createFile('recording.mp3', 2048, 'audio/mpeg');
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       await user.upload(input, file);
-      await user.click(screen.getByRole('button', { name: 'アップロード開始' }));
+      await user.click(screen.getByRole('button', { name: t('startUpload') }));
 
       await waitFor(() => {
         const progressBar = screen.getByRole('progressbar', { name: 'アップロード進捗' });

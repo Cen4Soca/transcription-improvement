@@ -1,0 +1,29 @@
+{
+  "sessionList": {
+    "loading": "読み込み中...",
+    "loadingAriaLabel": "読み込み中",
+    "defaultTitle": "校閲セッション一覧",
+    "statusFilterAriaLabel": "ステータスフィルター",
+    "filter": {
+      "all": "全て",
+      "pending": "未着手",
+      "inProgress": "進行中",
+      "completed": "完了"
+    },
+    "status": {
+      "pending": "未着手",
+      "inProgress": "進行中",
+      "completed": "完了"
+    },
+    "emptyState": "校閲セッションがありません",
+    "listAriaLabel": "セッション一覧",
+    "openReviewAriaLabel": "校閲画面を開く（{{name}} - {{status}}）",
+    "openReview": "校閲画面を開く",
+    "paginationAriaLabel": "ページネーション",
+    "itemRange": "{{totalItems}}件中 {{start}}〜{{end}}件を表示",
+    "previous": "前へ",
+    "previousAriaLabel": "前へ（前のページ）",
+    "next": "次へ",
+    "nextAriaLabel": "次へ（次のページ）"
+  }
+}
