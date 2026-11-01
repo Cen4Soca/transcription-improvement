@@ -1,18 +1,45 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   mergeSuggestions,
   limitSuggestions,
   generateSuggestions,
+  unionSpeakerLabels,
+  selectSurroundingSegments,
+  buildSegmentContext,
+  getSuggestionContext,
+  defaultBedrockProvider,
   type SuggestionCandidate,
   type BedrockSuggestionProvider,
   type ComprehendSuggestionProvider,
 } from './suggestion-service.js';
+import type { SegmentSummary } from '../repositories/segment-repository.js';
 
 vi.mock('../utils/dynamodb-client.js', () => ({
   docClient: {
     send: vi.fn(),
   },
   TABLE_NAME: 'TestTable',
+}));
+
+// generateSuggestions builds surrounding context via the segment/session
+// repositories. Mock them so these tests exercise suggestion logic in isolation
+// (dedicated repository behavior is covered by their own tests). The context
+// path defaults to "no context" unless a test overrides it.
+vi.mock('../repositories/segment-repository.js', () => ({
+  getSessionSegments: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('../repositories/session-repository.js', () => ({
+  getSessionById: vi.fn().mockResolvedValue(null),
+}));
+
+// Mock the Bedrock SDK so defaultBedrockProvider can be exercised without a
+// real AWS call. The mock captures the InvokeModel request body so we can
+// assert the prompt carries the surrounding context.
+const bedrockSendMock = vi.fn();
+vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
+  BedrockRuntimeClient: vi.fn(() => ({ send: bedrockSendMock })),
+  InvokeModelCommand: vi.fn((input) => ({ input })),
 }));
 
 describe('mergeSuggestions', () => {
@@ -214,6 +241,7 @@ describe('generateSuggestions', () => {
     };
 
     const result = await generateSuggestions(
+      'session1',
       'seg1',
       'original text',
       bedrockProvider,
@@ -247,6 +275,7 @@ describe('generateSuggestions', () => {
     };
 
     const result = await generateSuggestions(
+      'session1',
       'seg1',
       'original text',
       bedrockProvider,
@@ -279,7 +308,7 @@ describe('generateSuggestions', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
-      await generateSuggestions('seg1', 'original text', bedrockProvider, comprehendProvider);
+      await generateSuggestions('session1', 'seg1', 'original text', bedrockProvider, comprehendProvider);
 
       // The failure reason must be logged with the segment id so the root cause
       // is diagnosable from CloudWatch (not just the opaque hasExternalApiError flag).
@@ -311,6 +340,7 @@ describe('generateSuggestions', () => {
     };
 
     const result = await generateSuggestions(
+      'session1',
       'seg1',
       'original text',
       bedrockProvider,
@@ -341,6 +371,7 @@ describe('generateSuggestions', () => {
     };
 
     const result = await generateSuggestions(
+      'session1',
       'seg1',
       'original text',
       bedrockProvider,
@@ -368,6 +399,7 @@ describe('generateSuggestions', () => {
     };
 
     const result = await generateSuggestions(
+      'session1',
       'seg1',
       'original text',
       bedrockProvider,
@@ -403,6 +435,7 @@ describe('generateSuggestions', () => {
     };
 
     const result = await generateSuggestions(
+      'session1',
       'seg1',
       'original text',
       bedrockProvider,
@@ -414,5 +447,314 @@ describe('generateSuggestions', () => {
     expect(result.suggestions[0].source).toBe('history');
     expect(result.suggestions[1].source).toBe('history');
     expect(result.suggestions[2].source).toBe('history');
+  });
+});
+
+function seg(
+  segmentId: string,
+  startTime: number,
+  originalText: string,
+  speakerLabel?: string
+): SegmentSummary {
+  return speakerLabel !== undefined
+    ? { segmentId, startTime, originalText, speakerLabel }
+    : { segmentId, startTime, originalText };
+}
+
+describe('unionSpeakerLabels', () => {
+  it('merges master labels and segment labels in first-appearance order without duplicates', () => {
+    const segments = [
+      seg('s1', 0, 'a', 'SpeakerB'),
+      seg('s2', 1, 'b', 'SpeakerC'),
+      seg('s3', 2, 'c', 'SpeakerB'),
+    ];
+
+    const result = unionSpeakerLabels(['SpeakerA', 'SpeakerB'], segments);
+
+    expect(result).toEqual(['SpeakerA', 'SpeakerB', 'SpeakerC']);
+  });
+
+  it('ignores empty/whitespace labels and handles undefined master list', () => {
+    const segments = [seg('s1', 0, 'a', '  '), seg('s2', 1, 'b', 'SpeakerX')];
+
+    const result = unionSpeakerLabels(undefined, segments);
+
+    expect(result).toEqual(['SpeakerX']);
+  });
+
+  it('returns an empty array when no labels exist anywhere', () => {
+    expect(unionSpeakerLabels(undefined, [seg('s1', 0, 'a')])).toEqual([]);
+  });
+});
+
+describe('selectSurroundingSegments', () => {
+  it('always includes the target segment', () => {
+    const segments = [seg('s1', 0, 'a'), seg('s2', 1, 'target'), seg('s3', 2, 'c')];
+
+    const result = selectSurroundingSegments(segments, 's2');
+
+    expect(result.some((s) => s.segmentId === 's2')).toBe(true);
+  });
+
+  it('returns an empty array when the target id is not present', () => {
+    const segments = [seg('s1', 0, 'a'), seg('s2', 1, 'b')];
+
+    expect(selectSurroundingSegments(segments, 'missing')).toEqual([]);
+  });
+
+  it('preserves startTime (input) order in the output', () => {
+    const segments = [
+      seg('s1', 0, 'a'),
+      seg('s2', 1, 'b'),
+      seg('s3', 2, 'target'),
+      seg('s4', 3, 'd'),
+      seg('s5', 4, 'e'),
+    ];
+
+    const result = selectSurroundingSegments(segments, 's3', 1000);
+    const ids = result.map((s) => s.segmentId);
+
+    expect(ids).toEqual([...ids].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it('stops expanding once the character budget would be exceeded', () => {
+    const long = 'x'.repeat(100);
+    const segments = [
+      seg('s1', 0, long),
+      seg('s2', 1, 'target'),
+      seg('s3', 2, long),
+    ];
+
+    // Budget large enough for the target but not for a 100-char neighbor.
+    const result = selectSurroundingSegments(segments, 's2', 50);
+
+    expect(result.map((s) => s.segmentId)).toEqual(['s2']);
+  });
+});
+
+describe('buildSegmentContext', () => {
+  it('builds a speaker line and a context block with the target marked', () => {
+    const surrounding = [
+      seg('s1', 0, 'intro', 'SpeakerA'),
+      seg('s2', 1, 'target text', 'SpeakerB'),
+    ];
+
+    const result = buildSegmentContext({
+      speakerLabels: ['SpeakerA', 'SpeakerB'],
+      surroundingSegments: surrounding,
+      targetSegmentId: 's2',
+    });
+
+    expect(result).toContain('このセッションの話者: SpeakerA, SpeakerB');
+    expect(result).toContain('前後の文脈:');
+    expect(result).toContain('[SpeakerA] intro');
+    expect(result).toContain('[SpeakerB] target text  ← 修正対象のセグメント');
+    // Only the target line carries the marker.
+    expect(result.match(/← 修正対象のセグメント/g)).toHaveLength(1);
+  });
+
+  it('omits the speaker line when there are no labels', () => {
+    const result = buildSegmentContext({
+      speakerLabels: [],
+      surroundingSegments: [seg('s1', 0, 'only text')],
+      targetSegmentId: 's1',
+    });
+
+    expect(result).not.toContain('このセッションの話者');
+    expect(result).toContain('前後の文脈:');
+    expect(result).toContain('only text');
+  });
+
+  it('renders lines without a bracket prefix when a segment has no speaker', () => {
+    const result = buildSegmentContext({
+      speakerLabels: [],
+      surroundingSegments: [seg('s1', 0, 'no speaker here')],
+      targetSegmentId: 'other',
+    });
+
+    expect(result).toContain('no speaker here');
+    expect(result).not.toContain('[');
+  });
+
+  it('returns an empty string when nothing to show', () => {
+    expect(
+      buildSegmentContext({ speakerLabels: [], surroundingSegments: [], targetSegmentId: 's1' })
+    ).toBe('');
+  });
+});
+
+describe('getSuggestionContext', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('assembles context from the session speaker list and segments', async () => {
+    const { getSessionById } = await import('../repositories/session-repository.js');
+    const { getSessionSegments } = await import('../repositories/segment-repository.js');
+
+    vi.mocked(getSessionById).mockResolvedValue({
+      sessionId: 'session1',
+      name: 'S',
+      status: 'IN_PROGRESS',
+      assignedReviewerCount: 1,
+      consensusThreshold: 3,
+      speakerLabels: ['SpeakerA'],
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    } as never);
+    vi.mocked(getSessionSegments).mockResolvedValue([
+      seg('seg1', 0, 'hello', 'SpeakerA'),
+      seg('seg2', 1, 'target', 'SpeakerB'),
+    ]);
+
+    const context = await getSuggestionContext('session1', 'seg2');
+
+    expect(context).toContain('このセッションの話者: SpeakerA, SpeakerB');
+    expect(context).toContain('[SpeakerB] target  ← 修正対象のセグメント');
+  });
+
+  it('falls back to an empty string and logs when a repository fails', async () => {
+    const { getSessionById } = await import('../repositories/session-repository.js');
+    const { getSessionSegments } = await import('../repositories/segment-repository.js');
+
+    const failure = new Error('DynamoDB unavailable');
+    vi.mocked(getSessionById).mockResolvedValue(null as never);
+    vi.mocked(getSessionSegments).mockRejectedValue(failure);
+
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const context = await getSuggestionContext('session1', 'seg2');
+
+      expect(context).toBe('');
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('getSuggestionContext failed for session session1 segment seg2'),
+        failure
+      );
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+});
+
+describe('generateSuggestions context wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('passes the assembled context to the Bedrock provider', async () => {
+    const { docClient } = await import('../utils/dynamodb-client.js');
+    const { getSessionById } = await import('../repositories/session-repository.js');
+    const { getSessionSegments } = await import('../repositories/segment-repository.js');
+
+    // History query (first docClient.send) returns no history.
+    vi.mocked(docClient.send).mockResolvedValue({ Items: [] } as never);
+    vi.mocked(getSessionById).mockResolvedValue({
+      sessionId: 'session1',
+      name: 'S',
+      status: 'IN_PROGRESS',
+      assignedReviewerCount: 1,
+      consensusThreshold: 3,
+      speakerLabels: ['SpeakerA'],
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    } as never);
+    vi.mocked(getSessionSegments).mockResolvedValue([
+      seg('seg1', 0, 'before text', 'SpeakerA'),
+      seg('seg2', 1, 'target text', 'SpeakerB'),
+    ]);
+
+    const bedrockProvider: BedrockSuggestionProvider = {
+      getSuggestions: vi.fn().mockResolvedValue([]),
+    };
+    const comprehendProvider: ComprehendSuggestionProvider = {
+      getSuggestions: vi.fn().mockResolvedValue([]),
+    };
+
+    await generateSuggestions('session1', 'seg2', 'target text', bedrockProvider, comprehendProvider);
+
+    const call = vi.mocked(bedrockProvider.getSuggestions).mock.calls[0];
+    expect(call[0]).toBe('target text');
+    expect(call[1]).toContain('このセッションの話者: SpeakerA, SpeakerB');
+    expect(call[1]).toContain('[SpeakerB] target text  ← 修正対象のセグメント');
+  });
+
+  it('calls Bedrock with undefined context and still succeeds when context assembly fails', async () => {
+    const { docClient } = await import('../utils/dynamodb-client.js');
+    const { getSessionById } = await import('../repositories/session-repository.js');
+    const { getSessionSegments } = await import('../repositories/segment-repository.js');
+
+    vi.mocked(docClient.send).mockResolvedValue({ Items: [] } as never);
+    vi.mocked(getSessionById).mockResolvedValue(null as never);
+    vi.mocked(getSessionSegments).mockRejectedValue(new Error('boom'));
+
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const bedrockProvider: BedrockSuggestionProvider = {
+      getSuggestions: vi.fn().mockResolvedValue([{ text: 'fix', source: 'bedrock' }]),
+    };
+    const comprehendProvider: ComprehendSuggestionProvider = {
+      getSuggestions: vi.fn().mockResolvedValue([]),
+    };
+
+    try {
+      const result = await generateSuggestions(
+        'session1',
+        'seg2',
+        'target text',
+        bedrockProvider,
+        comprehendProvider
+      );
+
+      // Context failure must NOT mark hasExternalApiError (it's best-effort),
+      // and Bedrock is called with no context.
+      expect(result.hasExternalApiError).toBe(false);
+      expect(result.suggestions).toEqual([{ text: 'fix', source: 'bedrock' }]);
+      const call = vi.mocked(bedrockProvider.getSuggestions).mock.calls[0];
+      expect(call[1]).toBeUndefined();
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+});
+
+describe('defaultBedrockProvider prompt', () => {
+  beforeEach(() => {
+    bedrockSendMock.mockReset();
+  });
+
+  it('embeds the surrounding context into the Bedrock prompt', async () => {
+    const claudeBody = JSON.stringify({ content: [{ type: 'text', text: '修正候補1' }] });
+    bedrockSendMock.mockResolvedValue({ body: new TextEncoder().encode(claudeBody) });
+
+    const context =
+      'このセッションの話者: SpeakerA, SpeakerB\n\n前後の文脈:\n[SpeakerA] こんにちは\n[SpeakerB] 議題の一点目  ← 修正対象のセグメント';
+
+    const result = await defaultBedrockProvider.getSuggestions('議題の一点目', context);
+
+    expect(result).toEqual([{ text: '修正候補1', source: 'bedrock' }]);
+
+    // Inspect the request body sent to InvokeModel.
+    const sentCommand = bedrockSendMock.mock.calls[0][0] as { input: { body: string } };
+    const requestBody = JSON.parse(sentCommand.input.body) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const prompt = requestBody.messages[0].content;
+
+    expect(prompt).toContain('文字起こしテキスト: 議題の一点目');
+    expect(prompt).toContain('周辺の文脈:');
+    expect(prompt).toContain('このセッションの話者: SpeakerA, SpeakerB');
+    expect(prompt).toContain('[SpeakerB] 議題の一点目  ← 修正対象のセグメント');
+  });
+
+  it('omits the context line when no context is provided', async () => {
+    const claudeBody = JSON.stringify({ content: [{ type: 'text', text: 'x' }] });
+    bedrockSendMock.mockResolvedValue({ body: new TextEncoder().encode(claudeBody) });
+
+    await defaultBedrockProvider.getSuggestions('テキスト');
+
+    const sentCommand = bedrockSendMock.mock.calls[0][0] as { input: { body: string } };
+    const requestBody = JSON.parse(sentCommand.input.body) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    expect(requestBody.messages[0].content).not.toContain('周辺の文脈:');
   });
 });

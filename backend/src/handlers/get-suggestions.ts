@@ -51,7 +51,7 @@ export async function handler(
     await checkSessionAccess(user, sessionId);
 
     try {
-      const result = await generateSuggestions(segmentId, originalText);
+      const result = await generateSuggestions(sessionId, segmentId, originalText);
       return successResponse(result);
     } catch (error: unknown) {
       throw internalError(

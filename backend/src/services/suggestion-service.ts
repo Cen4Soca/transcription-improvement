@@ -12,6 +12,11 @@ import {
 import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 import { resolveBedrockRegion } from '../utils/bedrock-region.js';
 import { inferenceControlParams } from '../utils/bedrock-model-features.js';
+import {
+  getSessionSegments,
+  type SegmentSummary,
+} from '../repositories/segment-repository.js';
+import { getSessionById } from '../repositories/session-repository.js';
 
 /**
  * Suggestion source types indicating where a candidate originated.
@@ -160,6 +165,16 @@ const COMPREHEND_LANGUAGE_CODE: LanguageCode =
 /** Max suggestions requested from Bedrock in a single prompt. */
 const BEDROCK_MAX_CANDIDATES = 3;
 
+/**
+ * Maximum total length (characters) of the surrounding-segment context injected
+ * into the Bedrock prompt. Bounds prompt size / cost. Mirrors the 2000-char cap
+ * used by session-name-suggestion-service's MAX_TRANSCRIPT_LENGTH.
+ */
+const MAX_CONTEXT_LENGTH = 2000;
+
+/** Marker appended to the target segment line so Claude can locate the segment under review. */
+const TARGET_SEGMENT_MARKER = '  ← 修正対象のセグメント';
+
 // --- Lazily-initialized AWS SDK clients (reused across warm invocations) ---
 
 let bedrockClient: BedrockRuntimeClient | undefined;
@@ -188,6 +203,207 @@ function getComprehendClient(): ComprehendClient {
  */
 interface BedrockClaudeResponse {
   content?: Array<{ type: string; text?: string }>;
+}
+
+/**
+ * Format a single segment as a context line: "[話者ラベル] テキスト".
+ * When the segment has no speaker label, the bracket prefix is omitted.
+ */
+function formatSegmentLine(segment: SegmentSummary): string {
+  const label = segment.speakerLabel?.trim();
+  const text = segment.originalText.trim();
+  return label ? `[${label}] ${text}` : text;
+}
+
+/**
+ * Merge a session's master speaker-label list with the labels derived from its
+ * segments, preserving first-appearance order and removing duplicates/empties.
+ *
+ * This mirrors the review UI, which shows the UNION of ReviewSession.speakerLabels
+ * and each Segment.speakerLabel.
+ *
+ * @param masterLabels - ReviewSession.speakerLabels (may be undefined).
+ * @param segments - Session segments whose speakerLabel values are also included.
+ * @returns Distinct, non-empty labels in order of first appearance.
+ */
+export function unionSpeakerLabels(
+  masterLabels: string[] | undefined,
+  segments: SegmentSummary[]
+): string[] {
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  const add = (raw: string | undefined) => {
+    const label = raw?.trim();
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      labels.push(label);
+    }
+  };
+
+  for (const label of masterLabels ?? []) {
+    add(label);
+  }
+  for (const segment of segments) {
+    add(segment.speakerLabel);
+  }
+
+  return labels;
+}
+
+/**
+ * Select the segments surrounding the target, centered on the target and
+ * expanding alternately forward/backward, while keeping the total formatted
+ * length within `maxChars`.
+ *
+ * The target segment is always included (even if it alone exceeds the budget).
+ * Output order matches the input order (startTime ascending). When the target
+ * id is not present in `segments`, an empty array is returned.
+ *
+ * Pure function — no I/O.
+ *
+ * @param segments - All session segments in startTime order.
+ * @param targetSegmentId - The segment currently under review.
+ * @param maxChars - Total formatted-length budget (default MAX_CONTEXT_LENGTH).
+ * @returns The selected segments in startTime order.
+ */
+export function selectSurroundingSegments(
+  segments: SegmentSummary[],
+  targetSegmentId: string,
+  maxChars: number = MAX_CONTEXT_LENGTH
+): SegmentSummary[] {
+  const targetIndex = segments.findIndex((s) => s.segmentId === targetSegmentId);
+  if (targetIndex === -1) {
+    return [];
+  }
+
+  // Formatted length of a segment as it will appear in the context block.
+  const lineLength = (segment: SegmentSummary, isTarget: boolean): number =>
+    formatSegmentLine(segment).length + (isTarget ? TARGET_SEGMENT_MARKER.length : 0);
+
+  // Track the inclusive window [lo, hi]. The target is always included first.
+  const selectedIndices = new Set<number>([targetIndex]);
+  let total = lineLength(segments[targetIndex], true);
+
+  let before = targetIndex - 1;
+  let after = targetIndex + 1;
+  // Expand alternately: after, before, after, before... to stay balanced.
+  let takeAfter = true;
+
+  while (before >= 0 || after < segments.length) {
+    const canAfter = after < segments.length;
+    const canBefore = before >= 0;
+    // Decide which side to try this round, respecting availability.
+    const side = takeAfter ? (canAfter ? 'after' : 'before') : canBefore ? 'before' : 'after';
+
+    if (side === 'after' && canAfter) {
+      const cost = lineLength(segments[after], false);
+      if (total + cost > maxChars) break;
+      selectedIndices.add(after);
+      total += cost;
+      after += 1;
+    } else if (side === 'before' && canBefore) {
+      const cost = lineLength(segments[before], false);
+      if (total + cost > maxChars) break;
+      selectedIndices.add(before);
+      total += cost;
+      before -= 1;
+    } else {
+      break;
+    }
+
+    takeAfter = !takeAfter;
+  }
+
+  return segments.filter((_, index) => selectedIndices.has(index));
+}
+
+/**
+ * Build the Japanese context string injected into the Bedrock prompt from the
+ * session's speaker list and the selected surrounding segments.
+ *
+ * Layout:
+ *   このセッションの話者: 話者A, 話者B
+ *
+ *   前後の文脈:
+ *   [話者A] ...
+ *   [話者B] ...   ← 修正対象のセグメント
+ *
+ * The speaker line is omitted when there are no labels. The target segment line
+ * is marked so Claude can identify the segment under review. Returns an empty
+ * string when there is nothing to show.
+ *
+ * Pure function — no I/O.
+ */
+export function buildSegmentContext(params: {
+  speakerLabels: string[];
+  surroundingSegments: SegmentSummary[];
+  targetSegmentId: string;
+}): string {
+  const { speakerLabels, surroundingSegments, targetSegmentId } = params;
+
+  const sections: string[] = [];
+
+  if (speakerLabels.length > 0) {
+    sections.push(`このセッションの話者: ${speakerLabels.join(', ')}`);
+  }
+
+  const lines = surroundingSegments
+    .map((segment) => {
+      const line = formatSegmentLine(segment);
+      if (line.trim() === '') return '';
+      return segment.segmentId === targetSegmentId ? `${line}${TARGET_SEGMENT_MARKER}` : line;
+    })
+    .filter((line) => line !== '');
+
+  if (lines.length > 0) {
+    sections.push(['前後の文脈:', ...lines].join('\n'));
+  }
+
+  return sections.join('\n\n');
+}
+
+/**
+ * Fetch and assemble the surrounding-segment + speaker-list context for a
+ * segment under review.
+ *
+ * Flow:
+ * 1. Fetch the session (for the master speaker list) and all session segments
+ *    in parallel.
+ * 2. Union the master speaker labels with the segment-derived labels.
+ * 3. Select surrounding segments within the character budget.
+ * 4. Format the Japanese context string.
+ *
+ * On any failure, logs to CloudWatch and returns an empty string so suggestion
+ * generation falls back to the original text alone (no throw).
+ *
+ * @param sessionId - The session the segment belongs to.
+ * @param segmentId - The segment under review.
+ * @returns The context string, or an empty string on failure / no context.
+ */
+export async function getSuggestionContext(
+  sessionId: string,
+  segmentId: string
+): Promise<string> {
+  try {
+    const [session, segments] = await Promise.all([
+      getSessionById(sessionId),
+      getSessionSegments(sessionId),
+    ]);
+
+    const speakerLabels = unionSpeakerLabels(session?.speakerLabels, segments);
+    const surroundingSegments = selectSurroundingSegments(segments, segmentId);
+
+    return buildSegmentContext({ speakerLabels, surroundingSegments, targetSegmentId: segmentId });
+  } catch (error: unknown) {
+    // Context is best-effort: log the real failure for diagnosability (same
+    // policy as the Bedrock/Comprehend failure logs) and fall back to no
+    // context so suggestion generation still succeeds on the original text.
+    console.error(
+      `getSuggestionContext failed for session ${sessionId} segment ${segmentId}:`,
+      error
+    );
+    return '';
+  }
 }
 
 /**
@@ -323,33 +539,41 @@ export const defaultComprehendProvider: ComprehendSuggestionProvider = {
  * Generate suggestions for a segment by combining multiple sources.
  *
  * Flow:
- * 1. Query CorrectionHistory from DynamoDB
- * 2. Call Bedrock and Comprehend in parallel
+ * 1. Query CorrectionHistory and assemble the surrounding-segment context in parallel
+ * 2. Call Bedrock (with context) and Comprehend in parallel
  * 3. Merge results with priority: history → bedrock → comprehend
  * 4. Deduplicate and limit to max 5 candidates
  * 5. On external API failure, return history candidates + error flag
  *
+ * @param sessionId - The session the segment belongs to (used to build context)
  * @param segmentId - The segment to generate suggestions for
  * @param originalText - The original text of the segment
  * @param bedrockProvider - Bedrock suggestion provider (injectable for testing)
  * @param comprehendProvider - Comprehend suggestion provider (injectable for testing)
  */
 export async function generateSuggestions(
+  sessionId: string,
   segmentId: string,
   originalText: string,
   bedrockProvider: BedrockSuggestionProvider = defaultBedrockProvider,
   comprehendProvider: ComprehendSuggestionProvider = defaultComprehendProvider
 ): Promise<SuggestionResult> {
-  // Step 1: Get history candidates
-  const historyCandidates = await getCorrectionHistoryCandidates(segmentId);
+  // Step 1: Get history candidates and the surrounding-segment context in
+  // parallel. Both must resolve before we can call Bedrock, since Bedrock's
+  // prompt includes the context. getSuggestionContext never throws (it falls
+  // back to an empty string), so it does not affect hasExternalApiError.
+  const [historyCandidates, context] = await Promise.all([
+    getCorrectionHistoryCandidates(segmentId),
+    getSuggestionContext(sessionId, segmentId),
+  ]);
 
-  // Step 2: Call Bedrock and Comprehend in parallel
+  // Step 2: Call Bedrock (with context) and Comprehend in parallel
   let bedrockCandidates: SuggestionCandidate[] = [];
   let comprehendCandidates: SuggestionCandidate[] = [];
   let hasExternalApiError = false;
 
   const [bedrockResult, comprehendResult] = await Promise.allSettled([
-    bedrockProvider.getSuggestions(originalText),
+    bedrockProvider.getSuggestions(originalText, context || undefined),
     comprehendProvider.getSuggestions(originalText),
   ]);
 

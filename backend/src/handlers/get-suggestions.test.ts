@@ -204,7 +204,7 @@ describe('GET /sessions/{sessionId}/suggestions handler', () => {
     const event = createEvent({ text: 'custom text' });
     await handler(event);
 
-    expect(generateSuggestions).toHaveBeenCalledWith('segment-1', 'custom text');
+    expect(generateSuggestions).toHaveBeenCalledWith('session-1', 'segment-1', 'custom text');
   });
 
   it('should default text to empty string when not provided', async () => {
@@ -220,6 +220,6 @@ describe('GET /sessions/{sessionId}/suggestions handler', () => {
     event.queryStringParameters = { segmentId: 'segment-1' };
     await handler(event);
 
-    expect(generateSuggestions).toHaveBeenCalledWith('segment-1', '');
+    expect(generateSuggestions).toHaveBeenCalledWith('session-1', 'segment-1', '');
   });
 });
