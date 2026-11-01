@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { IPAllowlistEntry } from '../types/audit';
 
 export interface IPAllowlistSettingsProps {
@@ -12,9 +13,13 @@ export interface IPAllowlistSettingsProps {
 const CIDR_V4_REGEX = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
 const CIDR_V6_REGEX = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}\/\d{1,3}$/;
 
+/**
+ * Validates a CIDR block and returns a translation key for the error, or null when valid.
+ * The key is resolved against the `admin` namespace by the component.
+ */
 function validateCIDR(value: string): string | null {
   if (!value.trim()) {
-    return 'CIDRブロックを入力してください';
+    return 'ipAllowlist.validation.required';
   }
 
   const trimmed = value.trim();
@@ -25,10 +30,10 @@ function validateCIDR(value: string): string | null {
     const prefixNum = Number(prefix);
 
     if (octets.some((o) => o < 0 || o > 255)) {
-      return '無効なIPv4アドレスです。各オクテットは0〜255の範囲で指定してください。';
+      return 'ipAllowlist.validation.invalidIpv4';
     }
     if (prefixNum < 0 || prefixNum > 32) {
-      return '無効なプレフィックス長です。IPv4の場合は0〜32の範囲で指定してください。';
+      return 'ipAllowlist.validation.invalidPrefixV4';
     }
     return null;
   }
@@ -37,12 +42,12 @@ function validateCIDR(value: string): string | null {
     const [, prefix] = trimmed.split('/');
     const prefixNum = Number(prefix);
     if (prefixNum < 0 || prefixNum > 128) {
-      return '無効なプレフィックス長です。IPv6の場合は0〜128の範囲で指定してください。';
+      return 'ipAllowlist.validation.invalidPrefixV6';
     }
     return null;
   }
 
-  return '無効なCIDR形式です。例: 192.168.1.0/24 または 2001:db8::/32';
+  return 'ipAllowlist.validation.invalidCidr';
 }
 
 /**
@@ -57,6 +62,7 @@ export function IPAllowlistSettings({
   onAddEntry,
   onDeleteEntry,
 }: IPAllowlistSettingsProps) {
+  const { t } = useTranslation('admin');
   const [showAddForm, setShowAddForm] = useState(false);
   const [cidr, setCidr] = useState('');
   const [description, setDescription] = useState('');
@@ -66,14 +72,14 @@ export function IPAllowlistSettings({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const error = validateCIDR(cidr);
-    if (error) {
-      setValidationError(error);
+    const errorKey = validateCIDR(cidr);
+    if (errorKey) {
+      setValidationError(t(errorKey));
       return;
     }
 
     if (entries.length >= maxEntries) {
-      setValidationError(`エントリ数が上限（${maxEntries}件）に達しています。`);
+      setValidationError(t('ipAllowlist.validation.maxEntries', { count: maxEntries }));
       return;
     }
 
@@ -101,7 +107,7 @@ export function IPAllowlistSettings({
       <div
         className="flex items-center justify-center h-48"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('ipAllowlist.loadingAriaLabel')}
       >
         <div className="w-6 h-6 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
@@ -109,13 +115,13 @@ export function IPAllowlistSettings({
   }
 
   return (
-    <div className="space-y-4" aria-label="IPアドレス許可リスト管理">
+    <div className="space-y-4" aria-label={t('ipAllowlist.managementAriaLabel')}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">IPアドレス許可リスト</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('ipAllowlist.heading')}</h2>
           <p className="text-sm text-gray-500 mt-1">
-            登録数: {entries.length} / {maxEntries}件
+            {t('ipAllowlist.registeredCount', { count: entries.length, max: maxEntries })}
           </p>
         </div>
         <button
@@ -126,7 +132,7 @@ export function IPAllowlistSettings({
           aria-expanded={showAddForm}
           aria-controls="add-ip-form"
         >
-          {showAddForm ? 'キャンセル' : 'エントリ追加'}
+          {showAddForm ? t('common:cancel') : t('ipAllowlist.addEntry')}
         </button>
       </div>
 
@@ -136,12 +142,12 @@ export function IPAllowlistSettings({
           id="add-ip-form"
           onSubmit={handleSubmit}
           className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3"
-          aria-label="IPエントリ追加フォーム"
+          aria-label={t('ipAllowlist.addFormAriaLabel')}
           noValidate
         >
           <div>
             <label htmlFor="ip-cidr" className="block text-sm font-medium text-gray-700">
-              CIDRブロック
+              {t('ipAllowlist.cidrBlock')}
             </label>
             <input
               id="ip-cidr"
@@ -170,7 +176,7 @@ export function IPAllowlistSettings({
           </div>
           <div>
             <label htmlFor="ip-description" className="block text-sm font-medium text-gray-700">
-              説明（任意）
+              {t('ipAllowlist.descriptionOptional')}
             </label>
             <input
               id="ip-description"
@@ -178,14 +184,14 @@ export function IPAllowlistSettings({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="オフィスネットワーク"
+              placeholder={t('ipAllowlist.descriptionPlaceholder')}
             />
           </div>
           <button
             type="submit"
             className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            追加
+            {t('ipAllowlist.add')}
           </button>
         </form>
       )}
@@ -193,24 +199,24 @@ export function IPAllowlistSettings({
       {/* Entry list */}
       {entries.length === 0 ? (
         <p className="text-center text-gray-500 py-8">
-          IPアドレス許可リストが空です。すべてのIPアドレスからのアクセスが許可されています。
+          {t('ipAllowlist.emptyState')}
         </p>
       ) : (
         <div className="overflow-hidden border border-gray-200 rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200" aria-label="IPアドレス許可リストテーブル">
+          <table className="min-w-full divide-y divide-gray-200" aria-label={t('ipAllowlist.tableAriaLabel')}>
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  CIDRブロック
+                  {t('ipAllowlist.cidrBlock')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  説明
+                  {t('ipAllowlist.column.description')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  追加日時
+                  {t('ipAllowlist.column.addedAt')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  操作
+                  {t('ipAllowlist.column.actions')}
                 </th>
               </tr>
             </thead>
@@ -231,9 +237,9 @@ export function IPAllowlistSettings({
                       type="button"
                       onClick={() => setConfirmDeleteId(entry.entryId)}
                       className="text-sm text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-2 py-1"
-                      aria-label={`${entry.cidr}を削除`}
+                      aria-label={t('ipAllowlist.deleteAriaLabel', { cidr: entry.cidr })}
                     >
-                      削除
+                      {t('ipAllowlist.delete')}
                     </button>
                   </td>
                 </tr>
@@ -253,10 +259,10 @@ export function IPAllowlistSettings({
         >
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <h3 id="delete-ip-dialog-title" className="text-lg font-semibold text-gray-900">
-              エントリ削除の確認
+              {t('ipAllowlist.deleteDialogTitle')}
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              このIPアドレスエントリを削除しますか？削除すると、このCIDRブロックからのアクセスが拒否される可能性があります。
+              {t('ipAllowlist.deleteDialogDescription')}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -264,14 +270,14 @@ export function IPAllowlistSettings({
                 onClick={() => setConfirmDeleteId(null)}
                 className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
-                キャンセル
+                {t('common:cancel')}
               </button>
               <button
                 type="button"
                 onClick={() => handleDeleteConfirm(confirmDeleteId)}
                 className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                削除する
+                {t('ipAllowlist.deleteConfirm')}
               </button>
             </div>
           </div>

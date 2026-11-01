@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Team, TeamAssignment } from '../types/team';
 import type { User } from '../types/user';
 import type { ReviewSession } from '../types/session';
@@ -39,6 +40,7 @@ export function TeamManagement({
   onAssignSession,
   onUnassignSession,
 }: TeamManagementProps) {
+  const { t } = useTranslation('admin');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export function TeamManagement({
       <div
         className="flex items-center justify-center h-48"
         role="status"
-        aria-label="読み込み中"
+        aria-label={t('team.loadingAriaLabel')}
       >
         <div className="w-6 h-6 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
@@ -99,10 +101,10 @@ export function TeamManagement({
   }
 
   return (
-    <div className="space-y-4" aria-label="チーム管理">
+    <div className="space-y-4" aria-label={t('team.managementAriaLabel')}>
       {/* Header with create button */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">チーム一覧</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('team.heading')}</h2>
         <button
           type="button"
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -110,7 +112,7 @@ export function TeamManagement({
           aria-expanded={showCreateForm}
           aria-controls="create-team-form"
         >
-          {showCreateForm ? 'キャンセル' : 'チーム作成'}
+          {showCreateForm ? t('common:cancel') : t('team.createTeam')}
         </button>
       </div>
 
@@ -120,11 +122,11 @@ export function TeamManagement({
           id="create-team-form"
           onSubmit={handleCreateTeam}
           className="p-4 bg-gray-50 border border-gray-200 rounded-lg flex gap-2 items-end"
-          aria-label="チーム作成フォーム"
+          aria-label={t('team.createFormAriaLabel')}
         >
           <div className="flex-1">
             <label htmlFor="team-name" className="block text-sm font-medium text-gray-700">
-              チーム名
+              {t('team.teamName')}
             </label>
             <input
               id="team-name"
@@ -133,23 +135,23 @@ export function TeamManagement({
               value={newTeamName}
               onChange={(e) => setNewTeamName(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="チーム名を入力"
+              placeholder={t('team.teamNamePlaceholder')}
             />
           </div>
           <button
             type="submit"
             className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            作成
+            {t('team.create')}
           </button>
         </form>
       )}
 
       {/* Team list */}
       {teams.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">チームがありません</p>
+        <p className="text-center text-gray-500 py-8">{t('team.emptyState')}</p>
       ) : (
-        <ul className="space-y-3" aria-label="チーム一覧">
+        <ul className="space-y-3" aria-label={t('team.listAriaLabel')}>
           {teams.map((team) => {
             const members = getTeamMemberUsers(team.teamId);
             const isExpanded = expandedTeamId === team.teamId;
@@ -169,7 +171,7 @@ export function TeamManagement({
                         value={editingTeamName}
                         onChange={(e) => setEditingTeamName(e.target.value)}
                         className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        aria-label="チーム名を編集"
+                        aria-label={t('team.editNameAriaLabel')}
                         autoFocus
                       />
                       <button
@@ -177,14 +179,14 @@ export function TeamManagement({
                         onClick={() => handleEditSubmit(team.teamId)}
                         className="text-sm text-green-600 hover:text-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 rounded px-2 py-1"
                       >
-                        保存
+                        {t('common:save')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingTeamId(null)}
                         className="text-sm text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded px-2 py-1"
                       >
-                        キャンセル
+                        {t('common:cancel')}
                       </button>
                     </div>
                   ) : (
@@ -199,7 +201,7 @@ export function TeamManagement({
                         {team.name}
                       </button>
                       <span className="text-xs text-gray-500">
-                        {members.length}名
+                        {t('team.memberCount', { count: members.length })}
                       </span>
                     </div>
                   )}
@@ -213,25 +215,25 @@ export function TeamManagement({
                           setEditingTeamName(team.name);
                         }}
                         className="text-sm text-gray-600 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                        aria-label={`${team.name}を編集`}
+                        aria-label={t('team.editAriaLabel', { name: team.name })}
                       >
-                        編集
+                        {t('team.edit')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowAssignmentSection(isAssignmentOpen ? null : team.teamId)}
                         className="text-sm text-gray-600 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                        aria-label={`${team.name}にセッション割り当て`}
+                        aria-label={t('team.assignAriaLabel', { name: team.name })}
                       >
-                        割り当て
+                        {t('team.assign')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteTeamId(team.teamId)}
                         className="text-sm text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-2 py-1"
-                        aria-label={`${team.name}を削除`}
+                        aria-label={t('team.deleteAriaLabel', { name: team.name })}
                       >
-                        削除
+                        {t('team.delete')}
                       </button>
                     </div>
                   )}
@@ -243,11 +245,11 @@ export function TeamManagement({
                     id={`team-details-${team.teamId}`}
                     className="border-t border-gray-200 px-4 py-3 bg-gray-50"
                   >
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">メンバー</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">{t('team.members')}</h4>
                     {members.length === 0 ? (
-                      <p className="text-sm text-gray-500">メンバーがいません</p>
+                      <p className="text-sm text-gray-500">{t('team.noMembers')}</p>
                     ) : (
-                      <ul className="space-y-1 mb-3" aria-label={`${team.name}のメンバー`}>
+                      <ul className="space-y-1 mb-3" aria-label={t('team.membersAriaLabel', { name: team.name })}>
                         {members.map((member) => (
                           <li
                             key={member.userId}
@@ -261,9 +263,9 @@ export function TeamManagement({
                               type="button"
                               onClick={() => onRemoveMember?.(team.teamId, member.userId)}
                               className="text-xs text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-2 py-0.5"
-                              aria-label={`${member.displayName}をチームから削除`}
+                              aria-label={t('team.removeMemberAriaLabel', { name: member.displayName })}
                             >
-                              削除
+                              {t('team.delete')}
                             </button>
                           </li>
                         ))}
@@ -282,13 +284,13 @@ export function TeamManagement({
                 {/* Team assignment section */}
                 {isAssignmentOpen && (
                   <div className="border-t border-gray-200 px-4 py-3 bg-blue-50">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">セッション割り当て</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">{t('team.sessionAssignment')}</h4>
 
                     {/* Current assignments */}
                     {getTeamAssignments(team.teamId).length > 0 && (
                       <div className="mb-3">
-                        <p className="text-xs text-gray-500 mb-1">割り当て済み</p>
-                        <ul className="space-y-1" aria-label={`${team.name}の割り当て済みセッション`}>
+                        <p className="text-xs text-gray-500 mb-1">{t('team.assigned')}</p>
+                        <ul className="space-y-1" aria-label={t('team.assignedSessionsAriaLabel', { name: team.name })}>
                           {getTeamAssignments(team.teamId).map((assignment) => {
                             const session = sessions.find((s) => s.sessionId === assignment.sessionId);
                             return (
@@ -303,9 +305,9 @@ export function TeamManagement({
                                   type="button"
                                   onClick={() => onUnassignSession?.(team.teamId, assignment.sessionId)}
                                   className="text-xs text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-2 py-0.5"
-                                  aria-label={`${session?.name || assignment.sessionId}の割り当てを解除`}
+                                  aria-label={t('team.unassignAriaLabel', { name: session?.name || assignment.sessionId })}
                                 >
-                                  解除
+                                  {t('team.unassign')}
                                 </button>
                               </li>
                             );
@@ -338,10 +340,10 @@ export function TeamManagement({
         >
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <h3 id="delete-team-dialog-title" className="text-lg font-semibold text-gray-900">
-              チーム削除の確認
+              {t('team.deleteDialogTitle')}
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              このチームを削除しますか？チームの割り当てもすべて削除されます。
+              {t('team.deleteDialogDescription')}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -349,14 +351,14 @@ export function TeamManagement({
                 onClick={() => setConfirmDeleteTeamId(null)}
                 className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
-                キャンセル
+                {t('common:cancel')}
               </button>
               <button
                 type="button"
                 onClick={() => handleDeleteConfirm(confirmDeleteTeamId)}
                 className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                削除する
+                {t('team.deleteConfirm')}
               </button>
             </div>
           </div>
@@ -375,6 +377,7 @@ function AddMemberSelect({
   availableUsers: User[];
   onAddMember?: (teamId: string, userId: string) => void;
 }) {
+  const { t } = useTranslation('admin');
   const [selectedUserId, setSelectedUserId] = useState('');
 
   const handleAdd = () => {
@@ -391,9 +394,9 @@ function AddMemberSelect({
         value={selectedUserId}
         onChange={(e) => setSelectedUserId(e.target.value)}
         className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="追加するメンバーを選択"
+        aria-label={t('team.selectMemberAriaLabel')}
       >
-        <option value="">メンバーを選択...</option>
+        <option value="">{t('team.selectMemberPlaceholder')}</option>
         {availableUsers.map((user) => (
           <option key={user.userId} value={user.userId}>
             {user.displayName} ({user.email})
@@ -406,7 +409,7 @@ function AddMemberSelect({
         disabled={!selectedUserId}
         className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        追加
+        {t('team.add')}
       </button>
     </div>
   );
@@ -421,6 +424,7 @@ function AssignSessionSelect({
   availableSessions: ReviewSession[];
   onAssignSession?: (teamId: string, sessionId: string) => void;
 }) {
+  const { t } = useTranslation('admin');
   const [selectedSessionId, setSelectedSessionId] = useState('');
 
   const handleAssign = () => {
@@ -430,7 +434,7 @@ function AssignSessionSelect({
   };
 
   if (availableSessions.length === 0) {
-    return <p className="text-xs text-gray-500">割り当て可能なセッションがありません</p>;
+    return <p className="text-xs text-gray-500">{t('team.noAssignableSessions')}</p>;
   }
 
   return (
@@ -439,9 +443,9 @@ function AssignSessionSelect({
         value={selectedSessionId}
         onChange={(e) => setSelectedSessionId(e.target.value)}
         className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="割り当てるセッションを選択"
+        aria-label={t('team.selectSessionAriaLabel')}
       >
-        <option value="">セッションを選択...</option>
+        <option value="">{t('team.selectSessionPlaceholder')}</option>
         {availableSessions.map((session) => (
           <option key={session.sessionId} value={session.sessionId}>
             {session.name}
@@ -454,7 +458,7 @@ function AssignSessionSelect({
         disabled={!selectedSessionId}
         className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        割り当て
+        {t('team.assign')}
       </button>
     </div>
   );

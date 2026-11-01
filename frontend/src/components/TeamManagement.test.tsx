@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { TeamManagement } from './TeamManagement';
 import type { Team, TeamAssignment } from '../types/team';
 import type { User } from '../types/user';
@@ -76,6 +77,9 @@ const mockTeamAssignments: TeamAssignment[] = [
   },
 ];
 
+const tt = (key: string, opts?: Record<string, unknown>) => i18n.t(`admin:team.${key}`, opts);
+const tc = (key: string) => i18n.t(`common:${key}`);
+
 const defaultProps = {
   teams: mockTeams,
   users: mockUsers,
@@ -89,14 +93,14 @@ describe('TeamManagement', () => {
     render(<TeamManagement {...defaultProps} />);
 
     expect(screen.getByText('翻訳チームA')).toBeInTheDocument();
-    expect(screen.getByText('2名')).toBeInTheDocument();
+    expect(screen.getByText(tt('memberCount', { count: 2 }))).toBeInTheDocument();
     expect(screen.getByText('校閲チームB')).toBeInTheDocument();
-    expect(screen.getByText('0名')).toBeInTheDocument();
+    expect(screen.getByText(tt('memberCount', { count: 0 }))).toBeInTheDocument();
   });
 
   it('shows empty message when no teams', () => {
     render(<TeamManagement {...defaultProps} teams={[]} />);
-    expect(screen.getByText('チームがありません')).toBeInTheDocument();
+    expect(screen.getByText(tt('emptyState'))).toBeInTheDocument();
   });
 
   it('shows loading state', () => {
@@ -109,11 +113,11 @@ describe('TeamManagement', () => {
     const onCreateTeam = vi.fn();
     render(<TeamManagement {...defaultProps} onCreateTeam={onCreateTeam} />);
 
-    await user.click(screen.getByText('チーム作成'));
-    expect(screen.getByLabelText('チーム名')).toBeInTheDocument();
+    await user.click(screen.getByText(tt('createTeam')));
+    expect(screen.getByLabelText(tt('teamName'))).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('チーム名'), '新チーム');
-    await user.click(screen.getByText('作成'));
+    await user.type(screen.getByLabelText(tt('teamName')), '新チーム');
+    await user.click(screen.getByText(tt('create')));
 
     expect(onCreateTeam).toHaveBeenCalledWith('新チーム');
   });
@@ -123,13 +127,13 @@ describe('TeamManagement', () => {
     const onEditTeam = vi.fn();
     render(<TeamManagement {...defaultProps} onEditTeam={onEditTeam} />);
 
-    const editButtons = screen.getAllByText('編集');
+    const editButtons = screen.getAllByText(tt('edit'));
     await user.click(editButtons[0]);
 
-    const input = screen.getByLabelText('チーム名を編集');
+    const input = screen.getByLabelText(tt('editNameAriaLabel'));
     await user.clear(input);
     await user.type(input, '新しいチーム名');
-    await user.click(screen.getByText('保存'));
+    await user.click(screen.getByText(tc('save')));
 
     expect(onEditTeam).toHaveBeenCalledWith('team-1', '新しいチーム名');
   });
@@ -139,12 +143,12 @@ describe('TeamManagement', () => {
     const onDeleteTeam = vi.fn();
     render(<TeamManagement {...defaultProps} onDeleteTeam={onDeleteTeam} />);
 
-    const deleteButtons = screen.getAllByText('削除');
+    const deleteButtons = screen.getAllByText(tt('delete'));
     await user.click(deleteButtons[0]);
 
-    expect(screen.getByText('チーム削除の確認')).toBeInTheDocument();
+    expect(screen.getByText(tt('deleteDialogTitle'))).toBeInTheDocument();
 
-    await user.click(screen.getByText('削除する'));
+    await user.click(screen.getByText(tt('deleteConfirm')));
     expect(onDeleteTeam).toHaveBeenCalledWith('team-1');
   });
 
@@ -152,13 +156,13 @@ describe('TeamManagement', () => {
     const user = userEvent.setup();
     render(<TeamManagement {...defaultProps} />);
 
-    const deleteButtons = screen.getAllByText('削除');
+    const deleteButtons = screen.getAllByText(tt('delete'));
     await user.click(deleteButtons[0]);
 
-    expect(screen.getByText('チーム削除の確認')).toBeInTheDocument();
+    expect(screen.getByText(tt('deleteDialogTitle'))).toBeInTheDocument();
 
-    await user.click(screen.getByText('キャンセル'));
-    expect(screen.queryByText('チーム削除の確認')).not.toBeInTheDocument();
+    await user.click(screen.getByText(tc('cancel')));
+    expect(screen.queryByText(tt('deleteDialogTitle'))).not.toBeInTheDocument();
   });
 
   it('expands team to show members', async () => {
@@ -175,10 +179,10 @@ describe('TeamManagement', () => {
     const user = userEvent.setup();
     render(<TeamManagement {...defaultProps} />);
 
-    const assignButtons = screen.getAllByText('割り当て');
+    const assignButtons = screen.getAllByText(tt('assign'));
     await user.click(assignButtons[0]);
 
-    expect(screen.getByText('セッション割り当て')).toBeInTheDocument();
+    expect(screen.getByText(tt('sessionAssignment'))).toBeInTheDocument();
     expect(screen.getByText('セッション1')).toBeInTheDocument();
   });
 
@@ -193,12 +197,12 @@ describe('TeamManagement', () => {
       />
     );
 
-    const assignButtons = screen.getAllByText('割り当て');
+    const assignButtons = screen.getAllByText(tt('assign'));
     await user.click(assignButtons[0]);
 
-    const select = screen.getByLabelText('割り当てるセッションを選択');
+    const select = screen.getByLabelText(tt('selectSessionAriaLabel'));
     await user.selectOptions(select, 'session-1');
-    await user.click(screen.getByRole('button', { name: '割り当て' }));
+    await user.click(screen.getByRole('button', { name: tt('assign') }));
 
     expect(onAssignSession).toHaveBeenCalledWith('team-1', 'session-1');
   });
@@ -210,8 +214,10 @@ describe('TeamManagement', () => {
 
     await user.click(screen.getByText('翻訳チームA'));
 
-    const removeButtons = screen.getAllByLabelText(/をチームから削除/);
-    await user.click(removeButtons[0]);
+    const removeButton = screen.getByLabelText(
+      tt('removeMemberAriaLabel', { name: '管理者太郎' })
+    );
+    await user.click(removeButton);
 
     expect(onRemoveMember).toHaveBeenCalledWith('team-1', 'user-1');
   });
@@ -223,12 +229,12 @@ describe('TeamManagement', () => {
       <TeamManagement {...defaultProps} onUnassignSession={onUnassignSession} />
     );
 
-    const assignButtons = screen.getAllByText('割り当て');
+    const assignButtons = screen.getAllByText(tt('assign'));
     await user.click(assignButtons[0]);
 
     // team-1 has session-1 assigned via mockTeamAssignments.
-    expect(screen.getByText('割り当て済み')).toBeInTheDocument();
-    await user.click(screen.getByLabelText('セッション1の割り当てを解除'));
+    expect(screen.getByText(tt('assigned'))).toBeInTheDocument();
+    await user.click(screen.getByLabelText(tt('unassignAriaLabel', { name: 'セッション1' })));
 
     expect(onUnassignSession).toHaveBeenCalledWith('team-1', 'session-1');
   });
@@ -238,11 +244,11 @@ describe('TeamManagement', () => {
     // All sessions already assigned → no candidates remain for team-1.
     render(<TeamManagement {...defaultProps} />);
 
-    const assignButtons = screen.getAllByText('割り当て');
+    const assignButtons = screen.getAllByText(tt('assign'));
     await user.click(assignButtons[0]);
 
     expect(
-      screen.getByText('割り当て可能なセッションがありません')
+      screen.getByText(tt('noAssignableSessions'))
     ).toBeInTheDocument();
   });
 

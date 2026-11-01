@@ -1,8 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { IPAllowlistSettings } from './IPAllowlistSettings';
 import type { IPAllowlistEntry } from '../types/audit';
+
+const tip = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(`admin:ipAllowlist.${key}`, opts);
+const tc = (key: string) => i18n.t(`common:${key}`);
 
 const mockEntries: IPAllowlistEntry[] = [
   {
@@ -34,43 +39,43 @@ describe('IPAllowlistSettings', () => {
   it('shows entry count and max limit', () => {
     render(<IPAllowlistSettings entries={mockEntries} maxEntries={1000} />);
 
-    expect(screen.getByText('登録数: 2 / 1000件')).toBeInTheDocument();
+    expect(screen.getByText(tip('registeredCount', { count: 2, max: 1000 }))).toBeInTheDocument();
   });
 
   it('shows empty state when no entries', () => {
     render(<IPAllowlistSettings entries={[]} />);
 
     expect(
-      screen.getByText('IPアドレス許可リストが空です。すべてのIPアドレスからのアクセスが許可されています。')
+      screen.getByText(tip('emptyState'))
     ).toBeInTheDocument();
   });
 
   it('shows loading state', () => {
     render(<IPAllowlistSettings entries={[]} isLoading={true} />);
 
-    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: tip('loadingAriaLabel') })).toBeInTheDocument();
   });
 
   it('opens add form when clicking add button', async () => {
     const user = userEvent.setup();
     render(<IPAllowlistSettings entries={[]} />);
 
-    await user.click(screen.getByText('エントリ追加'));
+    await user.click(screen.getByText(tip('addEntry')));
 
-    expect(screen.getByLabelText('CIDRブロック')).toBeInTheDocument();
-    expect(screen.getByLabelText('説明（任意）')).toBeInTheDocument();
+    expect(screen.getByLabelText(tip('cidrBlock'))).toBeInTheDocument();
+    expect(screen.getByLabelText(tip('descriptionOptional'))).toBeInTheDocument();
   });
 
   it('validates invalid CIDR format and shows error', async () => {
     const user = userEvent.setup();
     render(<IPAllowlistSettings entries={[]} />);
 
-    await user.click(screen.getByText('エントリ追加'));
-    await user.type(screen.getByLabelText('CIDRブロック'), 'invalid-cidr');
-    await user.click(screen.getByText('追加'));
+    await user.click(screen.getByText(tip('addEntry')));
+    await user.type(screen.getByLabelText(tip('cidrBlock')), 'invalid-cidr');
+    await user.click(screen.getByText(tip('add')));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      '無効なCIDR形式です。例: 192.168.1.0/24 または 2001:db8::/32'
+      tip('validation.invalidCidr')
     );
   });
 
@@ -78,11 +83,11 @@ describe('IPAllowlistSettings', () => {
     const user = userEvent.setup();
     render(<IPAllowlistSettings entries={[]} />);
 
-    await user.click(screen.getByText('エントリ追加'));
-    await user.click(screen.getByText('追加'));
+    await user.click(screen.getByText(tip('addEntry')));
+    await user.click(screen.getByText(tip('add')));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'CIDRブロックを入力してください'
+      tip('validation.required')
     );
   });
 
@@ -90,12 +95,12 @@ describe('IPAllowlistSettings', () => {
     const user = userEvent.setup();
     render(<IPAllowlistSettings entries={[]} />);
 
-    await user.click(screen.getByText('エントリ追加'));
-    await user.type(screen.getByLabelText('CIDRブロック'), '256.0.0.0/24');
-    await user.click(screen.getByText('追加'));
+    await user.click(screen.getByText(tip('addEntry')));
+    await user.type(screen.getByLabelText(tip('cidrBlock')), '256.0.0.0/24');
+    await user.click(screen.getByText(tip('add')));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      '無効なIPv4アドレスです'
+      tip('validation.invalidIpv4')
     );
   });
 
@@ -103,12 +108,12 @@ describe('IPAllowlistSettings', () => {
     const user = userEvent.setup();
     render(<IPAllowlistSettings entries={[]} />);
 
-    await user.click(screen.getByText('エントリ追加'));
-    await user.type(screen.getByLabelText('CIDRブロック'), '192.168.1.0/33');
-    await user.click(screen.getByText('追加'));
+    await user.click(screen.getByText(tip('addEntry')));
+    await user.type(screen.getByLabelText(tip('cidrBlock')), '192.168.1.0/33');
+    await user.click(screen.getByText(tip('add')));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      '無効なプレフィックス長です。IPv4の場合は0〜32の範囲で指定してください。'
+      tip('validation.invalidPrefixV4')
     );
   });
 
@@ -117,10 +122,10 @@ describe('IPAllowlistSettings', () => {
     const onAddEntry = vi.fn();
     render(<IPAllowlistSettings entries={[]} onAddEntry={onAddEntry} />);
 
-    await user.click(screen.getByText('エントリ追加'));
-    await user.type(screen.getByLabelText('CIDRブロック'), '10.0.0.0/16');
-    await user.type(screen.getByLabelText('説明（任意）'), '開発環境');
-    await user.click(screen.getByText('追加'));
+    await user.click(screen.getByText(tip('addEntry')));
+    await user.type(screen.getByLabelText(tip('cidrBlock')), '10.0.0.0/16');
+    await user.type(screen.getByLabelText(tip('descriptionOptional')), '開発環境');
+    await user.click(screen.getByText(tip('add')));
 
     expect(onAddEntry).toHaveBeenCalledWith({ cidr: '10.0.0.0/16', description: '開発環境' });
   });
@@ -133,22 +138,22 @@ describe('IPAllowlistSettings', () => {
     render(<IPAllowlistSettings entries={singleEntry} maxEntries={maxEntries} />);
 
     // Button is disabled when at max
-    expect(screen.getByText('エントリ追加')).toBeDisabled();
+    expect(screen.getByText(tip('addEntry'))).toBeDisabled();
   });
 
   it('disables add button when max entries reached', () => {
     render(<IPAllowlistSettings entries={mockEntries} maxEntries={2} />);
 
-    expect(screen.getByText('エントリ追加')).toBeDisabled();
+    expect(screen.getByText(tip('addEntry'))).toBeDisabled();
   });
 
   it('shows delete confirmation dialog when clicking delete', async () => {
     const user = userEvent.setup();
     render(<IPAllowlistSettings entries={mockEntries} />);
 
-    await user.click(screen.getByLabelText('192.168.1.0/24を削除'));
+    await user.click(screen.getByLabelText(tip('deleteAriaLabel', { cidr: '192.168.1.0/24' })));
 
-    expect(screen.getByText('エントリ削除の確認')).toBeInTheDocument();
+    expect(screen.getByText(tip('deleteDialogTitle'))).toBeInTheDocument();
   });
 
   it('calls onDeleteEntry when confirming deletion', async () => {
@@ -156,8 +161,8 @@ describe('IPAllowlistSettings', () => {
     const onDeleteEntry = vi.fn();
     render(<IPAllowlistSettings entries={mockEntries} onDeleteEntry={onDeleteEntry} />);
 
-    await user.click(screen.getByLabelText('192.168.1.0/24を削除'));
-    await user.click(screen.getByText('削除する'));
+    await user.click(screen.getByLabelText(tip('deleteAriaLabel', { cidr: '192.168.1.0/24' })));
+    await user.click(screen.getByText(tip('deleteConfirm')));
 
     expect(onDeleteEntry).toHaveBeenCalledWith('entry-1');
   });
@@ -166,28 +171,28 @@ describe('IPAllowlistSettings', () => {
     const user = userEvent.setup();
     render(<IPAllowlistSettings entries={mockEntries} />);
 
-    await user.click(screen.getByLabelText('192.168.1.0/24を削除'));
-    await user.click(screen.getByText('キャンセル'));
+    await user.click(screen.getByLabelText(tip('deleteAriaLabel', { cidr: '192.168.1.0/24' })));
+    await user.click(screen.getByText(tc('cancel')));
 
-    expect(screen.queryByText('エントリ削除の確認')).not.toBeInTheDocument();
+    expect(screen.queryByText(tip('deleteDialogTitle'))).not.toBeInTheDocument();
   });
 
   it('clears validation error when user types', async () => {
     const user = userEvent.setup();
     render(<IPAllowlistSettings entries={[]} />);
 
-    await user.click(screen.getByText('エントリ追加'));
-    await user.click(screen.getByText('追加'));
+    await user.click(screen.getByText(tip('addEntry')));
+    await user.click(screen.getByText(tip('add')));
     expect(screen.getByRole('alert')).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('CIDRブロック'), '1');
+    await user.type(screen.getByLabelText(tip('cidrBlock')), '1');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('has proper ARIA attributes for accessibility', () => {
     render(<IPAllowlistSettings entries={mockEntries} />);
 
-    expect(screen.getByLabelText('IPアドレス許可リスト管理')).toBeInTheDocument();
-    expect(screen.getByLabelText('IPアドレス許可リストテーブル')).toBeInTheDocument();
+    expect(screen.getByLabelText(tip('managementAriaLabel'))).toBeInTheDocument();
+    expect(screen.getByLabelText(tip('tableAriaLabel'))).toBeInTheDocument();
   });
 });
