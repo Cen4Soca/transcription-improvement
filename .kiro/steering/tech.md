@@ -10,6 +10,7 @@ inclusion: always
 - React 19 + TypeScript (ESM) with Vite 8
 - TailwindCSS 4 via `@tailwindcss/vite` plugin
 - react-router-dom v7, aws-amplify v6 (Cognito)
+- i18n: react-i18next（日本語 / 英語）。UI テキストは翻訳キー化、エラーは詳細コードで翻訳。規約は `i18n-and-errors.md` を参照
 - Testing: Vitest + React Testing Library + fast-check + vitest-axe (WCAG 2.1 AA); Playwright for E2E (in `e2e/`)
 
 ### Backend
