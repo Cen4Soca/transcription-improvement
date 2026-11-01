@@ -122,6 +122,17 @@ export function ProfilePage({ displayName, email, onSave, onLanguageChange }: Pr
           </p>
         </div>
 
+        <div aria-labelledby="profile-language-heading">
+          <h2
+            id="profile-language-heading"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {t('languageSection')}
+          </h2>
+          <LanguageSelector onChange={onLanguageChange} />
+          <p className="mt-1 text-xs text-gray-500">{t('languageHint')}</p>
+        </div>
+
         <div className="flex items-center gap-3">
           <button
             type="submit"
@@ -132,14 +143,6 @@ export function ProfilePage({ displayName, email, onSave, onLanguageChange }: Pr
           </button>
         </div>
       </form>
-
-      <section className="mt-8 border-t border-gray-200 pt-6" aria-labelledby="profile-language-heading">
-        <h2 id="profile-language-heading" className="text-sm font-medium text-gray-700 mb-2">
-          {t('languageSection')}
-        </h2>
-        <LanguageSelector onChange={onLanguageChange} />
-        <p className="mt-2 text-xs text-gray-500">{t('languageHint')}</p>
-      </section>
     </main>
   );
 }
