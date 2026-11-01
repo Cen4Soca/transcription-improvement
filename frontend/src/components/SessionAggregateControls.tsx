@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ReviewSession, ForceAggregateResult } from '../types/session';
 import type { UserRole } from '../types/user';
 
@@ -26,6 +27,7 @@ export function SessionAggregateControls({
   userRole,
   onAggregate,
 }: SessionAggregateControlsProps) {
+  const { t } = useTranslation('review');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -49,7 +51,7 @@ export function SessionAggregateControls({
       setResult(data);
       setShowConfirm(false);
     } catch (e) {
-      setError(e instanceof Error && e.message ? e.message : '集約に失敗しました。');
+      setError(e instanceof Error && e.message ? e.message : t('aggregate.failed'));
     } finally {
       setBusy(false);
     }
@@ -60,7 +62,7 @@ export function SessionAggregateControls({
       <div
         className="flex flex-wrap items-center gap-2"
         role="group"
-        aria-label="強制集約の操作"
+        aria-label={t('aggregate.groupAriaLabel')}
       >
         <button
           type="button"
@@ -71,14 +73,14 @@ export function SessionAggregateControls({
           disabled={isCompleted || busy}
           aria-expanded={showConfirm}
           aria-controls={confirmRegionId}
-          aria-label="強制集約して確定"
+          aria-label={t('aggregate.aggregateButton')}
           className="px-3 py-1.5 text-sm font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          強制集約して確定
+          {t('aggregate.aggregateButton')}
         </button>
         {isCompleted && (
           <span className="text-xs text-gray-500">
-            このセッションは既に完了しています。
+            {t('aggregate.alreadyCompleted')}
           </span>
         )}
       </div>
@@ -88,11 +90,11 @@ export function SessionAggregateControls({
         <div
           id={confirmRegionId}
           role="group"
-          aria-label="強制集約の確認"
+          aria-label={t('aggregate.confirmAriaLabel')}
           className="rounded-md border border-amber-200 bg-amber-50 p-3 flex flex-col gap-2"
         >
           <p className="text-xs text-amber-800">
-            集約を実行するとセッションは完了となり、元に戻せません。実行してよろしいですか。
+            {t('aggregate.confirmMessage')}
           </p>
           <div className="flex gap-2">
             <button
@@ -101,7 +103,7 @@ export function SessionAggregateControls({
               disabled={busy}
               className="px-3 py-1.5 text-sm font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
             >
-              実行する
+              {t('aggregate.execute')}
             </button>
             <button
               type="button"
@@ -112,7 +114,7 @@ export function SessionAggregateControls({
               disabled={busy}
               className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              キャンセル
+              {t('common:cancel')}
             </button>
           </div>
         </div>
@@ -120,8 +122,11 @@ export function SessionAggregateControls({
 
       {result && (
         <p className="text-xs text-green-700" role="status">
-          集約が完了しました。確定 {result.confirmedCount} 件 / 不一致{' '}
-          {result.conflictCount} 件 / レビュアー {result.totalReviewers} 名
+          {t('aggregate.resultSummary', {
+            confirmed: result.confirmedCount,
+            conflict: result.conflictCount,
+            reviewers: result.totalReviewers,
+          })}
         </p>
       )}
 

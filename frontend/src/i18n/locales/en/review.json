@@ -77,6 +77,34 @@
     "emptyConfirmCancelAriaLabel": "Cancel confirming empty string",
     "emptyConfirmConfirmAriaLabel": "Confirm as empty string"
   },
+  "reopen": {
+    "groupAriaLabel": "Reopen actions",
+    "reopenButton": "Reopen to in progress",
+    "onlyCompleted": "Only completed sessions can be reopened.",
+    "confirmAriaLabel": "Reopen confirmation",
+    "confirmMessage": "This will return the session to in progress. Confirmed results are preserved. Do you want to continue?",
+    "execute": "Execute",
+    "done": "Returned to in progress.",
+    "failed": "Failed to reopen."
+  },
+  "aggregate": {
+    "groupAriaLabel": "Force aggregation actions",
+    "aggregateButton": "Force aggregate and confirm",
+    "alreadyCompleted": "This session is already completed.",
+    "confirmAriaLabel": "Force aggregation confirmation",
+    "confirmMessage": "Running aggregation will complete the session and cannot be undone. Do you want to continue?",
+    "execute": "Execute",
+    "resultSummary": "Aggregation complete. Confirmed {{confirmed}} / Conflicts {{conflict}} / Reviewers {{reviewers}}",
+    "failed": "Failed to aggregate."
+  },
+  "sessionName": {
+    "editAriaLabel": "Edit session name",
+    "nameAriaLabel": "Session name",
+    "validationRuleAriaLabel": "Validation rules",
+    "requestSuggestion": "Suggest a name from the transcription",
+    "suggesting": "Fetching suggestion...",
+    "suggestionFailed": "Could not fetch a suggestion."
+  },
   "suggestion": {
     "title": "Correction suggestions",
     "loadingAriaLabel": "Loading",

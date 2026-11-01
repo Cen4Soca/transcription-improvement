@@ -2,8 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { SessionNameEditor } from './SessionNameEditor';
 import { SESSION_NAME_RULE_TEXT } from '../utils/session-name';
+
+const tsn = (key: string) => i18n.t(`review:sessionName.${key}`);
+const tc = (key: string) => i18n.t(`common:${key}`);
 
 describe('SessionNameEditor', () => {
   it('表示モードで名前と編集ボタンを表示し、違反がない (WCAG 2.1 AA)', async () => {
@@ -13,7 +17,7 @@ describe('SessionNameEditor', () => {
 
     expect(screen.getByText('会議録A')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'セッション名を編集' })
+      screen.getByRole('button', { name: tsn('editAriaLabel') })
     ).toBeInTheDocument();
 
     const results = await axe(container);
@@ -27,12 +31,12 @@ describe('SessionNameEditor', () => {
       <SessionNameEditor name="旧名" onSave={onSave} />
     );
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
 
-    const input = screen.getByRole('textbox', { name: 'セッション名' });
+    const input = screen.getByRole('textbox', { name: tsn('nameAriaLabel') });
     await user.clear(input);
     await user.type(input, '  新しい名前  ');
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     expect(onSave).toHaveBeenCalledWith('新しい名前');
 
@@ -47,11 +51,11 @@ describe('SessionNameEditor', () => {
       <SessionNameEditor name="元の名前" onSave={onSave} />
     );
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
-    const input = screen.getByRole('textbox', { name: 'セッション名' });
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
+    const input = screen.getByRole('textbox', { name: tsn('nameAriaLabel') });
     await user.clear(input);
     await user.type(input, '破棄される入力');
-    await user.click(screen.getByRole('button', { name: 'キャンセル' }));
+    await user.click(screen.getByRole('button', { name: tc('cancel') }));
 
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByText('元の名前')).toBeInTheDocument();
@@ -67,10 +71,10 @@ describe('SessionNameEditor', () => {
       <SessionNameEditor name="元の名前" onSave={onSave} />
     );
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
-    const input = screen.getByRole('textbox', { name: 'セッション名' });
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
+    const input = screen.getByRole('textbox', { name: tsn('nameAriaLabel') });
     await user.clear(input);
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -88,11 +92,11 @@ describe('SessionNameEditor', () => {
       <SessionNameEditor name="元の名前" onSave={onSave} />
     );
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
-    const input = screen.getByRole('textbox', { name: 'セッション名' });
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
+    const input = screen.getByRole('textbox', { name: tsn('nameAriaLabel') });
     await user.clear(input);
     await user.type(input, 'a'.repeat(101));
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -111,11 +115,11 @@ describe('SessionNameEditor', () => {
     });
     render(<SessionNameEditor name="元の名前" onSave={onSave} />);
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
-    const input = screen.getByRole('textbox', { name: 'セッション名' });
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
+    const input = screen.getByRole('textbox', { name: tsn('nameAriaLabel') });
     await user.clear(input);
     await user.type(input, '有効な名前');
-    await user.click(screen.getByRole('button', { name: '保存' }));
+    await user.click(screen.getByRole('button', { name: tc('save') }));
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(SESSION_NAME_RULE_TEXT);
@@ -136,15 +140,15 @@ describe('SessionNameEditor', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
     await user.click(
       screen.getByRole('button', {
-        name: 'トランスクリプションから名前を提案',
+        name: tsn('requestSuggestion'),
       })
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('textbox', { name: 'セッション名' })).toHaveValue(
+      expect(screen.getByRole('textbox', { name: tsn('nameAriaLabel') })).toHaveValue(
         '提案されたセッション名'
       );
     });
@@ -167,16 +171,16 @@ describe('SessionNameEditor', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
     await user.click(
       screen.getByRole('button', {
-        name: 'トランスクリプションから名前を提案',
+        name: tsn('requestSuggestion'),
       })
     );
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(
-        '提案を取得できませんでした。'
+        tsn('suggestionFailed')
       );
     });
   });
@@ -187,11 +191,11 @@ describe('SessionNameEditor', () => {
       <SessionNameEditor name="元の名前" onSave={vi.fn().mockResolvedValue(null)} />
     );
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
 
     expect(
       screen.queryByRole('button', {
-        name: 'トランスクリプションから名前を提案',
+        name: tsn('requestSuggestion'),
       })
     ).not.toBeInTheDocument();
   });
@@ -202,10 +206,10 @@ describe('SessionNameEditor', () => {
       <SessionNameEditor name="元の名前" onSave={vi.fn().mockResolvedValue(null)} />
     );
 
-    await user.click(screen.getByRole('button', { name: 'セッション名を編集' }));
+    await user.click(screen.getByRole('button', { name: tsn('editAriaLabel') }));
 
     const infoButton = screen.getByRole('button', {
-      name: 'バリデーションルール',
+      name: tsn('validationRuleAriaLabel'),
     });
     const describedBy = infoButton.getAttribute('aria-describedby');
     expect(describedBy).toBeTruthy();

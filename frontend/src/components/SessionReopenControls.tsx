@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ReviewSession, ReopenSessionResult } from '../types/session';
 import type { UserRole } from '../types/user';
 
@@ -28,6 +29,7 @@ export function SessionReopenControls({
   userRole,
   onReopen,
 }: SessionReopenControlsProps) {
+  const { t } = useTranslation('review');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -52,7 +54,7 @@ export function SessionReopenControls({
       setShowConfirm(false);
     } catch (e) {
       setError(
-        e instanceof Error && e.message ? e.message : '差し戻しに失敗しました。'
+        e instanceof Error && e.message ? e.message : t('reopen.failed')
       );
     } finally {
       setBusy(false);
@@ -64,7 +66,7 @@ export function SessionReopenControls({
       <div
         className="flex flex-wrap items-center gap-2"
         role="group"
-        aria-label="差し戻しの操作"
+        aria-label={t('reopen.groupAriaLabel')}
       >
         <button
           type="button"
@@ -75,14 +77,14 @@ export function SessionReopenControls({
           disabled={!isCompleted || busy}
           aria-expanded={showConfirm}
           aria-controls={confirmRegionId}
-          aria-label="進行中に戻す"
+          aria-label={t('reopen.reopenButton')}
           className="px-3 py-1.5 text-sm font-medium rounded-md bg-slate-600 text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          進行中に戻す
+          {t('reopen.reopenButton')}
         </button>
         {!isCompleted && (
           <span className="text-xs text-gray-500">
-            完了したセッションのみ差し戻せます。
+            {t('reopen.onlyCompleted')}
           </span>
         )}
       </div>
@@ -92,11 +94,11 @@ export function SessionReopenControls({
         <div
           id={confirmRegionId}
           role="group"
-          aria-label="差し戻しの確認"
+          aria-label={t('reopen.confirmAriaLabel')}
           className="rounded-md border border-slate-200 bg-slate-50 p-3 flex flex-col gap-2"
         >
           <p className="text-xs text-slate-800">
-            このセッションを進行中に戻します。確定済みの結果は保持されます。実行してよろしいですか。
+            {t('reopen.confirmMessage')}
           </p>
           <div className="flex gap-2">
             <button
@@ -105,7 +107,7 @@ export function SessionReopenControls({
               disabled={busy}
               className="px-3 py-1.5 text-sm font-medium rounded-md bg-slate-600 text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50"
             >
-              実行する
+              {t('reopen.execute')}
             </button>
             <button
               type="button"
@@ -116,7 +118,7 @@ export function SessionReopenControls({
               disabled={busy}
               className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              キャンセル
+              {t('common:cancel')}
             </button>
           </div>
         </div>
@@ -124,7 +126,7 @@ export function SessionReopenControls({
 
       {done && (
         <p className="text-xs text-green-700" role="status">
-          進行中に戻しました。
+          {t('reopen.done')}
         </p>
       )}
 

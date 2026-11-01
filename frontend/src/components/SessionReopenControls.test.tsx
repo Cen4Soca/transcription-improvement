@@ -2,8 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { SessionReopenControls } from './SessionReopenControls';
 import type { ReviewSession, ReopenSessionResult } from '../types/session';
+
+const tr = (key: string, opts?: Record<string, unknown>) => i18n.t(`review:reopen.${key}`, opts);
+const tc = (key: string) => i18n.t(`common:${key}`);
 
 function createSession(overrides: Partial<ReviewSession> = {}): ReviewSession {
   return {
@@ -37,7 +41,7 @@ describe('SessionReopenControls', () => {
     );
 
     // Expand the confirmation step so the dialog region is also audited.
-    await userEvent.click(screen.getByRole('button', { name: '進行中に戻す' }));
+    await userEvent.click(screen.getByRole('button', { name: tr('reopenButton') }));
 
     const results = await axe(container);
     expect(results).toHaveNoViolations();
@@ -53,7 +57,7 @@ describe('SessionReopenControls', () => {
     );
 
     expect(
-      screen.queryByRole('button', { name: /進行中に戻す/ })
+      screen.queryByRole('button', { name: new RegExp(tr('reopenButton')) })
     ).not.toBeInTheDocument();
     expect(container).toBeEmptyDOMElement();
   });
@@ -68,7 +72,7 @@ describe('SessionReopenControls', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: '進行中に戻す' })
+      screen.getByRole('button', { name: tr('reopenButton') })
     ).toBeInTheDocument();
   });
 
@@ -82,7 +86,7 @@ describe('SessionReopenControls', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: '進行中に戻す' })
+      screen.getByRole('button', { name: tr('reopenButton') })
     ).toBeInTheDocument();
   });
 
@@ -96,10 +100,10 @@ describe('SessionReopenControls', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: '進行中に戻す' })
+      screen.getByRole('button', { name: tr('reopenButton') })
     ).toBeDisabled();
     expect(
-      screen.getByText('完了したセッションのみ差し戻せます。')
+      screen.getByText(tr('onlyCompleted'))
     ).toBeInTheDocument();
   });
 
@@ -114,15 +118,15 @@ describe('SessionReopenControls', () => {
     );
 
     // Opening the confirmation must NOT call the API yet.
-    await userEvent.click(screen.getByRole('button', { name: '進行中に戻す' }));
+    await userEvent.click(screen.getByRole('button', { name: tr('reopenButton') }));
     expect(onReopen).not.toHaveBeenCalled();
-    expect(screen.getByText(/確定済みの結果は保持されます/)).toBeInTheDocument();
+    expect(screen.getByText(tr('confirmMessage'))).toBeInTheDocument();
 
     // Cancelling closes the confirmation without calling the API.
-    await userEvent.click(screen.getByRole('button', { name: 'キャンセル' }));
+    await userEvent.click(screen.getByRole('button', { name: tc('cancel') }));
     expect(onReopen).not.toHaveBeenCalled();
     expect(
-      screen.queryByText(/確定済みの結果は保持されます/)
+      screen.queryByText(tr('confirmMessage'))
     ).not.toBeInTheDocument();
   });
 
@@ -136,13 +140,13 @@ describe('SessionReopenControls', () => {
       />
     );
 
-    await userEvent.click(screen.getByRole('button', { name: '進行中に戻す' }));
-    await userEvent.click(screen.getByRole('button', { name: '実行する' }));
+    await userEvent.click(screen.getByRole('button', { name: tr('reopenButton') }));
+    await userEvent.click(screen.getByRole('button', { name: tr('execute') }));
 
     await waitFor(() => expect(onReopen).toHaveBeenCalledWith('session-1'));
 
     const status = await screen.findByRole('status');
-    expect(status).toHaveTextContent('進行中に戻しました。');
+    expect(status).toHaveTextContent(tr('done'));
   });
 
   it('surfaces a Japanese error message when onReopen rejects', async () => {
@@ -157,8 +161,8 @@ describe('SessionReopenControls', () => {
       />
     );
 
-    await userEvent.click(screen.getByRole('button', { name: '進行中に戻す' }));
-    await userEvent.click(screen.getByRole('button', { name: '実行する' }));
+    await userEvent.click(screen.getByRole('button', { name: tr('reopenButton') }));
+    await userEvent.click(screen.getByRole('button', { name: tr('execute') }));
 
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(

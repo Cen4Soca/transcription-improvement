@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AppError } from '../types/api';
 import {
   validateSessionName,
@@ -39,6 +40,7 @@ export function SessionNameEditor({
   onRequestSuggestion,
   className,
 }: SessionNameEditorProps) {
+  const { t } = useTranslation('review');
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(name);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -90,13 +92,13 @@ export function SessionNameEditor({
     try {
       const result = await onRequestSuggestion();
       if (!result || result.suggestion === null || result.hasExternalApiError) {
-        setErrorMessage('提案を取得できませんでした。');
+        setErrorMessage(t('sessionName.suggestionFailed'));
         return;
       }
       setDraft(result.suggestion);
       inputRef.current?.focus();
     } catch {
-      setErrorMessage('提案を取得できませんでした。');
+      setErrorMessage(t('sessionName.suggestionFailed'));
     } finally {
       setIsSuggesting(false);
     }
@@ -109,7 +111,7 @@ export function SessionNameEditor({
         <button
           type="button"
           onClick={startEditing}
-          aria-label="セッション名を編集"
+          aria-label={t('sessionName.editAriaLabel')}
           className="inline-flex items-center p-1 text-gray-500 rounded hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         >
           <svg
@@ -134,7 +136,7 @@ export function SessionNameEditor({
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          aria-label="セッション名"
+          aria-label={t('sessionName.nameAriaLabel')}
           aria-invalid={errorMessage !== null}
           disabled={isSaving}
           className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
@@ -144,7 +146,7 @@ export function SessionNameEditor({
         <span className="relative inline-flex">
           <button
             type="button"
-            aria-label="バリデーションルール"
+            aria-label={t('sessionName.validationRuleAriaLabel')}
             aria-describedby={ruleTextId}
             onMouseEnter={() => setTooltipVisible(true)}
             onMouseLeave={() => setTooltipVisible(false)}
@@ -171,7 +173,7 @@ export function SessionNameEditor({
           disabled={isSaving}
           className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         >
-          {isSaving ? '保存中...' : '保存'}
+          {isSaving ? t('common:saving') : t('common:save')}
         </button>
         <button
           type="button"
@@ -179,7 +181,7 @@ export function SessionNameEditor({
           disabled={isSaving}
           className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50"
         >
-          キャンセル
+          {t('common:cancel')}
         </button>
       </div>
 
@@ -191,7 +193,7 @@ export function SessionNameEditor({
             disabled={isSuggesting || isSaving}
             className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            {isSuggesting ? '提案を取得中...' : 'トランスクリプションから名前を提案'}
+            {isSuggesting ? t('sessionName.suggesting') : t('sessionName.requestSuggestion')}
           </button>
         </div>
       )}

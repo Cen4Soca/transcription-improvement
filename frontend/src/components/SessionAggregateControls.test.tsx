@@ -2,8 +2,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import i18n from '../i18n';
 import { SessionAggregateControls } from './SessionAggregateControls';
 import type { ReviewSession, ForceAggregateResult } from '../types/session';
+
+const tag = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(`review:aggregate.${key}`, opts);
+const tc = (key: string) => i18n.t(`common:${key}`);
 
 function createSession(overrides: Partial<ReviewSession> = {}): ReviewSession {
   return {
@@ -41,7 +46,7 @@ describe('SessionAggregateControls', () => {
 
     // Expand the confirmation step so the dialog region is also audited.
     await userEvent.click(
-      screen.getByRole('button', { name: '強制集約して確定' })
+      screen.getByRole('button', { name: tag('aggregateButton') })
     );
 
     const results = await axe(container);
@@ -58,7 +63,7 @@ describe('SessionAggregateControls', () => {
     );
 
     expect(
-      screen.queryByRole('button', { name: /強制集約/ })
+      screen.queryByRole('button', { name: new RegExp(tag('aggregateButton')) })
     ).not.toBeInTheDocument();
     expect(container).toBeEmptyDOMElement();
   });
@@ -73,7 +78,7 @@ describe('SessionAggregateControls', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: '強制集約して確定' })
+      screen.getByRole('button', { name: tag('aggregateButton') })
     ).toBeInTheDocument();
   });
 
@@ -87,7 +92,7 @@ describe('SessionAggregateControls', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: '強制集約して確定' })
+      screen.getByRole('button', { name: tag('aggregateButton') })
     ).toBeInTheDocument();
   });
 
@@ -101,10 +106,10 @@ describe('SessionAggregateControls', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: '強制集約して確定' })
+      screen.getByRole('button', { name: tag('aggregateButton') })
     ).toBeDisabled();
     expect(
-      screen.getByText('このセッションは既に完了しています。')
+      screen.getByText(tag('alreadyCompleted'))
     ).toBeInTheDocument();
   });
 
@@ -120,15 +125,15 @@ describe('SessionAggregateControls', () => {
 
     // Opening the confirmation must NOT call the API yet.
     await userEvent.click(
-      screen.getByRole('button', { name: '強制集約して確定' })
+      screen.getByRole('button', { name: tag('aggregateButton') })
     );
     expect(onAggregate).not.toHaveBeenCalled();
-    expect(screen.getByText(/元に戻せません/)).toBeInTheDocument();
+    expect(screen.getByText(tag('confirmMessage'))).toBeInTheDocument();
 
     // Cancelling closes the confirmation without calling the API.
-    await userEvent.click(screen.getByRole('button', { name: 'キャンセル' }));
+    await userEvent.click(screen.getByRole('button', { name: tc('cancel') }));
     expect(onAggregate).not.toHaveBeenCalled();
-    expect(screen.queryByText(/元に戻せません/)).not.toBeInTheDocument();
+    expect(screen.queryByText(tag('confirmMessage'))).not.toBeInTheDocument();
   });
 
   it('calls onAggregate with the sessionId and shows a Japanese success summary', async () => {
@@ -142,16 +147,16 @@ describe('SessionAggregateControls', () => {
     );
 
     await userEvent.click(
-      screen.getByRole('button', { name: '強制集約して確定' })
+      screen.getByRole('button', { name: tag('aggregateButton') })
     );
-    await userEvent.click(screen.getByRole('button', { name: '実行する' }));
+    await userEvent.click(screen.getByRole('button', { name: tag('execute') }));
 
     await waitFor(() => expect(onAggregate).toHaveBeenCalledWith('session-1'));
 
     const status = await screen.findByRole('status');
-    expect(status).toHaveTextContent('確定 1 件');
-    expect(status).toHaveTextContent('不一致 1 件');
-    expect(status).toHaveTextContent('レビュアー 2 名');
+    expect(status).toHaveTextContent(
+      tag('resultSummary', { confirmed: 1, conflict: 1, reviewers: 2 })
+    );
   });
 
   it('surfaces a Japanese error message when onAggregate rejects', async () => {
@@ -167,9 +172,9 @@ describe('SessionAggregateControls', () => {
     );
 
     await userEvent.click(
-      screen.getByRole('button', { name: '強制集約して確定' })
+      screen.getByRole('button', { name: tag('aggregateButton') })
     );
-    await userEvent.click(screen.getByRole('button', { name: '実行する' }));
+    await userEvent.click(screen.getByRole('button', { name: tag('execute') }));
 
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
