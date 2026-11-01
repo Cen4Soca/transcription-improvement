@@ -8,6 +8,8 @@ export interface UseKeyboardShortcutsOptions {
   onConfirmEdit?: () => void;
   onCancelEdit?: () => void;
   onFocusSearch?: () => void;
+  /** Enter（編集フィールド外）: フォーカス中セグメントの編集を開始する */
+  onActivateSegment?: () => void;
   enabled?: boolean;
 }
 
@@ -19,6 +21,7 @@ export interface UseKeyboardShortcutsOptions {
  * - Shift+Tab: 前のSegmentに移動
  * - Ctrl+Z / Cmd+Z: アンドゥ
  * - Ctrl+Enter / Cmd+Enter: 編集確定
+ * - Enter（入力フィールド外）: フォーカス中Segmentの編集を開始
  * - Escape: 編集キャンセル
  * - Ctrl+F / Cmd+F: 検索バーにフォーカス
  * - IME入力中（isComposing === true）はショートカットを無効化
@@ -33,6 +36,7 @@ export function useKeyboardShortcuts({
   onConfirmEdit,
   onCancelEdit,
   onFocusSearch,
+  onActivateSegment,
   enabled = true,
 }: UseKeyboardShortcutsOptions): void {
   const isComposingRef = useRef(false);
@@ -98,6 +102,17 @@ export function useKeyboardShortcuts({
         return;
       }
 
+      // Enter (plain): Activate focused segment (start editing).
+      // Only when outside an editable element so textarea newlines are unaffected.
+      if (key === 'Enter' && !modKey && !shiftKey) {
+        if (isEditableElement(event.target)) return;
+        if (onActivateSegment) {
+          event.preventDefault();
+          onActivateSegment();
+        }
+        return;
+      }
+
       // Escape: Cancel edit
       if (key === 'Escape') {
         if (onCancelEdit) {
@@ -151,6 +166,7 @@ export function useKeyboardShortcuts({
     onConfirmEdit,
     onCancelEdit,
     onFocusSearch,
+    onActivateSegment,
     isEditableElement,
   ]);
 }

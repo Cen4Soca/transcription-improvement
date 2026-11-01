@@ -319,3 +319,150 @@ describe('ReviewPage - セッション名編集', () => {
     expect(results).toHaveNoViolations();
   });
 });
+
+describe('ReviewPage - キーボード操作の全配線（校閲効率化）', () => {
+  function makeSegments(): Segment[] {
+    return [
+      {
+        segmentId: 's1',
+        sessionId: 'session-1',
+        startTime: 0,
+        endTime: 2,
+        originalText: 'セグメント1',
+        consensusStatus: 'UNDECIDED',
+      },
+      {
+        segmentId: 's2',
+        sessionId: 'session-1',
+        startTime: 2,
+        endTime: 4,
+        originalText: 'セグメント2',
+        consensusStatus: 'UNDECIDED',
+      },
+      {
+        segmentId: 's3',
+        sessionId: 'session-1',
+        startTime: 4,
+        endTime: 6,
+        originalText: 'セグメント3',
+        consensusStatus: 'UNDECIDED',
+      },
+    ];
+  }
+
+  function renderForKeyboard(
+    overrides: Partial<React.ComponentProps<typeof ReviewPage>> = {},
+  ) {
+    return renderReviewPage({
+      segments: makeSegments(),
+      onSaveCorrection: vi.fn().mockResolvedValue(true),
+      onFetchSuggestions: vi
+        .fn()
+        .mockResolvedValue({ suggestions: [], hasError: false }),
+      ...overrides,
+    });
+  }
+
+  it('Tab でフォーカスが先頭→次へ進み、Shift+Tab で戻る', () => {
+    renderForKeyboard();
+
+    // 初期はフォーカス無し。Tab で先頭 s1 にフォーカス。
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(
+      document.querySelector('[data-segment-id="s1"]')
+    ).toHaveClass('ring-indigo-400');
+
+    // 次の Tab で s2。
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(
+      document.querySelector('[data-segment-id="s2"]')
+    ).toHaveClass('ring-indigo-400');
+
+    // Shift+Tab で s1 に戻る。
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(
+      document.querySelector('[data-segment-id="s1"]')
+    ).toHaveClass('ring-indigo-400');
+  });
+
+  it('Enter でフォーカス中セグメントの編集が開始する', () => {
+    renderForKeyboard();
+
+    fireEvent.keyDown(document, { key: 'Tab' }); // s1 にフォーカス
+    fireEvent.keyDown(document, { key: 'Enter' });
+
+    // 編集モードの textarea が出現する
+    expect(
+      screen.getByRole('textbox', { name: t('segmentEditor.editTextareaAriaLabel') })
+    ).toBeInTheDocument();
+  });
+
+  it('未修正のみ移動トグル ON 時、Tab は修正済みを飛ばす', () => {
+    renderForKeyboard({ correctedSegmentIds: new Set(['s1', 's2']) });
+
+    // トグルを ON にする
+    fireEvent.click(
+      screen.getByRole('checkbox', {
+        name: t('page.uncorrectedNavOnlyAriaLabel'),
+      })
+    );
+
+    // 未修正は s3 のみ。Tab で s1/s2 を飛ばして s3 にフォーカス。
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(
+      document.querySelector('[data-segment-id="s3"]')
+    ).toHaveClass('ring-indigo-400');
+  });
+
+  it('COMPLETED セッションでは Enter で編集が開始しない（移動は可能）', () => {
+    renderForKeyboard({ sessionStatus: 'COMPLETED' });
+
+    fireEvent.keyDown(document, { key: 'Tab' }); // 移動は許可
+    expect(
+      document.querySelector('[data-segment-id="s1"]')
+    ).toHaveClass('ring-indigo-400');
+
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(
+      screen.queryByRole('textbox', {
+        name: t('segmentEditor.editTextareaAriaLabel'),
+      })
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe('ReviewPage - 校閲進捗バー', () => {
+  function makeSegments(): Segment[] {
+    return [
+      {
+        segmentId: 's1',
+        sessionId: 'session-1',
+        startTime: 0,
+        endTime: 2,
+        originalText: 'セグメント1',
+        consensusStatus: 'UNDECIDED',
+      },
+      {
+        segmentId: 's2',
+        sessionId: 'session-1',
+        startTime: 2,
+        endTime: 4,
+        originalText: 'セグメント2',
+        consensusStatus: 'UNDECIDED',
+      },
+    ];
+  }
+
+  it('修正済み件数に応じた進捗を表示する', () => {
+    renderReviewPage({
+      segments: makeSegments(),
+      correctedSegmentIds: new Set(['s1']),
+      onSaveCorrection: vi.fn().mockResolvedValue(true),
+    });
+
+    const bar = screen.getByRole('progressbar', {
+      name: t('progress.ariaLabel'),
+    });
+    expect(bar).toHaveAttribute('aria-valuenow', '50');
+  });
+});

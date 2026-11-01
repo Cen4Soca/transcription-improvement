@@ -12,6 +12,8 @@ export interface TranscriptionEditorProps {
   error?: { message: string } | null;
   isLoading?: boolean;
   highlightedSegmentId?: string | null;
+  /** キーボードカーソルでフォーカス中のセグメント（Tab 移動） */
+  focusedSegmentId?: string | null;
   searchQuery?: string;
   /**
    * 修正済みセグメントの表示専用データ（segmentId -> 修正前/修正後）。
@@ -71,6 +73,7 @@ export function TranscriptionEditor({
   error,
   isLoading = false,
   highlightedSegmentId,
+  focusedSegmentId,
   searchQuery,
   displayCorrections,
   correctedSegmentIds,
@@ -164,6 +167,7 @@ export function TranscriptionEditor({
             <SegmentEditor
               segment={segment}
               isHighlighted={highlightedSegmentId === segment.segmentId}
+              isFocused={focusedSegmentId === segment.segmentId}
               isEditing={isEditing}
               editText={editTexts?.get(segment.segmentId)}
               searchQuery={searchQuery}

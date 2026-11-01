@@ -34,6 +34,8 @@
     "viewConsensus": "Consensus を確認",
     "viewConsensusAriaLabel": "Consensus を確認",
     "pressButtonToShowSuggestions": "ボタンを押して候補を表示",
+    "uncorrectedNavOnly": "未修正のみ移動",
+    "uncorrectedNavOnlyAriaLabel": "Tab移動を未修正セグメントのみに絞る",
     "openSpeakerManagerAriaLabel": "話者ラベル管理を開く",
     "speakerManager": "話者ラベル管理",
     "deleteMedia": "メディア削除",
@@ -56,6 +58,10 @@
     "transcriptionFallbackName": "Transcription",
     "deleteTranscriptionWarning": "この操作は取り消せません。関連するすべてのデータ（Segment・Correction・ConsensusResult）が削除されます。",
     "dataFetchFailed": "データの取得に失敗しました。"
+  },
+  "progress": {
+    "ariaLabel": "校閲進捗",
+    "label": "{{done}} / {{total}} 件 修正済み（{{percent}}%）"
   },
   "mediaUrlError": {
     "notFound": "メディアファイルが見つかりません。このセッションには再生可能なファイルが登録されていない可能性があります。",

@@ -34,6 +34,8 @@
     "viewConsensus": "View consensus",
     "viewConsensusAriaLabel": "View consensus",
     "pressButtonToShowSuggestions": "Show suggestions on button press",
+    "uncorrectedNavOnly": "Move through uncorrected only",
+    "uncorrectedNavOnlyAriaLabel": "Limit Tab navigation to uncorrected segments",
     "openSpeakerManagerAriaLabel": "Open speaker label management",
     "speakerManager": "Speaker labels",
     "deleteMedia": "Delete media",
@@ -56,6 +58,10 @@
     "transcriptionFallbackName": "Transcription",
     "deleteTranscriptionWarning": "This action cannot be undone. All related data (segments, corrections, consensus results) will be deleted.",
     "dataFetchFailed": "Failed to fetch data."
+  },
+  "progress": {
+    "ariaLabel": "Review progress",
+    "label": "{{done}} / {{total}} corrected ({{percent}}%)"
   },
   "mediaUrlError": {
     "notFound": "The media file was not found. This session may not have a playable file registered.",

@@ -8,6 +8,12 @@ export interface MediaPlayerProps {
   onError?: (error: string) => void;
   onPlayStateChange?: (isPlaying: boolean) => void;
   seekTo?: number | null;
+  /**
+   * 外部からの再生/一時停止トグル要求。値が変化するたびにトグルを実行する
+   * （seekTo と同じく「変化を検知して副作用を起こす」パターン）。
+   * ReviewPage の Space ショートカットから使う。
+   */
+  playToggleSignal?: number;
 }
 
 /**
@@ -42,6 +48,7 @@ export function MediaPlayer({
   onError,
   onPlayStateChange,
   seekTo,
+  playToggleSignal,
 }: MediaPlayerProps) {
   const { t } = useTranslation('review');
   const mediaRef = useRef<HTMLAudioElement | HTMLVideoElement | null>(null);
@@ -112,6 +119,16 @@ export function MediaPlayer({
       mediaRef.current.play();
     }
   }, [isPlaying, hasError]);
+
+  // 外部トグル要求（Space ショートカット）。playToggleSignal の変化で再生状態を切り替える。
+  // 初期マウント時（undefined → 値なし）は何もしないよう、前回値と比較する。
+  const prevToggleSignalRef = useRef<number | undefined>(playToggleSignal);
+  useEffect(() => {
+    if (playToggleSignal === undefined) return;
+    if (prevToggleSignalRef.current === playToggleSignal) return;
+    prevToggleSignalRef.current = playToggleSignal;
+    togglePlayPause();
+  }, [playToggleSignal, togglePlayPause]);
 
   const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!mediaRef.current || hasError) return;

@@ -15,7 +15,13 @@ import { useSearch } from '../hooks/useSearch';
 import { useUndoManager } from '../hooks/useUndoManager';
 import { useSuggestionPopup, type SuggestionCandidate } from '../hooks/useSuggestionPopup';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { ReviewProgressBar } from '../components/ReviewProgressBar';
 import { sortSegmentsByTimestamp } from '../utils/segments';
+import {
+  getNextSegmentId,
+  getPreviousSegmentId,
+} from '../utils/segment-navigation';
+import { computeReviewProgress } from '../utils/review-progress';
 import type { Segment } from '../types/segment';
 import type { TranscriptionApi } from '../services/transcription-api';
 import type { DeletionApi } from '../services/deletion-api';
@@ -151,10 +157,21 @@ export function ReviewPage({
   // 現在の検索一致位置（SearchBar のナビゲーション用）
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
   const [prevSearchKey, setPrevSearchKey] = useState('');
+  // キーボードカーソル位置（Tab/Shift+Tab で移動するフォーカス中セグメント）。
+  // 再生位置ベースの highlightedSegmentId とは独立して管理する。
+  const [focusedSegmentId, setFocusedSegmentId] = useState<string | null>(null);
+  // Tab 移動を未修正セグメントのみに絞るトグル（[2]=b）
+  const [uncorrectedNavOnly, setUncorrectedNavOnly] = useState(false);
+  // MediaPlayer への再生/一時停止トグル要求シグナル（Space ショートカット）
+  const [playToggleSignal, setPlayToggleSignal] = useState(0);
 
   // Use userRole prop if provided, otherwise try to get from useAuth
   const { user: authUser } = useAuth();
   const resolvedRole = userRole ?? authUser?.role;
+
+  // 完了（COMPLETED）セッションは確定済みのため読み取り専用（Req 2.18, 2.19）。
+  // キーボードショートカットの編集系配線でも参照するため、ここで先に導出する。
+  const isReadOnly = sessionStatus === 'COMPLETED';
 
   // --- 編集状態管理 (Req 2.x) ---
   const inlineEdit = useInlineEdit();
@@ -386,13 +403,108 @@ export function ReviewPage({
     });
   }, [undo, saveCorrection]);
 
-  // --- キーボードショートカット (Req 11.1) ---
+  // --- キーボードカーソル移動 (Tab / Shift+Tab) ---
+  // 表示順（タイムスタンプ昇順）で算出する。移動後は該当行へスクロールする。
+  const sortedSegments = useMemo(
+    () => sortSegmentsByTimestamp(segments),
+    [segments]
+  );
+
+  const scrollToSegment = useCallback((segmentId: string | null) => {
+    if (!segmentId) return;
+    const el = document.querySelector(`[data-segment-id="${segmentId}"]`);
+    // scrollIntoView は jsdom 等で未実装のことがあるため存在チェックしてから呼ぶ。
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, []);
+
+  const handleNextSegment = useCallback(() => {
+    const next = getNextSegmentId(sortedSegments, focusedSegmentId, {
+      uncorrectedOnly: uncorrectedNavOnly,
+      correctedIds: correctedIds,
+    });
+    if (next) {
+      setFocusedSegmentId(next);
+      scrollToSegment(next);
+    }
+  }, [sortedSegments, focusedSegmentId, uncorrectedNavOnly, correctedIds, scrollToSegment]);
+
+  const handlePreviousSegment = useCallback(() => {
+    const prev = getPreviousSegmentId(sortedSegments, focusedSegmentId, {
+      uncorrectedOnly: uncorrectedNavOnly,
+      correctedIds: correctedIds,
+    });
+    if (prev) {
+      setFocusedSegmentId(prev);
+      scrollToSegment(prev);
+    }
+  }, [sortedSegments, focusedSegmentId, uncorrectedNavOnly, correctedIds, scrollToSegment]);
+
+  // --- 再生トグル (Space) ---
+  const handleTogglePlayPause = useCallback(() => {
+    setPlayToggleSignal((n) => n + 1);
+  }, []);
+
+  // セグメントクリック時は再生シークに加えてキーボードカーソルも同期する。
+  const handleSegmentClickWithFocus = useCallback(
+    (segmentId: string) => {
+      setFocusedSegmentId(segmentId);
+      handleSegmentClick(segmentId);
+    },
+    [handleSegmentClick]
+  );
+
+  // --- ページレベルの編集確定 / キャンセル (Ctrl+Enter / Esc) ---
+  // 編集中セグメントがある場合のみ対象にする。複数編集中は最後に開始したものを対象とする。
+  const currentEditingSegmentId = useCallback((): string | null => {
+    const keys = Array.from(inlineEdit.editingEntries.keys());
+    return keys.length > 0 ? keys[keys.length - 1] : null;
+  }, [inlineEdit.editingEntries]);
+
+  const handleShortcutConfirmEdit = useCallback(() => {
+    const segmentId = currentEditingSegmentId();
+    if (!segmentId) return;
+    const editText = editTexts.get(segmentId) ?? '';
+    void handleConfirmEdit(segmentId, editText);
+  }, [currentEditingSegmentId, editTexts, handleConfirmEdit]);
+
+  const handleShortcutCancelEdit = useCallback(() => {
+    const segmentId = currentEditingSegmentId();
+    if (!segmentId) return;
+    inlineEdit.cancelEdit(segmentId);
+  }, [currentEditingSegmentId, inlineEdit]);
+
+  // Enter: フォーカス中セグメントの編集を開始する。
+  const handleActivateSegment = useCallback(() => {
+    if (!focusedSegmentId) return;
+    const segment = sortedSegments.find((s) => s.segmentId === focusedSegmentId);
+    if (!segment) return;
+    // 確定済み（CONFIRMED）セグメントは読み取り専用のため編集を開始しない。
+    if (segment.consensusStatus === 'CONFIRMED') return;
+    inlineEdit.startEdit(focusedSegmentId, segment.originalText);
+  }, [focusedSegmentId, sortedSegments, inlineEdit]);
+
+  // --- キーボードショートカット (Req 11.1, 校閲効率化で全配線) ---
   const searchBarRef = useRef<SearchBarHandle>(null);
   useKeyboardShortcuts({
+    onTogglePlayPause: handleTogglePlayPause,
+    onNextSegment: handleNextSegment,
+    onPreviousSegment: handlePreviousSegment,
     onUndo: handleUndo,
     onFocusSearch: () => searchBarRef.current?.focus(),
+    // COMPLETED セッションでは編集系ショートカットを無効化（再生・移動は維持）
+    onConfirmEdit: isReadOnly ? undefined : handleShortcutConfirmEdit,
+    onCancelEdit: isReadOnly ? undefined : handleShortcutCancelEdit,
+    onActivateSegment: isReadOnly ? undefined : handleActivateSegment,
     enabled: true,
   });
+
+  // 校閲進捗（全セグメント中の校閲済み件数）
+  const reviewProgress = useMemo(
+    () => computeReviewProgress(segments, correctedIds),
+    [segments, correctedIds]
+  );
 
   const toggleLayout = useCallback(() => {
     setLayout((prev) => (prev === 'horizontal' ? 'vertical' : 'horizontal'));
@@ -428,8 +540,6 @@ export function ReviewPage({
   const effectiveMediaError = mediaError ?? mediaUnavailableReason ?? null;
   const showMediaPlayer = mediaUrl !== null && effectiveMediaError === null && !mediaDeleted;
   const showDeleteButtons = canDelete(resolvedRole);
-  // 完了セッションは確定済みのため読み取り専用（Req 2.18, 2.19）
-  const isReadOnly = sessionStatus === 'COMPLETED';
   // 編集・候補・保存が有効なのは保存コールバックが提供されており、かつ読み取り専用でない場合のみ
   const editingEnabled = Boolean(onSaveCorrection) && !isReadOnly;
   const suggestionEnabled = Boolean(onFetchSuggestions) && !isReadOnly;
@@ -490,6 +600,20 @@ export function ReviewPage({
               </span>
             </label>
           )}
+
+          {/* 未修正のみ移動トグル ([2]=b): Tab 移動対象を未修正セグメントに絞る */}
+          <label className="flex items-center gap-1.5 cursor-pointer select-none mr-1">
+            <input
+              type="checkbox"
+              checked={uncorrectedNavOnly}
+              onChange={(e) => setUncorrectedNavOnly(e.target.checked)}
+              aria-label={t('page.uncorrectedNavOnlyAriaLabel')}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-400"
+            />
+            <span className="text-xs text-gray-600 whitespace-nowrap">
+              {t('page.uncorrectedNavOnly')}
+            </span>
+          </label>
 
           {/* 話者ラベル管理 (Req 2.13) */}
           {editingEnabled && hasSpeakerLabels && (
@@ -596,6 +720,11 @@ export function ReviewPage({
         </div>
       </div>
 
+      {/* 校閲進捗バー: 全セグメント中の校閲済み件数を表示 */}
+      <div className="px-4 py-2 border-b border-gray-200 bg-white">
+        <ReviewProgressBar progress={reviewProgress} />
+      </div>
+
       {/* 検索バー (Req 6.x) */}
       <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
         <SearchBar
@@ -693,6 +822,7 @@ export function ReviewPage({
                 onTimeUpdate={handleTimeUpdate}
                 onError={handleMediaError}
                 seekTo={seekTo}
+                playToggleSignal={playToggleSignal}
               />
             </div>
           </div>
@@ -716,6 +846,7 @@ export function ReviewPage({
               error={error}
               isLoading={isLoading}
               highlightedSegmentId={highlightedSegmentId}
+              focusedSegmentId={focusedSegmentId}
               searchQuery={search.keyword}
               displayCorrections={displayCorrections}
               correctedSegmentIds={correctedIds}
@@ -724,7 +855,7 @@ export function ReviewPage({
               onUpdateText={editingEnabled ? inlineEdit.updateEditText : undefined}
               onConfirmEdit={editingEnabled ? handleConfirmEdit : undefined}
               onCancelEdit={editingEnabled ? inlineEdit.cancelEdit : undefined}
-              onSegmentClick={handleSegmentClick}
+              onSegmentClick={handleSegmentClickWithFocus}
               onSuggestionRequest={
                 suggestionEnabled
                   ? (segmentId) => suggestionPopup.handleButtonClick(segmentId)

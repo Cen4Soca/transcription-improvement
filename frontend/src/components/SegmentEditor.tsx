@@ -9,6 +9,8 @@ import { SuggestionButton } from './SuggestionPopup';
 export interface SegmentEditorProps {
   segment: Segment;
   isHighlighted?: boolean;
+  /** キーボードカーソルでフォーカス中か（Tab 移動）。再生ハイライトとは独立 */
+  isFocused?: boolean;
   isEditing?: boolean;
   editText?: string;
   searchQuery?: string;
@@ -63,6 +65,7 @@ export interface SegmentEditorProps {
 export function SegmentEditor({
   segment,
   isHighlighted = false,
+  isFocused = false,
   isEditing = false,
   editText,
   searchQuery,
@@ -220,11 +223,13 @@ export function SegmentEditor({
       className={`flex items-start gap-3 px-4 py-3 border-b border-gray-200 transition-colors ${
         isEditing
           ? 'ring-2 ring-blue-400 bg-blue-50'
-          : isHighlighted
-            ? 'bg-yellow-50 border-l-4 border-l-yellow-400'
-            : isUncorrected
-              ? 'cursor-pointer border-l-4 border-l-amber-300 bg-amber-50/40 hover:bg-amber-50'
-              : 'cursor-pointer hover:bg-gray-50'
+          : isFocused
+            ? 'ring-2 ring-indigo-400 bg-indigo-50/60 cursor-pointer'
+            : isHighlighted
+              ? 'bg-yellow-50 border-l-4 border-l-yellow-400'
+              : isUncorrected
+                ? 'cursor-pointer border-l-4 border-l-amber-300 bg-amber-50/40 hover:bg-amber-50'
+                : 'cursor-pointer hover:bg-gray-50'
       }`}
     >
       {/* タイムスタンプ */}
