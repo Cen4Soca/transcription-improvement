@@ -194,10 +194,20 @@ export async function startJob(params: StartJobParams): Promise<TranscriptionJob
   // This also supports re-transcription: a media file whose previous session
   // was deleted (its job reset to IN_PROGRESS) gets a brand-new session here,
   // and the media file is re-linked to it.
+  //
+  // Session creation and media-file linking are handled in two separate steps
+  // so that a failure in either can be detected and recorded without being
+  // silently swallowed (bugfix 2.4). Neither failure blocks the job: the job
+  // result is preserved (Req 17.8) with jobRecord.sessionId left unset, and
+  // the process-job-complete handler's existing fallback
+  // (job.sessionId ?? randomUUID()) completes the session later. For missing
+  // media-file links, getMediaFileForSession performs a fallback resolution at
+  // retrieval time.
+  let session: Awaited<ReturnType<typeof createSessionForJob>> | undefined;
   try {
     // Auto-assign the session to the uploader (mediaFile.uploadedBy). When an
     // ADMIN uploads the media, the session is assigned to that admin.
-    const session = await createSessionForJob(
+    session = await createSessionForJob(
       jobId,
       transcribeJobName,
       mediaFile.teamId,
@@ -206,13 +216,30 @@ export async function startJob(params: StartJobParams): Promise<TranscriptionJob
 
     // Reflect the linked session on the job record before persisting it.
     jobRecord.sessionId = session.sessionId;
+  } catch (error: unknown) {
+    // Session creation failed: record it and preserve the job (Req 17.8).
+    // jobRecord.sessionId stays unset; process-job-complete will complete it.
+    // Only non-sensitive identifiers are logged (no signed URLs / credentials).
+    console.error('Failed to create session for job', { jobId, mediaFileId, error });
+  }
 
-    // Re-link the media file to the newly created session so that
-    // session <-> media lookups (signed URLs, deletion cascade) stay consistent.
-    await mediaFileRepository.updateSessionId(mediaFileId, session.sessionId);
-  } catch {
-    // ReviewSession creation failure should not block the job.
-    // The job result is preserved and user can manually create a session later (Req 17.8).
+  // Only attempt to link the media file when the session was created, so a
+  // creation failure (no sessionId) does not trigger a spurious link attempt.
+  if (session) {
+    try {
+      // Re-link the media file to the newly created session so that
+      // session <-> media lookups (signed URLs, deletion cascade) stay consistent.
+      await mediaFileRepository.updateSessionId(mediaFileId, session.sessionId);
+    } catch (error: unknown) {
+      // Linking failed even though the session exists: record it and preserve
+      // the job (Req 17.8). getMediaFileForSession compensates the missing link
+      // at retrieval time. Only non-sensitive identifiers are logged.
+      console.error('Failed to link session to media file for job', {
+        jobId,
+        mediaFileId,
+        error,
+      });
+    }
   }
 
   // Save to DynamoDB (includes sessionId when the session was created successfully).

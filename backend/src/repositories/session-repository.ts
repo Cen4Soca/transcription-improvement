@@ -3,6 +3,12 @@ import { docClient, TABLE_NAME } from '../utils/dynamodb-client.js';
 
 export interface SessionRecord {
   sessionId: string;
+  /**
+   * ID of the TranscriptionJob this session was created for. Used to walk
+   * session -> job -> mediaFileId when the direct MediaFile.sessionId link is
+   * missing (media-service fallback resolution).
+   */
+  transcriptionJobId?: string;
   name: string;
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
   /**
@@ -893,6 +899,8 @@ export async function createSession(
 function mapItemToSessionRecord(item: Record<string, unknown>): SessionRecord {
   return {
     sessionId: item['sessionId'] as string,
+    transcriptionJobId:
+      (item['transcriptionJobId'] as string | undefined) ?? undefined,
     name: item['name'] as string,
     status: item['status'] as SessionRecord['status'],
     assignedUserId: (item['assignedUserId'] as string | undefined) ?? undefined,

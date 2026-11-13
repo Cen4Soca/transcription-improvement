@@ -28,6 +28,7 @@ import {
   type SessionRecord,
   type CreateSessionInput,
 } from '../repositories/session-repository.js';
+import { createReviewAssignment } from '../repositories/team-repository.js';
 
 const VALID_STATUSES = ['PENDING', 'IN_PROGRESS', 'COMPLETED'] as const;
 type SessionStatus = (typeof VALID_STATUSES)[number];
@@ -224,6 +225,13 @@ export async function deleteSpeakerLabel(
  * @param name - The name for the ReviewSession (typically the job name)
  * @param teamId - Optional team ID for team-based access
  * @param assignedUserId - Optional userId to auto-assign the session to (the uploader)
+ *
+ * When an uploader (assignedUserId) is provided, a ReviewAssignment is also
+ * created so the session reaches getAccessibleSessionIds' direct-assignment
+ * path (PK=USER#{userId}, SK begins_with ASSIGNMENT#) and appears in the
+ * session list. This is role-independent: REVIEWER / TEAM_LEADER uploaders
+ * become visible, while ADMIN's "null means all" behavior is unaffected.
+ * createReviewAssignment is a fixed-key PUT, so re-transcription is idempotent.
  */
 export async function createSessionForJob(
   transcriptionJobId: string,
@@ -241,7 +249,20 @@ export async function createSessionForJob(
     assignedUserId,
   };
 
-  return createSession(input);
+  const session = await createSession(input);
+
+  // Give the uploader a direct ReviewAssignment so the upload-generated session
+  // reaches the direct-assignment path of getAccessibleSessionIds and shows up
+  // in GET /sessions. Idempotent (fixed-key PUT), safe on re-transcription.
+  if (assignedUserId) {
+    await createReviewAssignment({
+      userId: assignedUserId,
+      sessionId,
+      createdBy: assignedUserId,
+    });
+  }
+
+  return session;
 }
 
 /**

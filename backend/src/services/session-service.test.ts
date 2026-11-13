@@ -38,6 +38,13 @@ vi.mock('./access-control-service.js', () => ({
   isTeamMember: vi.fn(),
 }));
 
+// team-repository.createReviewAssignment is invoked by createSessionForJob to
+// give the uploader a direct ReviewAssignment. It is mocked so this unit test
+// does not touch DynamoDB (bugfix reviewer-uploaded-session-not-visible 2.1-2.3).
+vi.mock('../repositories/team-repository.js', () => ({
+  createReviewAssignment: vi.fn().mockResolvedValue(undefined),
+}));
+
 import {
   getSessionById,
   updateSessionStatus,
@@ -52,6 +59,7 @@ import {
   getSegmentSpeakerLabels,
 } from '../repositories/session-repository.js';
 import { getUserTeamIds, isTeamMember } from './access-control-service.js';
+import { createReviewAssignment } from '../repositories/team-repository.js';
 
 const mockedGetSessionById = vi.mocked(getSessionById);
 const mockedUpdateSessionStatus = vi.mocked(updateSessionStatus);
@@ -66,6 +74,7 @@ const mockedGetUserTeamIds = vi.mocked(getUserTeamIds);
 const mockedIsTeamMember = vi.mocked(isTeamMember);
 const mockedUpdateSessionSpeakerLabels = vi.mocked(updateSessionSpeakerLabels);
 const mockedGetSegmentSpeakerLabels = vi.mocked(getSegmentSpeakerLabels);
+const mockedCreateReviewAssignment = vi.mocked(createReviewAssignment);
 
 const reviewer: AuthUser = {
   userId: 'reviewer-001',
@@ -310,6 +319,86 @@ describe('session-service', () => {
           assignedUserId: 'admin-001',
         })
       );
+    });
+
+    it('creates a ReviewAssignment for the uploader with the correct keys when assignedUserId is provided', async () => {
+      mockedCreateSession.mockResolvedValue({
+        sessionId: 'generated-uuid',
+        name: 'Reviewer Upload',
+        status: 'PENDING',
+        assignedUserId: 'reviewer-001',
+        assignedReviewerCount: 0,
+        consensusThreshold: 67,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
+
+      await createSessionForJob('job-004', 'Reviewer Upload', undefined, 'reviewer-001');
+
+      // The sessionId is generated inside the service (uuidv4) and threaded
+      // into both createSession and createReviewAssignment, so they must agree.
+      const createdSessionId = mockedCreateSession.mock.calls[0][0].sessionId;
+
+      // The ReviewAssignment reaches getAccessibleSessionIds' direct-assignment
+      // path (PK=USER#{userId}, SK=ASSIGNMENT#{sessionId}). createdBy is the
+      // uploader themselves for an upload-generated auto-assignment.
+      expect(mockedCreateReviewAssignment).toHaveBeenCalledTimes(1);
+      expect(mockedCreateReviewAssignment).toHaveBeenCalledWith({
+        userId: 'reviewer-001',
+        sessionId: createdSessionId,
+        createdBy: 'reviewer-001',
+      });
+    });
+
+    it('does not create a ReviewAssignment when assignedUserId is not provided', async () => {
+      mockedCreateSession.mockResolvedValue({
+        sessionId: 'generated-uuid',
+        name: 'No Uploader',
+        status: 'PENDING',
+        assignedReviewerCount: 0,
+        consensusThreshold: 67,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
+
+      await createSessionForJob('job-005', 'No Uploader');
+
+      expect(mockedCreateReviewAssignment).not.toHaveBeenCalled();
+    });
+
+    it('is idempotent on re-run: re-transcription uses the same fixed keys without error', async () => {
+      // createReviewAssignment is a fixed-key PUT, so a second call with the
+      // same sessionId is safe (no error). Simulate re-transcription by calling
+      // createSessionForJob twice; the service must not throw.
+      mockedCreateSession.mockResolvedValue({
+        sessionId: 'session-fixed',
+        name: 'Re-run',
+        status: 'PENDING',
+        assignedUserId: 'leader-001',
+        assignedReviewerCount: 0,
+        consensusThreshold: 67,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
+
+      await expect(
+        createSessionForJob('job-006', 'Re-run', 'team-001', 'leader-001')
+      ).resolves.toMatchObject({ sessionId: 'session-fixed' });
+      await expect(
+        createSessionForJob('job-006', 'Re-run', 'team-001', 'leader-001')
+      ).resolves.toMatchObject({ sessionId: 'session-fixed' });
+
+      // Each run issues exactly one ReviewAssignment, keyed by (uploader,
+      // generated sessionId) with the uploader as createdBy. createReviewAssignment
+      // is a fixed-key PUT, so re-running is safe (no error, idempotent write).
+      expect(mockedCreateReviewAssignment).toHaveBeenCalledTimes(2);
+      for (const call of mockedCreateReviewAssignment.mock.calls) {
+        expect(call[0]).toMatchObject({
+          userId: 'leader-001',
+          createdBy: 'leader-001',
+          sessionId: expect.any(String),
+        });
+      }
     });
   });
 

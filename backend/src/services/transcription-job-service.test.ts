@@ -313,6 +313,75 @@ describe('startJob', () => {
     expect(transcriptionJobRepository.save).toHaveBeenCalledTimes(1);
   });
 
+  // --- Session creation / media-link failure handling (bugfix 2.4) ---
+
+  test('logs and preserves the job (sessionId unset) when createSessionForJob fails', async () => {
+    const { createSessionForJob } = await import('./session-service.js');
+    vi.mocked(createSessionForJob).mockRejectedValueOnce(
+      new Error('Session creation failed')
+    );
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      const result = await startJob({
+        mediaFileId: 'media-123',
+        user: reviewerUser,
+      });
+
+      // The failure is recorded (no silent swallow).
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to create session for job',
+        expect.objectContaining({ jobId: 'test-uuid-1234', mediaFileId: 'media-123' })
+      );
+      // The job is preserved and persisted with sessionId left unset.
+      expect(result.jobId).toBe('test-uuid-1234');
+      expect(result.status).toBe('IN_PROGRESS');
+      expect(result.sessionId).toBeUndefined();
+      expect(transcriptionJobRepository.save).toHaveBeenCalledTimes(1);
+      const savedRecord = vi.mocked(transcriptionJobRepository.save).mock.calls[0][0];
+      expect(savedRecord.sessionId).toBeUndefined();
+      // No spurious link attempt when the session was never created.
+      expect(mediaFileRepository.updateSessionId).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  test('logs the link failure but preserves the job (sessionId set) when only updateSessionId fails', async () => {
+    // createSessionForJob succeeds (default mock); only the link step fails.
+    vi.mocked(mediaFileRepository.updateSessionId).mockRejectedValueOnce(
+      new Error('link failed')
+    );
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      const result = await startJob({
+        mediaFileId: 'media-123',
+        user: reviewerUser,
+      });
+
+      // Separate log message distinguishes the link failure from a creation failure.
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to link session to media file for job',
+        expect.objectContaining({ jobId: 'test-uuid-1234', mediaFileId: 'media-123' })
+      );
+      // The creation-failure message must NOT be emitted for a link-only failure.
+      expect(errorSpy).not.toHaveBeenCalledWith(
+        'Failed to create session for job',
+        expect.anything()
+      );
+      // The session was created, so the job keeps its sessionId and is preserved.
+      expect(result.jobId).toBe('test-uuid-1234');
+      expect(result.status).toBe('IN_PROGRESS');
+      expect(result.sessionId).toBe('session-uuid');
+      expect(transcriptionJobRepository.save).toHaveBeenCalledTimes(1);
+      const savedRecord = vi.mocked(transcriptionJobRepository.save).mock.calls[0][0];
+      expect(savedRecord.sessionId).toBe('session-uuid');
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
   test('throws validation error for invalid maxSpeakerLabels', async () => {
     await expect(
       startJob({

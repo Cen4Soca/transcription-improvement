@@ -362,6 +362,35 @@ describe('access-control-service', () => {
       const result = await getAccessibleSessionIds(reviewer);
       expect(result).toEqual([]);
     });
+
+    // --- bugfix reviewer-uploaded-session-not-visible (2.1-2.3, 3.2) ---
+
+    it('includes an upload-generated sessionId once a direct ReviewAssignment exists for the uploader', async () => {
+      // A REVIEWER uploader with no team: visibility must come solely from the
+      // direct ReviewAssignment that createSessionForJob now creates.
+      const reviewer = createUser({ role: 'REVIEWER' });
+
+      // getUserTeamIds: no teams.
+      mockSend.mockResolvedValueOnce({ Items: [] } as any);
+      // Direct ReviewAssignment for the upload-origin session.
+      mockSend.mockResolvedValueOnce({
+        Items: [{ PK: 'USER#user-123', SK: 'ASSIGNMENT#upload-session-1' }],
+      } as any);
+
+      const result = await getAccessibleSessionIds(reviewer);
+
+      expect(result).toContain('upload-session-1');
+    });
+
+    it('keeps returning null (all sessions) for ADMIN regardless of assignments', async () => {
+      const admin = createUser({ role: 'ADMIN' });
+
+      const result = await getAccessibleSessionIds(admin);
+
+      expect(result).toBeNull();
+      // ADMIN path short-circuits before any assignment query.
+      expect(mockSend).not.toHaveBeenCalled();
+    });
   });
 
   describe('canAccessMediaFile', () => {

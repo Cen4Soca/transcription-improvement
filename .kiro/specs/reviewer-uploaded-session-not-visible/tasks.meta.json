@@ -1,0 +1,269 @@
+{
+  "pbtResults": {
+    "1. 可視性バグの探索テストを書く（修正前）": {
+      "status": "passed",
+      "failingExample": "Property failed after 1 tests\n{ seed: -108260277, path: \"0:0:0:0:0:0:0\", endOnFailure: true }\nCounterexample: [{\"uploaderUserId\":\" \",\"jobId\":\" \",\"sessionName\":\" \",\"role\":\"REVIEWER\",\"teamId\":undefined}]\nShrunk 6 time(s)\nGot AssertionError: expected [] to include 'f4c9a881-e994-49ff-9870-0ed56e0e6aef'\n  at expect(listedIds).toContain(session.sessionId)  // session-service.property.test.ts:289\n\n意味: アップロード由来セッション（REVIEWER, mediaFile.teamId 未設定）を createSessionForJob で作成後、getAccessibleSessionIds(uploader) が空配列 [] を返し当該 sessionId を含まない（TeamAssignment / ReviewAssignment が 0 件のため）。一方 getAssignedSessions(uploader) には SessionParticipant 経由で含まれ、assigned ⊆ listed の整合が破れる。TeamLeader（teamId 設定済み）ケースでも GSI1 の SESSION# アイテムが getAccessibleSessionIds の ASSIGNMENT# 走査に拾われず同じ不整合が再現する。これは未修正コードで FAIL するのが正しい（バグの存在を証明）。",
+      "lastRunTimestamp": 1794568877847
+    },
+    "2. メディアリンクバグの探索テストを書く（修正前）": {
+      "status": "passed",
+      "failingExample": "Counterexample (shrunk 11×, seed 1246686859): [{\"sessionId\":\" \",\"jobId\":\" \",\"mediaFileId\":\" \",\"uploaderUserId\":\" \",\"role\":\"REVIEWER\",\"scanStatus\":\"CLEAN\",\"teamId\":undefined}]\n\nFor an upload-derived session whose MediaFile has no sessionId attribute (getBySessionId → null) while the session, its TranscriptionJob (job.mediaFileId), and the MediaFile all exist and are reachable via session.transcriptionJobId → job.mediaFileId → MediaFile, the unfixed getMediaFileForSession (media-service.ts:52) throws `AppError: Media file not found` (MEDIA_FILE_NOT_FOUND / 404) because it only calls getBySessionId and never walks the fallback path. Role-independent: minimal failing role is REVIEWER. The Admin late-assignment edge (TeamAssignment added, MediaFile.sessionId still null) also throws 404. This failure proves isBugCondition_mediaLink.",
+      "lastRunTimestamp": 1794569144458
+    },
+    "4. メディア取得・スキャン状態の Preservation プロパティテストを書く（修正前）": {
+      "status": "passed",
+      "lastRunTimestamp": 1794569540584
+    },
+    "5.4 可視性バグの探索テストが PASS することを検証する": {
+      "status": "passed",
+      "lastRunTimestamp": 1794569963599
+    }
+  },
+  "executionHistory": {
+    "1. 可視性バグの探索テストを書く（修正前）": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563709990
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563716990
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794568902967
+      }
+    ],
+    "2. メディアリンクバグの探索テストを書く（修正前）": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710155
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794568908275
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569167322
+      }
+    ],
+    "3. 可視性の Preservation プロパティテストを書く（修正前）": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710182
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569173063
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569340018
+      }
+    ],
+    "4. メディア取得・スキャン状態の Preservation プロパティテストを書く（修正前）": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710206
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569345956
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569565390
+      }
+    ],
+    "5.1 可視性修正: `createSessionForJob` がアップローダーに ReviewAssignment を冪等作成する（採用案 A）": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710227
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569573892
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569664632
+      }
+    ],
+    "5.2 メディアリンク修正: `startJob` の空 catch を明示的ハンドリングに変える（採用案 D）": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710268
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569670772
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569774509
+      }
+    ],
+    "5.3 メディアリンク修正: 取得時フォールバック解決・補償を `media-service` に追加する（採用案 D）": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710285
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569779988
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569915622
+      }
+    ],
+    "5.4 可視性バグの探索テストが PASS することを検証する": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710301
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569922783
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569980526
+      }
+    ],
+    "5.5 メディアリンクバグの探索テストが PASS することを検証する": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710319
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794569986789
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794570040924
+      }
+    ],
+    "5.6 Preservation テストが引き続き PASS することを検証する": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710336
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794570046452
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794570099615
+      }
+    ],
+    "6. 単体テストを追加・更新する": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710381
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794570105256
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794570435013
+      }
+    ],
+    "7. Checkpoint - すべてのテストが PASS することを確認する": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794563710399
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794570440112
+      },
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794570508497
+      }
+    ],
+    "5. 修正を実装する（可視性 + メディアリンク）": [
+      {
+        "executionId": "6aa68cf2-ba7d-4c24-b715-ffd7ed4d5df7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794570099680
+      }
+    ],
+    "8. 可視性バックフィルスクリプトを作成する（`infra/scripts/`）": [
+      {
+        "executionId": "6cf39f71-e70d-4cb3-b77a-5772e5a337fd",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794573826764
+      },
+      {
+        "executionId": "6cf39f71-e70d-4cb3-b77a-5772e5a337fd",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794573832700
+      },
+      {
+        "executionId": "6cf39f71-e70d-4cb3-b77a-5772e5a337fd",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794575175952
+      }
+    ],
+    "9. E2E 検証を追加する（Playwright, `e2e/`）": [
+      {
+        "executionId": "6cf39f71-e70d-4cb3-b77a-5772e5a337fd",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794573826814
+      },
+      {
+        "executionId": "6cf39f71-e70d-4cb3-b77a-5772e5a337fd",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794573837750
+      },
+      {
+        "executionId": "6cf39f71-e70d-4cb3-b77a-5772e5a337fd",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794575176958
+      }
+    ]
+  }
+}

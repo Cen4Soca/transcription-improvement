@@ -3,6 +3,9 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { notFoundError, forbiddenError, internalError } from '../utils/error-handler.js';
 import { ERROR_CODES } from '../utils/error-codes.js';
 import * as mediaFileRepository from '../repositories/media-file-repository.js';
+import * as sessionRepository from '../repositories/session-repository.js';
+import * as transcriptionJobRepository from '../repositories/transcription-job-repository.js';
+import type { MediaFile } from '../types/media-file.js';
 
 export interface MediaUrlResult {
   data: {
@@ -39,14 +42,61 @@ export function setS3Client(client: S3Client): void {
 }
 
 /**
+ * Resolve a MediaFile for a session when the direct MediaFile.sessionId link is
+ * missing, by walking session -> transcriptionJob -> mediaFileId.
+ *
+ * This is the fallback path for the media-link bug: when a (re-)transcription's
+ * updateSessionId failed and the link was lost, getBySessionId returns null.
+ * We recover the MediaFile from the session's transcriptionJobId (session ->
+ * job -> mediaFileId -> MediaFile) and, on success, compensate the broken link
+ * via updateSessionId so subsequent getBySessionId lookups succeed (self-heal).
+ *
+ * Returns the resolved MediaFile, or null when it cannot be resolved.
+ */
+async function resolveMediaFileFallback(
+  sessionId: string
+): Promise<MediaFile | null> {
+  const session = await sessionRepository.getSessionById(sessionId);
+  if (!session?.transcriptionJobId) {
+    return null;
+  }
+
+  const job = await transcriptionJobRepository.getById(
+    session.transcriptionJobId
+  );
+  if (!job?.mediaFileId) {
+    return null;
+  }
+
+  const mediaFile = await mediaFileRepository.getById(job.mediaFileId);
+  if (!mediaFile) {
+    return null;
+  }
+
+  // Compensate the broken link (self-heal) so future getBySessionId lookups
+  // resolve the MediaFile directly without needing this fallback.
+  await mediaFileRepository.updateSessionId(mediaFile.mediaFileId, sessionId);
+
+  return mediaFile;
+}
+
+/**
  * Get the MediaFile record for a session and validate scanStatus.
  * - If no MediaFile found: throws 404
  * - If scanStatus is PENDING: throws 403
  * - If scanStatus is INFECTED: throws 403
  * - If scanStatus is CLEAN: returns the MediaFile
+ *
+ * When the direct MediaFile.sessionId lookup (getBySessionId) returns null, a
+ * fallback resolves the MediaFile via session -> transcriptionJob -> mediaFileId
+ * and compensates the missing link (self-heal). The scanStatus gating below is
+ * applied to the resolved MediaFile unchanged. The linked path
+ * (getBySessionId non-null) is untouched by this fallback.
  */
 export async function getMediaFileForSession(sessionId: string) {
-  const mediaFile = await mediaFileRepository.getBySessionId(sessionId);
+  const mediaFile =
+    (await mediaFileRepository.getBySessionId(sessionId)) ??
+    (await resolveMediaFileFallback(sessionId));
 
   if (!mediaFile) {
     throw notFoundError(
