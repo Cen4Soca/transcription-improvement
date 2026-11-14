@@ -324,3 +324,132 @@ describe('Feature: reviewer-uploaded-session-not-visible, Property 2: 既存可�
     );
   });
 });
+
+// ----------------------------------------------------------------------------
+// Property 6: Isolation — the visibility fix (adding a ReviewAssignment for the
+// uploader) does NOT over-expose. An upload-origin session reachable ONLY via
+// uploader A's own ReviewAssignment (no TeamAssignment, no shared team) must
+// never appear in the accessible-session list of an unrelated Reviewer B or an
+// unrelated TeamLeader, while STILL appearing for the uploader A (which also
+// guards against the under-visibility regression in the opposite direction).
+//
+// This guards the "sees too much" reverse regression and confirms the fix did
+// not loosen access control (bugfix 3.6): ReviewAssignments are granted to the
+// uploader ONLY, so unrelated users remain isolated.
+// ----------------------------------------------------------------------------
+
+describe('Feature: reviewer-uploaded-session-not-visible, Property 6: 分離（isolation）— 他人のアップロード由来セッションが無関係ユーザーの一覧に出ない', () => {
+  beforeEach(() => {
+    store.clear();
+    vi.clearAllMocks();
+  });
+
+  /**
+   * **Validates: Requirements 3.6**
+   *
+   * The visibility fix (adopted approach A) makes an upload-origin session
+   * reachable by adding a direct ReviewAssignment for the uploader only. This
+   * property proves that addition does not over-expose the session:
+   *
+   *   - The uploader A's session (backed solely by A's ReviewAssignment, with
+   *     NO TeamAssignment and NO shared team) IS included in
+   *     getAccessibleSessionIds(A) — assigned ⊆ listed, so the fix is not an
+   *     under-visibility regression.
+   *   - An unrelated Reviewer B — different userId, no ReviewAssignment for the
+   *     session, and no team shared with A — does NOT see the session in
+   *     getAccessibleSessionIds(B).
+   *   - An unrelated TeamLeader C — belonging only to teams disjoint from A's
+   *     (and the session has no TeamAssignment anyway) — does NOT see the
+   *     session in getAccessibleSessionIds(C).
+   *
+   * Together these assert bugfix 3.6: the fix grants visibility to the uploader
+   * alone and leaves access control for everyone else unchanged (no over-
+   * exposure of other users' upload-origin sessions).
+   */
+  it('A のアップロード由来セッション（A の ReviewAssignment のみ）が A には含まれ、無関係な Reviewer B / 別チーム TeamLeader には含まれない', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc
+          .record({
+            // Distinct user ids for uploader A, unrelated reviewer B, unrelated
+            // team leader C.
+            userIds: fc.uniqueArray(fc.string({ minLength: 1, maxLength: 8 }), {
+              minLength: 3,
+              maxLength: 3,
+            }),
+            sessionId: fc.string({ minLength: 1, maxLength: 10 }),
+            // Teams A belongs to (upload session has NO TeamAssignment, so these
+            // never grant access to it; present only to exercise disjointness).
+            teamIdsA: fc.uniqueArray(fc.string({ minLength: 1, maxLength: 6 }), {
+              maxLength: 3,
+            }),
+            // Teams the unrelated TeamLeader C belongs to — must stay disjoint
+            // from A's teams (enforced in the body by prefixing).
+            teamIdsC: fc.uniqueArray(fc.string({ minLength: 1, maxLength: 6 }), {
+              minLength: 1,
+              maxLength: 3,
+            }),
+          })
+          .map((r) => {
+            const [a, b, c] = r.userIds;
+            // Keep C's teams disjoint from A's teams by namespacing them.
+            const teamsA = r.teamIdsA.map((t) => `A-${t}`);
+            const teamsC = r.teamIdsC.map((t) => `C-${t}`);
+            return {
+              uploaderA: a,
+              reviewerB: b,
+              leaderC: c,
+              sessionId: r.sessionId,
+              teamsA,
+              teamsC,
+            };
+          }),
+        async (input) => {
+          store.clear();
+
+          const { uploaderA, reviewerB, leaderC, sessionId, teamsA, teamsC } =
+            input;
+
+          const userA = makeUser(uploaderA, 'REVIEWER');
+          const userB = makeUser(reviewerB, 'REVIEWER');
+          const userC = makeUser(leaderC, 'TEAM_LEADER');
+
+          // Uploader A's team memberships (irrelevant to the no-team upload
+          // session, but seeded to mirror a realistic account).
+          for (const teamId of teamsA) {
+            seedTeamMembership(uploaderA, teamId);
+          }
+          // Unrelated TeamLeader C belongs only to disjoint teams.
+          for (const teamId of teamsC) {
+            seedTeamMembership(leaderC, teamId);
+          }
+
+          // The fix's output: a direct ReviewAssignment for the uploader A only.
+          // No TeamAssignment for the session, nothing shared with B or C.
+          seedReviewAssignment(uploaderA, sessionId);
+
+          const [listedA, listedB, listedC] = await Promise.all([
+            getAccessibleSessionIds(userA),
+            getAccessibleSessionIds(userB),
+            getAccessibleSessionIds(userC),
+          ]);
+
+          // Uploader A sees the session (assigned ⊆ listed — no under-visibility
+          // regression).
+          expect(listedA).not.toBeNull();
+          expect(listedA as string[]).toContain(sessionId);
+
+          // Unrelated Reviewer B does NOT see the session (no over-exposure).
+          expect(listedB).not.toBeNull();
+          expect(listedB as string[]).not.toContain(sessionId);
+
+          // Unrelated TeamLeader C (disjoint teams, no TeamAssignment) does NOT
+          // see the session (bugfix 3.6: access control not loosened).
+          expect(listedC).not.toBeNull();
+          expect(listedC as string[]).not.toContain(sessionId);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});

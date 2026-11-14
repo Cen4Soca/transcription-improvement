@@ -4,6 +4,7 @@ import {
   seedUploadOriginSession,
   linkMediaFileToSession,
   getMediaBucketName,
+  getUserIdByEmail,
 } from '../../helpers/dynamodb-helper.js';
 import { SEEDED_MEDIA_SESSION_IDS } from '../../helpers/ui-helper.js';
 import { expectNoAxeViolations } from '../../helpers/axe-helper.js';
@@ -26,6 +27,15 @@ import { expectNoAxeViolations } from '../../helpers/axe-helper.js';
  *   3. 校閲画面を開くとメディア取得（署名付き URL）が成功し、
  *      「メディアファイルが見つかりません」「データの取得に失敗しました」
  *      「リソースが見つかりません」のエラーが表示されない。
+ *   4. 分離（isolation, _Requirements: 3.6_）: reviewer アップロード由来の
+ *      no-team セッション（ReviewAssignment が reviewer 本人にのみ付与）が、
+ *      無関係な TeamLeader の一覧に出ない（toHaveCount(0)）。可視性修正が
+ *      「見えすぎる」逆方向リグレッションを生んでいないことを確認する。
+ *   5. Admin 全件パスの回帰（_Requirements: 3.2, 2.1_）: Admin アップロード由来
+ *      セッションが loginAsAdmin の一覧に出続ける。ADMIN は getAccessibleSessionIds
+ *      が null（＝全件）を返すため、ReviewAssignment / TeamAssignment の有無に
+ *      関わらず一覧に現れる。本 bugfix（ReviewAssignment 追加に限定）が ADMIN の
+ *      全件パスを壊していないことの退行検出（bugfix 3.2）。
  *
  * データ戦略（既存 E2E の流儀に準拠）
  * ----------------------------------
@@ -78,6 +88,31 @@ const TEAMLEADER_SESSION = {
   transcriptionJobId: 'e2e-uploaded-leader-job-001',
   name: 'E2E TeamLeader アップロード可視性セッション',
 };
+const ADMIN_SESSION = {
+  sessionId: 'e2e-uploaded-admin-vis-001',
+  transcriptionJobId: 'e2e-uploaded-admin-job-001',
+  name: 'E2E Admin アップロード可視性セッション',
+};
+
+/**
+ * Admin のアップローダー userId を解決する。testUsers（.auth/test-users.json）には
+ * admin が含まれず（teamLeader / reviewer のみ）、Admin は Cognito の
+ * ADMIN_EMAIL/PASSWORD でログインするため、seed-data.ts と同じ流儀で解決する:
+ *   1. ADMIN_EMAIL の実ユーザーレコード（extractUser が参照する正）を GSI1 で引く
+ *   2. 無ければ ADMIN_USER_ID 環境変数（seed と同じ上書き手段）
+ *   3. それも無ければ seed 既定値 e2e-admin-user-001
+ * ADMIN は getAccessibleSessionIds が null（全件）を返すため、一覧可視性自体は
+ * uploaderId の厳密一致に依存しないが、「Admin アップロード由来」を正しく表すため
+ * 実 Admin の userId に合わせる。
+ */
+async function resolveAdminUserId(): Promise<string> {
+  const email = process.env.ADMIN_EMAIL;
+  if (email) {
+    const byEmail = await getUserIdByEmail(email);
+    if (byEmail) return byEmail;
+  }
+  return process.env.ADMIN_USER_ID || 'e2e-admin-user-001';
+}
 
 /**
  * seed:media が投入する S3 実体付きメディア（sample-audio-for-delete.mp3, CLEAN）。
@@ -141,6 +176,17 @@ test.describe('アップロード由来セッションの可視性・メディ�
       status: 'COMPLETED',
     });
 
+    // シナリオ 5: Admin アップロード（ADMIN 全件パスの回帰検出）。uploaderId を
+    // 実 Admin の userId に合わせる。teamId は付けない（TeamAssignment なし）。
+    // ADMIN は getAccessibleSessionIds が null（全件）を返すため、Assignment の
+    // 有無に関わらず一覧に出続けることを検証する。
+    const adminUserId = await resolveAdminUserId();
+    await seedUploadOriginSession({
+      ...ADMIN_SESSION,
+      uploaderId: adminUserId,
+      status: 'COMPLETED',
+    });
+
     // シナリオ 3（メディア実体あり）: Reviewer アップロード由来セッションに
     // S3 実体付き MediaFile（CLEAN）を sessionId リンクし、署名付き URL 取得が
     // 成功する「修正後」の状態を用意する。MEDIA_BUCKET_NAME 未設定時はスキップ。
@@ -187,6 +233,61 @@ test.describe('アップロード由来セッションの可視性・メディ�
       // teamId 設定済みでも、修正で付与された ReviewAssignment により一覧に出る。
       await expect(
         sessionOpenButtonByName(page, TEAMLEADER_SESSION.name).first()
+      ).toBeVisible({ timeout: 15_000 });
+    });
+  });
+
+  test.describe('シナリオ 4: 分離（isolation）— 無関係ユーザーの一覧に他人のアップロード由来セッションが出ない', () => {
+    // _Requirements: 3.6, 2.1, 2.2_
+    //
+    // 可視性修正が「見えすぎる」逆方向リグレッションを生んでいないことを確認する。
+    // REVIEWER_SESSION は teamId 未設定（TeamAssignment なし）で、アップローダー
+    // 本人（reviewer）の ReviewAssignment だけが到達経路。修正は ReviewAssignment を
+    // アップローダー本人にのみ付与するため、TeamLeader は（reviewer の no-team
+    // セッションへの ReviewAssignment を持たず、当該セッションに TeamAssignment も
+    // 無いので）このセッションに到達できない。team を共有していても no-team
+    // セッションには TeamAssignment が無いため経路にならない点が本検証の肝。
+    // Preservation（bugfix 3.6）: 他人のアップロード由来セッションへのアクセスは
+    // 従来どおり与えられない（checkSessionAccess / denyResourceAccess の 404 維持）。
+    test('TeamLeader の一覧に reviewer アップロード由来（teamId なし）セッションが出ない', async ({
+      page,
+      loginAsTeamLeader,
+    }) => {
+      await loginAsTeamLeader(page);
+      await expect(
+        page.getByRole('main', { name: '校閲セッション一覧' })
+      ).toBeVisible();
+
+      // reviewer の no-team アップロードセッションは ReviewAssignment が reviewer
+      // 本人にしか無く、TeamLeader への可視経路（ReviewAssignment / TeamAssignment）が
+      // 存在しないため、TeamLeader の一覧に現れてはいけない。
+      await expect(
+        sessionOpenButtonByName(page, REVIEWER_SESSION.name)
+      ).toHaveCount(0);
+    });
+  });
+
+  test.describe('シナリオ 5: Admin アップロード由来セッションが一覧に出続ける（ADMIN 全件パスの回帰）', () => {
+    // _Requirements: 3.2, 2.1_
+    //
+    // ADMIN は getAccessibleSessionIds が null（＝全件）を返すため、
+    // ReviewAssignment / TeamAssignment の有無に関わらずセッション一覧に出る。
+    // 本 bugfix は ReviewAssignment 追加に限定され ADMIN パスを変えていないので、
+    // Admin アップロード由来セッションは従来どおり一覧に出続ける（bugfix 3.2）。
+    // このシナリオはその「ADMIN 全件パス」が退行していないことを検出する。
+    test('Admin のセッション一覧に Admin アップロード由来セッションが表示される', async ({
+      page,
+      loginAsAdmin,
+    }) => {
+      await loginAsAdmin(page);
+      await expect(
+        page.getByRole('main', { name: '校閲セッション一覧' })
+      ).toBeVisible();
+
+      // ADMIN=null（全件）パスにより、Admin アップロード由来セッションが
+      // 一覧先頭ページ（createdAt=now で降順先頭）に現れる。
+      await expect(
+        sessionOpenButtonByName(page, ADMIN_SESSION.name).first()
       ).toBeVisible({ timeout: 15_000 });
     });
   });

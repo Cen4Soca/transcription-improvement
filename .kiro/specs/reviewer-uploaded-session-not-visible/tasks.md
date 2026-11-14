@@ -184,3 +184,51 @@ design.md「既存の壊れたデータの扱い」節の「可視性バック�
   - アクセシビリティ: `helpers/axe-helper.ts` が存在するため、既存 spec の方針に合わせて画面検証に含める（過度には求めない）
   - 前提・実行: デプロイ環境 + `e2e/.env` が前提。実行は運用手順（`e2e/SETUP.md` 準拠）として spec ヘッダコメントに記載し、CI 不在でもローカルから `cd e2e && npx playwright test tests/sessions/reviewer-uploaded-session-visibility.spec.ts` で動く形にする
   - _Requirements: 2.1, 2.2, 2.3, 2.5, 2.6_
+## 再発防止テスト強化タスク（タスク 10〜13）
+
+design.md「テスト見逃し分析と再発防止」節に基づく追加タスク。既存テスト（E2E 含む）が「アップロード → ジョブ → セッション生成」の生成経路を一切通らず、生成経路の出力を直接 seed / stub して表示のみを検証していたため本バグを見逃した。以下は生成経路そのものを実経路で通すテスト、可視性の「見えすぎ」逆方向リグレッションを検出するテスト、縦貫テスト、ADMIN 全件パスの回帰テストを追加する。タスク 1〜9・既存プロパティ番号・採用案（案 A / 案 D）は変更しない。
+
+- [x] 10. **P1（最重要）**: アップロード生成経路の統合テストを追加する（LocalStack）
+  - **目的**: `startJob` が実際に `createSessionForJob` → `ReviewAssignment` 生成 → `MediaFile.sessionId` リンクまでを、**モックせず実経路**で行うことを LocalStack 統合テストで検証し、本バグを「生成時点」で捕捉する。既存の 4 層テスト（media-upload E2E / session-list・review-page E2E / 本 spec の可視性 E2E / backend 単体・プロパティ）はいずれも生成経路を通らなかった盲点を埋める
+  - **配置**: `backend/src/__tests__/integration/reviewer-uploaded-session.integration.test.ts`（integration 規約どおり `__tests__/integration/`、`{feature}.integration.test.ts`）
+  - **前提**: LocalStack が必要（`http://localhost:4566`, `ap-northeast-1`）。既存 integration の流儀に準拠する:
+    - `const SHOULD_RUN = process.env.INTEGRATION_TEST === 'true'; const describeIntegration = SHOULD_RUN ? describe : describe.skip;`
+    - `beforeAll` でテーブル（`PK`/`SK` + GSI1/GSI2）を `CreateTableCommand` で作成、`afterAll` で `DeleteTableCommand` で削除。テーブル定義は `backend/src/__tests__/integration/dynamodb-crud.integration.test.ts` のキースキーマ（PK/SK/GSI1PK/GSI1SK/GSI2PK/GSI2SK, `PAY_PER_REQUEST`）を参考にする
+    - `DynamoDBDocumentClient`（`marshallOptions.removeUndefinedValues = true`）, `TABLE_NAME='TranscriptionReviewApp'`
+  - **検証方針**: Transcribe クライアントは `vi.mock()` でモック（実ジョブは起動しない）してよいが、`createSessionForJob` / `session-repository` / `team-repository.createReviewAssignment` / `media-file-repository` の **DynamoDB 書き込みは LocalStack の実テーブルに対して行う**（これらをモックしない）
+  - **アサーション**: `startJob` 実行後、
+    1. `ReviewAssignment`（`PK=USER#{uploaderId}, SK=ASSIGNMENT#{sessionId}`）が実テーブルに作られ、`getAccessibleSessionIds(uploader)` が当該 `sessionId` を含む
+    2. `MediaFile` の `sessionId` が張られ、`getBySessionId(sessionId)` で解決できる
+  - **ロール網羅**: uploader role を `REVIEWER` / `TEAM_LEADER` / `ADMIN` で網羅する（`TEAM_LEADER` は `teamId` 設定済みケースも含む）。ADMIN は `getAccessibleSessionIds` が `null`（全件）を返す切り分けを明示する
+  - **運用注記**: 環境が無い場合は `describe.skip` で収集のみ確認し、実行はローカル / CI の LocalStack 起動時に行う
+  - **実行手順**（docstring に記載）: `cd backend && INTEGRATION_TEST=true npx vitest --run --config vitest.integration.config.ts reviewer-uploaded-session`
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
+
+- [x] 11. **P2**: ロール別可視性マトリクス（分離の検証）を追加する
+  - **目的**: 可視性修正が「見えすぎる」逆方向リグレッション（他人のアップロード由来セッションが無関係ユーザーの一覧に出る）を生んでいないことを検証する。アクセス制御（bugfix 3.6）を緩めていないことの保証
+  - **配置（2 層）**:
+    - (a) **backend プロパティ/単体**: `backend/src/services/access-control-service.property.test.ts` に **新しい Property 番号で追加**する（既存 Property 2 と別番号。例: `Property 6: 分離（isolation）`。既存プロパティ番号 1〜5 は変更しない）。Reviewer A のアップロード由来セッション（A の `ReviewAssignment` のみ存在）が、無関係な Reviewer B / 別チームの TeamLeader の `getAccessibleSessionIds` に **含まれない** ことを fast-check で検証する（`{ numRuns: 100 }`、`describe` は `Feature: reviewer-uploaded-session-not-visible, Property 6: ...` 形式、`it` の docstring に `**Validates: Requirements 3.6**`）
+    - (b) **E2E**: `e2e/tests/sessions/reviewer-uploaded-session-visibility.spec.ts` に、無関係ユーザーの一覧に当該セッションが出ない（`toHaveCount(0)` 相当）シナリオを追加する。ただし E2E の固定テストユーザー構成（`testUsers` は reviewer / teamLeader / admin のみ）で「無関係ユーザー」を表現できるか実装者が確認し、表現しにくければ **backend 層を主、E2E は可能な範囲で補助**とする（例: reviewer アップロード由来セッションを teamLeader が別チーム前提で見られないことを可能な範囲で確認）
+  - **Preservation 観点**: 他チーム・未割り当てセッションへの拒否（`checkSessionAccess` / `denyResourceAccess` の 404）が維持されることを注記する（bugfix 3.6）。本修正が ReviewAssignment を**アップローダー本人にのみ**付与し、無関係ユーザーに露出しないことを明示する
+  - **運用注記**: backend プロパティは `cd backend && npx vitest --run access-control-service` で実行。E2E はデプロイ環境 + `e2e/.env` が前提
+  - _Requirements: 3.6, 2.1, 2.2_
+
+- [x] 12. **P3**: 準エンドツーエンド縦貫テストを追加する（LocalStack）
+  - **目的**: アップロード〜ジョブ完了〜一覧表示を実経路で縦貫する。Transcribe 実時間を避けるため、`startJob`（Transcribe はモック or LocalStack）→ `process-job-complete` を**完了イベント注入で短絡**→ 生成されたセッションが一覧経路（`getAccessibleSessionIds`）に出て、メディアが `getBySessionId` で解決することを検証する
+  - **配置**: `backend/src/__tests__/integration/`。タスク 10 と同ファイル（`reviewer-uploaded-session.integration.test.ts`）に縦貫ケースとして追加するか、別ファイル `reviewer-uploaded-session-e2e.integration.test.ts` にする。実装者が既存粒度に合わせて判断する
+  - **前提**: LocalStack が必要（`http://localhost:4566`, `ap-northeast-1`）。`SHOULD_RUN` / `describeIntegration` パターンに準拠（タスク 10 と同じ流儀）
+  - **検証方針**:
+    - `process-job-complete.ts` のハンドラを**実際に呼び出す**（完了イベントを注入して短絡）
+    - `job.sessionId` がある場合の**既存セッション再利用**（bugfix 3.7）— 重複した空セッション（`SK=METADATA`）を作らないこと — も併せて確認する
+    - 縦貫後、生成されたセッションが `getAccessibleSessionIds(uploader)` に含まれ、メディアが `getBySessionId` で解決することをアサートする
+  - **運用注記**: 環境が無い場合は `describe.skip` で収集のみ確認し、実行はローカル / CI の LocalStack 起動時に行う
+  - **実行手順**（docstring に記載）: `cd backend && INTEGRATION_TEST=true npx vitest --run --config vitest.integration.config.ts reviewer-uploaded-session`（別ファイルにした場合はそのファイル名でフィルタ）
+  - _Requirements: 2.1, 2.5, 3.7_
+
+- [x] 13. **P4**: Admin アップロードの回帰テストを追加する（E2E 層）
+  - **目的**: Admin アップロード由来セッションが一覧に出続ける（`getAccessibleSessionIds` の ADMIN=`null` 全件パスが壊れていない）ことを E2E で確認する。本修正が ReviewAssignment 追加に限定され、ADMIN パスを変えていないことの退行検出
+  - **配置**: `e2e/tests/sessions/reviewer-uploaded-session-visibility.spec.ts` に Admin シナリオを追加する（`seedUploadOriginSession` の `uploaderId = testUsers.admin.userId`、`loginAsAdmin` で一覧にそのセッションが出ることを確認）。または `session-list.spec.ts` の Admin 前提に沿える場合はそちらを検討する。実装者が既存構成に合わせて判断する
+  - **前提**: デプロイ環境 + `e2e/.env`（`helpers/dynamodb-helper.ts` の `seedUploadOriginSession`, `fixtures/auth.ts` の `loginAsAdmin` / `testUsers` を再利用）
+  - **検証内容**: Admin アップロード由来セッションが `loginAsAdmin` のセッション一覧（`校閲セッション一覧`）に表示される（`getAccessibleSessionIds` が `null` 全件を返す ADMIN パスの維持 = bugfix 3.2）
+  - **運用注記**: 実行は `cd e2e && npx playwright test tests/sessions/reviewer-uploaded-session-visibility.spec.ts`。CI 不在でもローカルから動く形にする
+  - _Requirements: 3.2, 2.1_

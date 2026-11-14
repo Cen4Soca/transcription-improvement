@@ -264,6 +264,74 @@
         "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
         "timestamp": 1794575176958
       }
+    ],
+    "10. **P1（最重要）**: アップロード生成経路の統合テストを追加する（LocalStack）": [
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642010721
+      },
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642022013
+      },
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642261934
+      }
+    ],
+    "11. **P2**: ロール別可視性マトリクス（分離の検証）を追加する": [
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642010767
+      },
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642022970
+      },
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642263001
+      }
+    ],
+    "12. **P3**: 準エンドツーエンド縦貫テストを追加する（LocalStack）": [
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642010801
+      },
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642272100
+      },
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642513976
+      }
+    ],
+    "13. **P4**: Admin アップロードの回帰テストを追加する（E2E 層）": [
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642010821
+      },
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642273096
+      },
+      {
+        "executionId": "dc027ccb-15ab-47b9-a970-029728828e23",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794642514939
+      }
     ]
   }
 }

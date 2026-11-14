@@ -324,3 +324,32 @@ END FOR
 - **フルフロー（メディア取得）**: 上記セッションで `GET /sessions/{sessionId}/media-url` が、CLEAN なら署名付き URL を返す（リンク補償経由を含む）。
 - **Admin 後付け割り当て**: リンク欠落セッションに Admin が team/reviewer を割り当て → 校閲画面のメディア取得が成功する（bugfix 2.6）。
 - **process-job-complete 連携**: `startJob` が `sessionId` を設定済みの job を処理 → 既存セッション再利用、重複なし（bugfix 3.7）。
+## テスト見逃し分析と再発防止
+
+### なぜ既存テストでこのバグを捕まえられなかったか
+
+本バグは E2E を含む複数のテスト層が存在したにもかかわらず見逃された。原因は、**どのテスト層も「アップロード → ジョブ → セッション生成」という生成経路（`startJob` → `createSessionForJob` → `ReviewAssignment` 生成 / `MediaFile.sessionId` リンク）を一切通っていなかった** という構造的盲点である。既存テストはいずれも「生成経路の出力」を直接 seed / stub したうえで、その後の表示や UI 遷移だけを検証していた。したがって、生成経路そのものの欠陥（`startJob` が `ReviewAssignment` を作らない / 空 catch でメディアリンクが欠落する）を観測できるレイヤーが存在しなかった。
+
+#### 4 層テストの構造的盲点（どの層も生成経路を通っていなかった）
+
+| テスト層 | 既存の検証内容 | 生成経路を通るか | 見逃した欠陥 |
+|----------|----------------|------------------|--------------|
+| media-upload E2E（`e2e/tests/upload/media-upload.spec.ts`） | presigned URL 取得・S3 PUT を全スタブし、アップロード UI の遷移・成功表示のみ検証 | **通らない**（presigned / S3 PUT をスタブ、ジョブ起動以降に到達しない） | `startJob` の `ReviewAssignment` 未生成・空 catch によるメディアリンク欠落 |
+| session-list / review-page E2E（`e2e/tests/sessions/session-list.spec.ts`, `review-page.spec.ts`） | 整合済みデータ（Assignment あり / メディアリンク済み）を直接 seed し、一覧表示・校閲画面表示のみ検証 | **通らない**（生成経路の出力を手で seed して表示だけ確認） | 生成経路が Assignment / メディアリンクを作らないこと（seed が肩代わりしていた） |
+| 本 spec の可視性/メディア E2E（`reviewer-uploaded-session-visibility.spec.ts`） | 修正後レイアウト（ReviewSession + SessionParticipant + ReviewAssignment）を `seedUploadOriginSession` で直接投入し、表示のみ検証 | **通らない**（修正後の生成結果を seed、生成経路は実行しない） | 生成経路が実際にその出力を作るかどうか（seed が肩代わりする限り永久に緑） |
+| backend 単体 / プロパティ（Property 1〜5） | AWS SDK を `vi.mock()` でモックし、Handler / Service / Repository を独立検証 | **通らない**（Service 間の実連携・実 DynamoDB 書き込みはモックで分断） | モック境界をまたぐ `startJob → createSessionForJob → team-repository` の実連携不整合 |
+
+要するに、(a) media-upload E2E は presigned / S3 PUT を全スタブして UI 遷移のみを見ており生成経路に到達せず、(b) session-list / review-page E2E と本 spec は整合済みデータ・修正後レイアウトを直接 seed して表示のみを見ていた。生成経路の欠陥を捕まえるレイヤーが欠けていた。
+
+### 追加する 4 パターンの狙い
+
+再発防止として、tasks.md にタスク 10〜13 を追加する。各パターンが上表のどの盲点を埋めるかを以下に示す。
+
+| 追加パターン | 層 | 埋める盲点 | 狙い |
+|--------------|----|------------|------|
+| タスク 10（P1）アップロード生成経路の統合テスト | backend 統合（LocalStack） | 生成経路をモックせず実行する層が無かった | `startJob` → `createSessionForJob` → `ReviewAssignment` 生成 → `MediaFile.sessionId` リンクを実テーブルに対して実経路で検証し、本バグを「生成時点」で捕捉する（最重要） |
+| タスク 11（P2）ロール別可視性マトリクス | backend プロパティ + E2E 補助 | 「見えすぎる」逆方向リグレッションを検出する層が無かった | 可視性修正が他人のアップロード由来セッションを無関係ユーザーに露出していないこと（分離）を検証し、アクセス制御を緩めていないことを保証 |
+| タスク 12（P3）準エンドツーエンド縦貫 | backend 統合（LocalStack） | アップロード〜ジョブ完了〜一覧表示を実経路で縦貫する層が無かった | Transcribe 実時間を避けつつ、完了イベント注入で `process-job-complete` を短絡し、生成されたセッションが一覧経路・メディア解決経路に実際に乗ることを縦貫検証 |
+| タスク 13（P4）Admin アップロードの回帰 | E2E | ADMIN 全件パスの退行を見張る層が弱かった | `getAccessibleSessionIds` の ADMIN=null 全件パスが本修正で壊れていないことを E2E で確認 |
+
+これらにより、今後 (1) 生成経路が `ReviewAssignment` / メディアリンクを作らなくなる退行、(2) 可視性を緩めすぎる逆方向退行、(3) 縦貫フローの破断、(4) ADMIN 全件パスの退行、のいずれも検出可能になる。
