@@ -259,7 +259,7 @@ export function SegmentEditor({
                 e.stopPropagation();
                 setIsEditingSpeaker(true);
               }}
-              aria-label={t('segmentEditor.speakerLabel')}
+              aria-label={t('segmentEditor.speakerLabelWithValue', { label: segment.speakerLabel })}
               className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded whitespace-nowrap cursor-pointer hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors"
             >
               {segment.speakerLabel}
@@ -268,7 +268,7 @@ export function SegmentEditor({
         ) : (
           <span
             className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded whitespace-nowrap"
-            aria-label={t('segmentEditor.speakerLabel')}
+            aria-label={t('segmentEditor.speakerLabelWithValue', { label: segment.speakerLabel })}
           >
             {segment.speakerLabel}
           </span>
@@ -279,7 +279,7 @@ export function SegmentEditor({
         <div className="flex-1 space-y-2" role="group" aria-label={t('segmentEditor.groupAriaLabel')}>
           {/* Requirement 2.2: 編集前テキストの表示（取り消し線付き） */}
           <div
-            className="text-sm text-gray-400 line-through px-2 py-1"
+            className="text-sm text-gray-600 line-through px-2 py-1"
             aria-label={t('segmentEditor.originalTextAriaLabel')}
           >
             {segment.originalText}
@@ -334,7 +334,7 @@ export function SegmentEditor({
                   {t('segmentEditor.beforeCorrection')}
                 </span>
                 <span
-                  className="text-sm text-gray-400 line-through leading-relaxed"
+                  className="text-sm text-gray-600 line-through leading-relaxed"
                   aria-label={t('segmentEditor.beforeCorrectionAriaLabel')}
                 >
                   {displayCorrection.originalText}

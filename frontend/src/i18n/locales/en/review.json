@@ -178,6 +178,7 @@
     "segmentAriaLabel": "Segment {{time}}",
     "startTime": "Start time",
     "speakerLabel": "Speaker label",
+    "speakerLabelWithValue": "Speaker label {{label}}",
     "groupAriaLabel": "Inline editing",
     "originalTextAriaLabel": "Original text",
     "editTextareaAriaLabel": "Edit text",

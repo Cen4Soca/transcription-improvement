@@ -178,6 +178,7 @@
     "segmentAriaLabel": "セグメント {{time}}",
     "startTime": "開始時刻",
     "speakerLabel": "話者ラベル",
+    "speakerLabelWithValue": "話者ラベル {{label}}",
     "groupAriaLabel": "インライン編集",
     "originalTextAriaLabel": "編集前テキスト",
     "editTextareaAriaLabel": "編集テキスト",

@@ -31,7 +31,7 @@ describe('SegmentEditor', () => {
       const segment = createSegment({ speakerLabel: undefined });
       render(<SegmentEditor segment={segment} />);
 
-      expect(screen.queryByLabelText('話者ラベル')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/話者ラベル/)).not.toBeInTheDocument();
     });
 
     it('enters edit mode on click (Requirement 2.1)', async () => {
