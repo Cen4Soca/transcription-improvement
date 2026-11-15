@@ -64,6 +64,7 @@ import {
   updateUser,
 } from '../repositories/user-repository.js';
 import { updateUserProfile } from '../services/user-service.js';
+import { recordAuditLog } from '../services/audit-service.js';
 import {
   createCognitoUser,
   disableCognitoUser,
@@ -83,6 +84,7 @@ const mockedEnableCognitoUser = vi.mocked(enableCognitoUser);
 const mockedGlobalSignOutCognitoUser = vi.mocked(globalSignOutCognitoUser);
 const mockedUpdateCognitoUserRole = vi.mocked(updateCognitoUserRole);
 const mockedUpdateUserProfile = vi.mocked(updateUserProfile);
+const mockedRecordAuditLog = vi.mocked(recordAuditLog);
 
 function createEvent(
   overrides: Partial<{
@@ -453,6 +455,7 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
   it('updates user role', async () => {
     mockedGetUserById.mockResolvedValue(sampleUsers[0]);
     mockedUpdateCognitoUserRole.mockResolvedValue(undefined);
+    mockedGlobalSignOutCognitoUser.mockResolvedValue(undefined);
     mockedUpdateUser.mockResolvedValue({
       ...sampleUsers[0],
       role: 'TEAM_LEADER',
@@ -473,7 +476,10 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
     // Verify role change goes through AdminUpdateUserAttributes
     expect(mockedUpdateCognitoUserRole).toHaveBeenCalledWith('reviewer@example.com', 'TEAM_LEADER');
     expect(mockedDisableCognitoUser).not.toHaveBeenCalled();
-    expect(mockedGlobalSignOutCognitoUser).not.toHaveBeenCalled();
+    // A real role change now forces a single global sign-out so the new role
+    // takes effect immediately (role-change session invalidation).
+    expect(mockedGlobalSignOutCognitoUser).toHaveBeenCalledTimes(1);
+    expect(mockedGlobalSignOutCognitoUser).toHaveBeenCalledWith('reviewer@example.com');
   });
 
   it('disables user and invalidates sessions', async () => {
@@ -635,6 +641,10 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
 
   it('returns 500 when DynamoDB update fails', async () => {
     mockedGetUserById.mockResolvedValue(sampleUsers[0]);
+    // A role change now signs out first; let it resolve so the flow reaches
+    // the DynamoDB persist step that this test exercises.
+    mockedUpdateCognitoUserRole.mockResolvedValue(undefined);
+    mockedGlobalSignOutCognitoUser.mockResolvedValue(undefined);
     mockedUpdateUser.mockRejectedValue(new Error('DynamoDB error'));
 
     const event = createEvent({
@@ -831,5 +841,206 @@ describe('PATCH /admin/users/{userId} - updateUserHandler', () => {
     expect(result.statusCode).toBe(200);
     expect(mockedUpdateCognitoUserRole).toHaveBeenCalled();
     expect(mockedUpdateUserProfile).toHaveBeenCalled();
+  });
+});
+
+describe('PATCH /admin/users/{userId} - role-change session invalidation matrix', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Target used for role-change cases. ADMIN so we can exercise demotion
+  // (ADMIN -> REVIEWER); REVIEWER cases reuse sampleUsers[0].
+  const adminTarget = {
+    userId: 'user-003',
+    email: 'target@example.com',
+    displayName: 'Target Admin',
+    role: 'ADMIN' as const,
+    isActive: true,
+    createdAt: '2024-01-03T00:00:00.000Z',
+    updatedAt: '2024-01-03T00:00:00.000Z',
+  };
+
+  it('demotion (ADMIN -> REVIEWER) forces one global sign-out and runs role+DynamoDB updates in order', async () => {
+    mockedGetUserById.mockResolvedValue(adminTarget);
+    mockedUpdateCognitoUserRole.mockResolvedValue(undefined);
+    mockedGlobalSignOutCognitoUser.mockResolvedValue(undefined);
+    mockedUpdateUser.mockResolvedValue({
+      ...adminTarget,
+      role: 'REVIEWER',
+      updatedAt: '2024-01-15T00:00:00.000Z',
+    });
+
+    const event = createEvent({
+      method: 'PATCH',
+      path: '/admin/users/user-003',
+      pathParameters: { userId: 'user-003' },
+      body: JSON.stringify({ role: 'REVIEWER' }),
+    });
+    const result = await updateUserHandler(event);
+
+    expect(result.statusCode).toBe(200);
+    // Sign-out fires exactly once for the target email.
+    expect(mockedGlobalSignOutCognitoUser).toHaveBeenCalledTimes(1);
+    expect(mockedGlobalSignOutCognitoUser).toHaveBeenCalledWith('target@example.com');
+    // Role update and DynamoDB persist also run.
+    expect(mockedUpdateCognitoUserRole).toHaveBeenCalledWith('target@example.com', 'REVIEWER');
+    expect(mockedUpdateUser).toHaveBeenCalledWith('user-003', {
+      role: 'REVIEWER',
+      isActive: undefined,
+    });
+    // Order: updateCognitoUserRole -> globalSignOutCognitoUser -> updateUser.
+    const roleOrder = mockedUpdateCognitoUserRole.mock.invocationCallOrder[0];
+    const signOutOrder = mockedGlobalSignOutCognitoUser.mock.invocationCallOrder[0];
+    const updateOrder = mockedUpdateUser.mock.invocationCallOrder[0];
+    expect(roleOrder).toBeLessThan(signOutOrder);
+    expect(signOutOrder).toBeLessThan(updateOrder);
+  });
+
+  it('promotion (REVIEWER -> TEAM_LEADER) forces a single global sign-out for the target email', async () => {
+    mockedGetUserById.mockResolvedValue(sampleUsers[0]); // REVIEWER
+    mockedUpdateCognitoUserRole.mockResolvedValue(undefined);
+    mockedGlobalSignOutCognitoUser.mockResolvedValue(undefined);
+    mockedUpdateUser.mockResolvedValue({
+      ...sampleUsers[0],
+      role: 'TEAM_LEADER',
+      updatedAt: '2024-01-15T00:00:00.000Z',
+    });
+
+    const event = createEvent({
+      method: 'PATCH',
+      path: '/admin/users/user-001',
+      pathParameters: { userId: 'user-001' },
+      body: JSON.stringify({ role: 'TEAM_LEADER' }),
+    });
+    const result = await updateUserHandler(event);
+
+    expect(result.statusCode).toBe(200);
+    expect(mockedGlobalSignOutCognitoUser).toHaveBeenCalledTimes(1);
+    expect(mockedGlobalSignOutCognitoUser).toHaveBeenCalledWith('reviewer@example.com');
+    expect(mockedUpdateCognitoUserRole).toHaveBeenCalledWith('reviewer@example.com', 'TEAM_LEADER');
+  });
+
+  it('does not sign out when the requested role equals the existing role', async () => {
+    mockedGetUserById.mockResolvedValue(sampleUsers[0]); // REVIEWER
+    mockedUpdateUser.mockResolvedValue({
+      ...sampleUsers[0],
+      updatedAt: '2024-01-15T00:00:00.000Z',
+    });
+
+    const event = createEvent({
+      method: 'PATCH',
+      path: '/admin/users/user-001',
+      pathParameters: { userId: 'user-001' },
+      body: JSON.stringify({ role: 'REVIEWER' }),
+    });
+    const result = await updateUserHandler(event);
+
+    expect(result.statusCode).toBe(200);
+    // No actual role change -> neither role update nor sign-out should fire.
+    expect(mockedUpdateCognitoUserRole).not.toHaveBeenCalled();
+    expect(mockedGlobalSignOutCognitoUser).not.toHaveBeenCalled();
+  });
+
+  it('does not sign out when role is unspecified (isActive: true only on an active user)', async () => {
+    mockedGetUserById.mockResolvedValue(sampleUsers[0]); // already active
+    mockedUpdateUser.mockResolvedValue({
+      ...sampleUsers[0],
+      updatedAt: '2024-01-15T00:00:00.000Z',
+    });
+
+    const event = createEvent({
+      method: 'PATCH',
+      path: '/admin/users/user-001',
+      pathParameters: { userId: 'user-001' },
+      body: JSON.stringify({ isActive: true }),
+    });
+    const result = await updateUserHandler(event);
+
+    expect(result.statusCode).toBe(200);
+    expect(mockedGlobalSignOutCognitoUser).not.toHaveBeenCalled();
+    expect(mockedUpdateCognitoUserRole).not.toHaveBeenCalled();
+  });
+
+  it('signs out only once when a role change and deactivation are requested together', async () => {
+    mockedGetUserById.mockResolvedValue(adminTarget); // ADMIN, active
+    mockedUpdateCognitoUserRole.mockResolvedValue(undefined);
+    mockedGlobalSignOutCognitoUser.mockResolvedValue(undefined);
+    mockedDisableCognitoUser.mockResolvedValue(undefined);
+    mockedUpdateUser.mockResolvedValue({
+      ...adminTarget,
+      role: 'REVIEWER',
+      isActive: false,
+      updatedAt: '2024-01-15T00:00:00.000Z',
+    });
+
+    const event = createEvent({
+      method: 'PATCH',
+      path: '/admin/users/user-003',
+      pathParameters: { userId: 'user-003' },
+      body: JSON.stringify({ role: 'REVIEWER', isActive: false }),
+    });
+    const result = await updateUserHandler(event);
+
+    expect(result.statusCode).toBe(200);
+    // The deactivation branch owns the sign-out; the role-change branch must
+    // not add a second one (invalidateForRoleChange === false).
+    expect(mockedGlobalSignOutCognitoUser).toHaveBeenCalledTimes(1);
+    expect(mockedGlobalSignOutCognitoUser).toHaveBeenCalledWith('target@example.com');
+    expect(mockedDisableCognitoUser).toHaveBeenCalledTimes(1);
+    expect(mockedDisableCognitoUser).toHaveBeenCalledWith('target@example.com');
+    expect(mockedUpdateCognitoUserRole).toHaveBeenCalledWith('target@example.com', 'REVIEWER');
+  });
+
+  it('returns a 500 with ROLE_CHANGE_SESSION_INVALIDATION_FAILED when sign-out fails after a role change', async () => {
+    mockedGetUserById.mockResolvedValue(adminTarget);
+    mockedUpdateCognitoUserRole.mockResolvedValue(undefined);
+    mockedGlobalSignOutCognitoUser.mockRejectedValue(new Error('Cognito sign-out timeout'));
+
+    const event = createEvent({
+      method: 'PATCH',
+      path: '/admin/users/user-003',
+      pathParameters: { userId: 'user-003' },
+      body: JSON.stringify({ role: 'REVIEWER' }),
+    });
+    const result = await updateUserHandler(event);
+
+    expect(result.statusCode).toBe(500);
+    const body = JSON.parse(result.body as string);
+    expect(body.error.code).toBe('INTERNAL_ERROR');
+    expect(body.error.errorCode).toBe('ROLE_CHANGE_SESSION_INVALIDATION_FAILED');
+    expect(body.error.message).toContain('Failed to invalidate existing sessions');
+    // DynamoDB persist and audit must not run after the partial failure.
+    expect(mockedUpdateUser).not.toHaveBeenCalled();
+    expect(mockedRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('records sessionInvalidated: true alongside previousValue/newValue in the audit metadata', async () => {
+    mockedGetUserById.mockResolvedValue(adminTarget); // ADMIN
+    mockedUpdateCognitoUserRole.mockResolvedValue(undefined);
+    mockedGlobalSignOutCognitoUser.mockResolvedValue(undefined);
+    mockedUpdateUser.mockResolvedValue({
+      ...adminTarget,
+      role: 'REVIEWER',
+      updatedAt: '2024-01-15T00:00:00.000Z',
+    });
+
+    const event = createEvent({
+      method: 'PATCH',
+      path: '/admin/users/user-003',
+      pathParameters: { userId: 'user-003' },
+      body: JSON.stringify({ role: 'REVIEWER' }),
+    });
+    const result = await updateUserHandler(event);
+
+    expect(result.statusCode).toBe(200);
+    expect(mockedRecordAuditLog).toHaveBeenCalledTimes(1);
+    const auditArg = mockedRecordAuditLog.mock.calls[0][0];
+    expect(auditArg.operationType).toBe('USER_MANAGEMENT');
+    expect(auditArg.metadata).toMatchObject({
+      sessionInvalidated: true,
+      newValue: 'REVIEWER',
+      previousValue: 'ADMIN',
+    });
   });
 });

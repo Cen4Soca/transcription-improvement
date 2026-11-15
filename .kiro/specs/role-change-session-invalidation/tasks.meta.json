@@ -1,0 +1,151 @@
+{
+  "pbtResults": {
+    "1. バグ条件探索テストを書く（修正前に FAIL）": {
+      "status": "passed",
+      "failingExample": "Counterexample: [\"REVIEWER\",\"ADMIN\"] (existingRole=REVIEWER, newRole=ADMIN — promotion). AssertionError: expected globalSignOutCognitoUser spy to be called 1 times, but got 0 times. seed=-954497949, path=\"0:0\", shrunk 1 time. On the unfixed updateUserHandler, the role-change branch (body.role !== undefined && body.role !== existingUser.role, isActive unspecified) calls updateCognitoUserRole + updateUser but never calls globalSignOutCognitoUser, so the target user's existing JWT sessions are not invalidated.",
+      "lastRunTimestamp": 1794740071955
+    },
+    "2. Preservation プロパティテストを書く（修正前に PASS）": {
+      "status": "passed",
+      "lastRunTimestamp": 1794740227078
+    },
+    "3.3 バグ条件探索テストが PASS に転じることを確認する": {
+      "status": "passed",
+      "lastRunTimestamp": 1794740354877
+    },
+    "3.4 Preservation テストが引き続き PASS することを確認する": {
+      "status": "passed",
+      "lastRunTimestamp": 1794740356262
+    }
+  },
+  "executionHistory": {
+    "1. バグ条件探索テストを書く（修正前に FAIL）": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739964883
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739972479
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740097896
+      }
+    ],
+    "2. Preservation プロパティテストを書く（修正前に PASS）": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739964915
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740106310
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740245883
+      }
+    ],
+    "3.1 新しい詳細エラーコードを追加する": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739964930
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740253884
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740391062
+      }
+    ],
+    "3.2 updateUserHandler のロール変更ブランチに強制サインアウトを実装する": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739964978
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740393739
+      }
+    ],
+    "3.3 バグ条件探索テストが PASS に転じることを確認する": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739964994
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740392379
+      }
+    ],
+    "3.4 Preservation テストが引き続き PASS することを確認する": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739965006
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740394784
+      }
+    ],
+    "4. 発火条件マトリクスの単体テストを追加する": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739965022
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740401727
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794745451211
+      }
+    ],
+    "5. Checkpoint - 全テストが PASS することを確認する": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794739965037
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794745458209
+      },
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794745542943
+      }
+    ],
+    "3. ロール変更時セッション強制サインアウトの修正": [
+      {
+        "executionId": "2941c40f-c545-4c79-9ea1-51eb160306f3",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794740394805
+      }
+    ]
+  }
+}

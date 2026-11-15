@@ -267,8 +267,15 @@ export async function updateUserHandler(
       }
     }
 
-    // Handle role change via AdminUpdateUserAttributes (Req 14.18)
-    if (body.role !== undefined && body.role !== existingUser.role) {
+    // Handle role change via AdminUpdateUserAttributes (Req 14.18).
+    // When the role actually changes, force sign-out the target's existing
+    // sessions so the new role takes effect immediately on both dedicated and
+    // shared User Pool configurations (Req 2.1, 2.2). The sign-out is skipped
+    // when the deactivation flow already signed the user out above, to avoid a
+    // double sign-out (Req 3.2).
+    const roleChanged = body.role !== undefined && body.role !== existingUser.role;
+    const invalidateForRoleChange = roleChanged && body.isActive !== false;
+    if (roleChanged) {
       try {
         await updateCognitoUserRole(
           existingUser.email,
@@ -280,6 +287,23 @@ export async function updateUserHandler(
           cognitoError instanceof Error ? cognitoError.message : undefined,
           ERROR_CODES.ROLE_UPDATE_FAILED
         );
+      }
+
+      if (invalidateForRoleChange) {
+        try {
+          // Invalidate existing sessions so the next JWT carries the new role.
+          await globalSignOutCognitoUser(existingUser.email);
+        } catch (cognitoError: unknown) {
+          // The role is updated in Cognito but sessions could not be
+          // invalidated. Surface this partial failure explicitly instead of
+          // swallowing it; no rollback — re-issuing the same PATCH converges
+          // (both operations are idempotent).
+          throw internalError(
+            'Failed to invalidate existing sessions after the role change.',
+            cognitoError instanceof Error ? cognitoError.message : undefined,
+            ERROR_CODES.ROLE_CHANGE_SESSION_INVALIDATION_FAILED
+          );
+        }
       }
     }
 
@@ -308,6 +332,7 @@ export async function updateUserHandler(
                   : 'User updated',
             ...(body.role !== undefined && { newValue: body.role as string }),
             ...(body.role !== undefined && existingUser.role !== body.role && { previousValue: existingUser.role }),
+            ...(invalidateForRoleChange && { sessionInvalidated: true }),
           },
         });
       } catch (dbError: unknown) {
