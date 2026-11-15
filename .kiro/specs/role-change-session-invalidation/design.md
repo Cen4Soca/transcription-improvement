@@ -237,3 +237,25 @@ END FOR
 4. 降格の場合、再ログイン後は新しい（低い）ロールの権限に制限されることを確認する。
 
 **挙動の注意**: Cognito の global sign-out（`AdminUserGlobalSignOut`）はリフレッシュトークンを即時無効化するが、既発行のアクセストークンは短期の有効期限が切れた時点で弾かれる。したがって手順 3 の拒否は即時 401 とは限らず、アクセストークンの有効期限に依存しうる（リフレッシュ時 / トークン失効後に確実に再ログインが要求される）。
+
+## Known Issue / 再発防止（Deferred）
+
+本スペックの実機確認（6.1）準備中に、テスト観点のすり抜けによる監査要件の実環境未達を発見した。発見事項は本スペックで修正済みだが、同種の再発を防ぐための方針を記録として残す（本節は記録のみで、実装や既存設計の変更を伴わない）。
+
+### 事象
+
+本修正は `updateUserHandler` がロール変更時に `recordAuditLog` の `metadata` へ `sessionInvalidated: true` を渡すが、`recordAuditLog` → `sanitizeMetadata`（`backend/src/utils/metadata-sanitizer.ts`）の allowlist（`ALLOWED_KEYS`）に `sessionInvalidated` が含まれていなかったため、保存前に除去されていた。結果、デプロイ済み環境では監査ログに `sessionInvalidated` が出ず、監査要件（bugfix 2.4）が実環境で未達だった。
+
+### すり抜けの原因
+
+ハンドラの単体テスト（`backend/src/handlers/admin-users.test.ts`）が `recordAuditLog` の **呼び出し引数（sanitize 前の `metadata`）** を検証していたため、`sanitizeMetadata` を通過した後（＝実際に永続化される内容）とのギャップを検出できなかった。ハンドラ側のテストは「正しい `metadata` を渡している」ことは示せるが、「監査ログに実際に残る」ことは保証しない。
+
+### 修正済み（本スペックで対応）
+
+`sanitizeMetadata` の `ALLOWED_KEYS` に `sessionInvalidated` を追加（boolean `true` → 文字列 `'true'` で保存）。E2E 6.1（監査ログ観測）で `sessionInvalidated: 'true'` が `GET /admin/audit-logs` に出ることを実機確認済み。
+
+### 再発防止の方針（記録のみ、後日の改善候補）
+
+- (a) 監査メタデータの検証は「sanitize 後に実際に永続化される内容」を対象にする。例: handler/service の単体テストに加え、`sanitizeMetadata` を含む経路（`recordAuditLog`）での検証、または E2E/統合テストで `GET /admin/audit-logs` の実レスポンスを確認する層を、監査系の変更時に必須とする。
+- (b) 新しい監査 `metadata` キーを追加する際は、必ず `sanitizeMetadata` の `ALLOWED_KEYS` への追加もセットで行う（チェックリスト化）。allowlist とキー追加の乖離を防ぐ仕組み（例: `metadata` キーの型/定数を一元管理し allowlist と突き合わせる）を検討する。
+- (c) 「呼び出し引数の mock 検証」だけに依存する監査テストの限界を認識し、sanitize を含む end-to-end の観測を補う。
