@@ -447,6 +447,32 @@ export async function createReviewAssignment(input: {
 }
 
 /**
+ * Check whether a session has at least one TeamAssignment (from any team).
+ *
+ * Queries GSI1 with GSI1PK=SESSION#{sessionId} and GSI1SK begins_with TEAM#.
+ * The same GSI1PK also holds ReviewAssignments (GSI1SK=USER#{userId}), so the
+ * `begins_with(GSI1SK, 'TEAM#')` condition is required to count only
+ * TeamAssignments and avoid miscounting ReviewAssignments. Uses Limit: 1 since
+ * we only need to know whether any exists.
+ */
+export async function hasAnyTeamAssignment(sessionId: string): Promise<boolean> {
+  const result = await docClient.send(
+    new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: 'GSI1',
+      KeyConditionExpression: 'GSI1PK = :pk AND begins_with(GSI1SK, :prefix)',
+      ExpressionAttributeValues: {
+        ':pk': `SESSION#${sessionId}`,
+        ':prefix': 'TEAM#',
+      },
+      Limit: 1,
+    })
+  );
+
+  return (result.Items?.length ?? 0) > 0;
+}
+
+/**
  * Get all ReviewAssignments for a user.
  * Uses PK=USER#{userId} with SK begins_with ASSIGNMENT#.
  */

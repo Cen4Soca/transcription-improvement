@@ -1,0 +1,105 @@
+# Implementation Plan
+
+- [x] 1. バグ条件の探索テストを書く（修正前に FAIL）
+  - **Property 1: Bug Condition** - 本人所有（チーム未アサイン）ReviewAssignment の巻き添え削除
+  - **CRITICAL**: このテストは未修正コードで必ず FAIL する。FAIL することがバグの存在を証明する
+  - **DO NOT attempt to fix the test or the code when it fails** — FAIL は想定どおりの結果
+  - **NOTE**: このテストは期待挙動（本人所有かつチーム未アサイン分の保持）をエンコードしており、修正後に PASS へ転じることで Fix を検証する
+  - **GOAL**: バグを示すカウンターイグザンプルを表面化させ、根本原因（revoke が所有状態＝`createdBy` / `TeamAssignment` の有無を区別せず全件削除する）を確認する
+  - **Scoped PBT Approach**: fast-check でバグ条件 `isBugCondition` を満たす入力を生成する。`getUserTeamIds(userId)` が空（全チーム離脱）、かつ「本人所有かつチーム未アサイン」（`createdBy === userId` かつ `hasAnyTeamAssignment(sessionId)` が偽）の `ReviewAssignment` を少なくとも 1 件含む `ReviewAssignment` 集合（owner-retained / チーム経由 / 移管済み を混在）を生成する
+  - 対象テストファイルは co-located のプロパティテスト `backend/src/services/team-service.property.test.ts`（`{source}.property.test.ts` 規約）。新規作成する
+  - `describe` ブロックは Feature 名と Property 番号を含める: `Feature: team-departure-revokes-uploaded-session-visibility, Property 1: Bug Condition`
+  - docstring に検証要件を明記: `**Validates: Requirements 2.1, 2.2, 2.3**`
+  - 既存 `team-service` テストのモック手法（`vi.mock()` による AWS SDK / repository モック）に合わせ、`getUserTeamIds` / `getReviewAssignmentsByUser` / `deleteReviewAssignment` / `hasAnyTeamAssignment` をモックする（`hasAnyTeamAssignment` で `TeamAssignment` の有無を制御）
+  - テスト内容: 全チーム離脱状態で未修正の `revokeReviewAssignmentsIfOrphaned(userId)` を実行し、「本人所有かつチーム未アサイン」（`createdBy === userId` かつ `TeamAssignment` 不在）の `ReviewAssignment` に対して `deleteReviewAssignment(userId, sessionId)` が呼ばれる（＝巻き添え削除され可視性が失われる）ことをアサートする
+  - `removeMemberFromTeam` 経由と `deleteExistingTeam` カスケード経由の両方で巻き添え削除が起きることをカバーする
+  - fast-check `{ numRuns: 100 }`
+  - 未修正コードで実行する
+  - **EXPECTED OUTCOME**: テストが FAIL する（これが正しい。バグの存在を証明する）
+  - カウンターイグザンプルを記録する（例: `revokeReviewAssignmentsIfOrphaned(U)` が `{ userId: U, sessionId: S, createdBy: U }`（S は TeamAssignment 無し）に対して `deleteReviewAssignment(U, S)` を呼ぶ）
+  - テストを書き、実行し、FAIL を記録した時点でタスク完了
+  - _Bug_Condition: isBugCondition(X) := LENGTH(getUserTeamIds(userId)) = 0 AND EXISTS A IN assignments WHERE A.createdBy === userId AND NOT hasAnyTeamAssignment(A.sessionId)（design Bug Condition / Formal Specification）_
+  - _Expected_Behavior: expectedBehavior(result) := owner-retained（createdBy === userId かつ TeamAssignment 不在）は保持、それ以外（チーム経由 / 移管済み）は削除、可視性維持（design Correctness Properties Property 1）_
+  - _Requirements: 2.1, 2.2, 2.3_
+
+- [x] 2. Preservation / 所有権移転プロパティテストを書く（修正前に PASS）
+  - **Property 2: Preservation** - 非バグ入力での挙動不変、**Property 3: Ownership Transfer** - 移管済みは離脱で削除
+  - **IMPORTANT**: observation-first メソドロジーに従う。まず未修正コードを対象入力で実行し、実際の出力を観測してからプロパティを書く
+  - 対象テストファイルは `backend/src/services/team-service.property.test.ts`（Property 1 と同じファイルに追記）
+  - `describe` ブロック: `Feature: team-departure-revokes-uploaded-session-visibility, Property 2: Preservation` と `Feature: team-departure-revokes-uploaded-session-visibility, Property 3: Ownership Transfer`
+  - docstring に検証要件を明記: Property 2 は `**Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**`、Property 3 は `**Validates: Requirements 3.6**`
+  - **Property 2（Preservation）**: fast-check で `isBugCondition` を満たさない入力を生成する: (a) `getUserTeamIds(userId)` が非空、または (b) owner-retained（`createdBy === userId` かつ `TeamAssignment` 不在）を 1 件も含まない（全件チーム経由、または `createdBy === userId` でも全件が `TeamAssignment` を持つ）
+    - 観測: 未修正コードで (a) 非空 `teamIds` のとき `deleteReviewAssignment` が一切呼ばれず早期 return することを観測
+    - 観測: 未修正コードで (b) 全チーム離脱 + owner-retained 無しのとき、全 `ReviewAssignment` が `deleteReviewAssignment` される（全件削除）ことを観測
+    - 観測した挙動パターンをプロパティ化する: 非バグ入力に対し、削除された `(userId, sessionId)` 集合が「(a) では空集合」「(b) では全 `ReviewAssignment` 集合」と一致する
+  - **Property 3（Ownership Transfer, 所有権移転の中核）**: fast-check で「全チーム離脱 + `createdBy === userId` だが `hasAnyTeamAssignment(sessionId)` が真」のセッションを含む入力を生成する
+    - 観測: 未修正コードでも当該 RA は削除される（未修正は全件削除のため）。この挙動は修正後も正しい挙動として PASS させる（＝チームアサイン済みは離脱で可視性を失うのが正しい）
+    - プロパティ化: 当該「移管済み」RA は（修正前後ともに）必ず `deleteReviewAssignment` される
+  - 併せて ADMIN の全件アクセス不変（`getAccessibleSessionIds(adminUser)` が `null` を返し続ける、3.4）と、`deleteExistingTeam` カスケードがチーム管理下分を revoke する既存意図（3.5）を観測し、プロパティ/アサーションとして固定する
+  - `hasAnyTeamAssignment` をモックして `TeamAssignment` の有無を制御する
+  - fast-check `{ numRuns: 100 }`
+  - 未修正コードで実行する
+  - **EXPECTED OUTCOME**: テストが PASS する（保持すべきベースライン挙動と移管済み削除を確認する）
+  - テストを書き、実行し、未修正コードで PASS することを確認した時点でタスク完了
+  - _Preservation: Preservation Requirements（design）— 非空 teamIds は早期 return / owner-retained を含まない場合は全件削除 / team スコープ即時反映 / ADMIN は null / カスケードはチーム管理下分を revoke。所有権移転: createdBy === userId でも TeamAssignment ありは削除_
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [x] 3. 所有権移転モデルの revoke 保護を実装する
+
+  - [x] 3.1 hasAnyTeamAssignment を Repository に追加する
+    - `backend/src/repositories/team-repository.ts` に `hasAnyTeamAssignment(sessionId: string): Promise<boolean>` を追加する
+    - GSI1 を使用: `KeyConditionExpression: 'GSI1PK = :pk AND begins_with(GSI1SK, :prefix)'`、`:pk = SESSION#{sessionId}`、`:prefix = 'TEAM#'`、`Limit: 1`
+    - 同じ `GSI1PK=SESSION#{sessionId}` に乗る `ReviewAssignment`（`GSI1SK=USER#{userId}`）を除外するため、`GSI1SK` は必ず `begins_with 'TEAM#'` で絞る（TeamAssignment のみを数える）
+    - `(result.Items?.length ?? 0) > 0` を返す
+    - `isSessionAssignedToUserTeams`（access-control-service）はユーザーのチームに絞った判定であり意味が異なるため流用しない。Repository に新規追加する（レイヤリング: Service → Repository）
+    - _Requirements: 2.1, 2.2, 2.3, 3.6_
+
+  - [x] 3.2 revokeReviewAssignmentsIfOrphaned に所有権移転ロジックを実装する
+    - `backend/src/services/team-service.ts` の `revokeReviewAssignmentsIfOrphaned(userId)` を修正する
+    - 早期 return（`teamIds.length > 0` のとき何もしない）は不変とする（3.2）
+    - `getReviewAssignmentsByUser(userId)` の各 `ReviewAssignment` について、除外（保持）条件を判定する: `assignment.createdBy === userId` かつ `hasAnyTeamAssignment(assignment.sessionId) === false` のとき skip（保持）。それ以外は `deleteReviewAssignment(userId, assignment.sessionId)` を呼ぶ
+    - すなわち: 本人所有かつチーム未アサインのみ保持、`createdBy !== userId`（チーム経由）および `createdBy === userId` だが `TeamAssignment` あり（移管済み）は削除
+    - 意図を英語コメントで明記する（所有権移転: チームにアサインされた時点で所有権がチームへ移り離脱で可視性を失う、チーム未アサインの本人所有のみ保持。Req 13.8 とアップロード由来保護の両立）
+    - `removeMemberFromTeam` / `deleteExistingTeam` / `revokeOrphanedReviewAssignments` のシグネチャ・呼び出し順は変更しない（カスケードは共通の `revokeReviewAssignmentsIfOrphaned` 経由で自動的に新ロジックを得る）
+    - Handler（`admin-teams` 系）は変更しない（レイヤリング厳守）
+    - _Bug_Condition: isBugCondition(X) := LENGTH(getUserTeamIds(userId)) = 0 AND EXISTS A IN assignments WHERE isOwnerRetained(A)（design）_
+    - _Expected_Behavior: expectedBehavior(result) := owner-retained は remaining、それ以外は deleted、保持 sessionId は getAccessibleSessionIds に含まれる（design Fix Checking）_
+    - _Preservation: Preservation Requirements（design）— 非空 teamIds の早期 return / owner-retained なしの全件削除 / team スコープ即時反映 / ADMIN は null / カスケードのチーム管理下 revoke を維持 / 移管済みは削除_
+    - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+  - [x] 3.3 バグ条件探索テストが PASS に転じることを確認する
+    - **Property 1: Expected Behavior** - 本人所有（チーム未アサイン）ReviewAssignment の保持と可視性維持
+    - **IMPORTANT**: タスク 1 の同じテストを再実行する。新しいテストは書かない
+    - タスク 1 のテストは期待挙動をエンコードしている。これが PASS することで期待挙動の充足を確認する
+    - タスク 1 のバグ条件探索テストを修正後コードで実行する
+    - **EXPECTED OUTCOME**: テストが PASS する（バグが修正されたことを確認する。owner-retained が保持され、チーム経由 / 移管済みは削除され、可視性が維持される）
+    - _Expected_Behavior: Correctness Properties Property 1（design）_
+    - _Requirements: 2.1, 2.2, 2.3_
+
+  - [x] 3.4 Preservation / 所有権移転テストが維持されることを確認する
+    - **Property 2: Preservation** / **Property 3: Ownership Transfer**
+    - **IMPORTANT**: タスク 2 の同じテストを再実行する。新しいテストは書かない
+    - タスク 2 の Preservation / Ownership Transfer プロパティテストを修正後コードで実行する
+    - **EXPECTED OUTCOME**: テストが PASS する（リグレッションが無く、移管済みは引き続き削除されることを確認する）
+    - 修正後も全テストが PASS することを確認する（非空 teamIds の早期 return / owner-retained なしの全件削除 / ADMIN は null / カスケードのチーム管理下 revoke / 移管済み削除が不変）
+    - _Preservation: Preservation Requirements（design）_
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [x] 4. revokeReviewAssignmentsIfOrphaned の 4 象限を網羅する単体テストを追加する
+  - 対象テストファイルは `backend/src/services/team-service.test.ts`（co-located の単体テスト）。`vi.mock()` で `getUserTeamIds` / `getReviewAssignmentsByUser` / `deleteReviewAssignment` / `hasAnyTeamAssignment` をモックする
+  - **4 象限**:
+    - アップロード由来 × TeamAssignment 無 → **保持**: `createdBy === userId` かつ `hasAnyTeamAssignment` 偽の RA が削除されないことを検証（`removeMemberFromTeam` 経由, 2.1）
+    - アップロード由来 × TeamAssignment 有 → **削除**: `createdBy === userId` だが `hasAnyTeamAssignment` 真の RA が削除されることを検証（3.6, 所有権移転）
+    - チーム経由（`createdBy !== userId`）→ **削除**: `TeamAssignment` の有無に関わらず削除されることを検証（3.1）
+    - 全チーム所属あり（teamIds 非空）→ **何もしない**: 早期 return で `deleteReviewAssignment` が一切呼ばれないことを検証（3.2）
+  - 混在集合での選択的削除を検証: owner-retained 保持 / チーム経由削除 / 移管済み削除（design Examples）
+  - `deleteExistingTeam` カスケード経由で、メンバーの owner-retained 分が保持され、チーム管理下分が削除されることを検証（3.5）
+  - _Bug_Condition: isBugCondition(X)（design）_
+  - _Expected_Behavior: expectedBehavior(result)（design Fix Checking）_
+  - _Preservation: Preservation Requirements（design）_
+  - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.5, 3.6_
+
+- [x] 5. Checkpoint - 全テストが PASS することを確認する
+  - `cd backend && npx vitest --run`（関連範囲: `team-service.property.test.ts` / `team-service.test.ts`）を実行する
+  - Property 1（Bug Condition / Expected Behavior）が修正後に PASS、Property 2（Preservation）と Property 3（Ownership Transfer）が修正前後で PASS、単体テスト（4 象限）が PASS することを確認する
+  - 疑問が生じた場合はユーザーに確認する

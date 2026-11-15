@@ -27,6 +27,7 @@ import {
   createReviewAssignment,
   deleteReviewAssignment,
   getReviewAssignmentsByUser,
+  hasAnyTeamAssignment,
   type TeamRecord,
   type TeamMembershipRecord,
   type TeamAssignmentRecord,
@@ -422,6 +423,16 @@ export async function createUserReviewAssignment(
  * Per Req 13.8:
  * "WHEN Userがすべての Team メンバーシップを失った（いずれの Team にも所属しなくなった）とき、
  *  THE App SHALL そのUserの個別ReviewAssignmentによるアクセスを取り消す。"
+ *
+ * Ownership-transfer model: a ReviewAssignment is kept only when it is
+ * owner-retained, i.e. the user created it (`createdBy === userId`, as for an
+ * uploader via `createSessionForJob`) AND the session has not yet been assigned
+ * to any team (no TeamAssignment exists). Once a session is assigned to a team,
+ * ownership transfers to the team, so the assignment is revoked on full team
+ * departure (this is correct, not a defect). Team-granted assignments
+ * (`createdBy !== userId`) are always revoked. This preserves the
+ * uploaded-session visibility fix while keeping the Req 13.8 revoke of
+ * team-managed access.
  */
 async function revokeReviewAssignmentsIfOrphaned(userId: string): Promise<void> {
   const teamIds = await getUserTeamIds(userId);
@@ -431,9 +442,16 @@ async function revokeReviewAssignmentsIfOrphaned(userId: string): Promise<void> 
     return;
   }
 
-  // User has no team memberships - revoke all ReviewAssignments
+  // User has no team memberships - revoke team-managed ReviewAssignments only,
+  // keeping owner-retained (uploader-owned, not yet team-assigned) ones.
   const reviewAssignments = await getReviewAssignmentsByUser(userId);
   for (const assignment of reviewAssignments) {
+    const ownerRetained =
+      assignment.createdBy === userId &&
+      !(await hasAnyTeamAssignment(assignment.sessionId));
+    if (ownerRetained) {
+      continue;
+    }
     await deleteReviewAssignment(userId, assignment.sessionId);
   }
 }

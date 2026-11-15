@@ -32,6 +32,7 @@ vi.mock('../repositories/team-repository.js', () => ({
   createReviewAssignment: vi.fn(),
   deleteReviewAssignment: vi.fn(),
   getReviewAssignmentsByUser: vi.fn(),
+  hasAnyTeamAssignment: vi.fn(),
 }));
 
 vi.mock('./access-control-service.js', () => ({
@@ -67,6 +68,7 @@ import {
   createReviewAssignment,
   deleteReviewAssignment,
   getReviewAssignmentsByUser,
+  hasAnyTeamAssignment,
 } from '../repositories/team-repository.js';
 import {
   requireTeamAccess,
@@ -91,6 +93,7 @@ const mockedDeleteTeamAssignment = vi.mocked(deleteTeamAssignment);
 const mockedCreateReviewAssignment = vi.mocked(createReviewAssignment);
 const mockedDeleteReviewAssignment = vi.mocked(deleteReviewAssignment);
 const mockedGetReviewAssignmentsByUser = vi.mocked(getReviewAssignmentsByUser);
+const mockedHasAnyTeamAssignment = vi.mocked(hasAnyTeamAssignment);
 const mockedRequireTeamAccess = vi.mocked(requireTeamAccess);
 const mockedGetUserTeamIds = vi.mocked(getUserTeamIds);
 const mockedIsTeamMember = vi.mocked(isTeamMember);
@@ -526,5 +529,144 @@ describe('Team Service - createUserReviewAssignment', () => {
       statusCode: 400,
       message: 'Session ID is required.',
     });
+  });
+});
+
+// ============================================================
+// revokeReviewAssignmentsIfOrphaned - ownership-transfer model (4 quadrants)
+//
+// revokeReviewAssignmentsIfOrphaned is private, so it is driven through
+// removeMemberFromTeam / deleteExistingTeam. The ownership-transfer model keeps
+// an assignment only when it is owner-retained: createdBy === userId AND the
+// session has no TeamAssignment (hasAnyTeamAssignment === false). Everything
+// else is revoked.
+// ============================================================
+
+describe('Team Service - revokeReviewAssignmentsIfOrphaned (ownership-transfer model)', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  // Quadrant 1: uploaded-origin (createdBy === userId) × no TeamAssignment → KEEP.
+  // Owner-retained visibility must survive full team departure (Req 2.1).
+  it('Quadrant 1: keeps owner-retained assignment (createdBy === userId, no TeamAssignment)', async () => {
+    mockedRequireTeamAccess.mockResolvedValue(undefined);
+    mockedRemoveTeamMember.mockResolvedValue(undefined);
+    mockedGetUserTeamIds.mockResolvedValue([]); // user departed all teams
+    mockedGetReviewAssignmentsByUser.mockResolvedValue([
+      { userId: 'user-001', sessionId: 'session-own', createdBy: 'user-001', createdAt: '2024-01-01T00:00:00.000Z' },
+    ]);
+    mockedHasAnyTeamAssignment.mockResolvedValue(false); // not assigned to any team
+    mockedDeleteReviewAssignment.mockResolvedValue(undefined);
+
+    await removeMemberFromTeam(adminUser, 'team-001', 'user-001');
+
+    expect(mockedHasAnyTeamAssignment).toHaveBeenCalledWith('session-own');
+    expect(mockedDeleteReviewAssignment).not.toHaveBeenCalled();
+  });
+
+  // Quadrant 2: uploaded-origin (createdBy === userId) × TeamAssignment exists → DELETE.
+  // Ownership transferred to the team once assigned, so departure revokes it (Req 3.6).
+  it('Quadrant 2: deletes transferred assignment (createdBy === userId, TeamAssignment exists)', async () => {
+    mockedRequireTeamAccess.mockResolvedValue(undefined);
+    mockedRemoveTeamMember.mockResolvedValue(undefined);
+    mockedGetUserTeamIds.mockResolvedValue([]);
+    mockedGetReviewAssignmentsByUser.mockResolvedValue([
+      { userId: 'user-001', sessionId: 'session-transferred', createdBy: 'user-001', createdAt: '2024-01-01T00:00:00.000Z' },
+    ]);
+    mockedHasAnyTeamAssignment.mockResolvedValue(true); // session was assigned to a team
+    mockedDeleteReviewAssignment.mockResolvedValue(undefined);
+
+    await removeMemberFromTeam(adminUser, 'team-001', 'user-001');
+
+    expect(mockedHasAnyTeamAssignment).toHaveBeenCalledWith('session-transferred');
+    expect(mockedDeleteReviewAssignment).toHaveBeenCalledWith('user-001', 'session-transferred');
+  });
+
+  // Quadrant 3: team-granted (createdBy !== userId) → DELETE regardless of TeamAssignment.
+  // The createdBy mismatch short-circuits, so hasAnyTeamAssignment need not decide (Req 3.1).
+  it('Quadrant 3: deletes team-granted assignment (createdBy !== userId), regardless of TeamAssignment', async () => {
+    mockedRequireTeamAccess.mockResolvedValue(undefined);
+    mockedRemoveTeamMember.mockResolvedValue(undefined);
+    mockedGetUserTeamIds.mockResolvedValue([]);
+    mockedGetReviewAssignmentsByUser.mockResolvedValue([
+      { userId: 'user-001', sessionId: 'session-granted', createdBy: 'leader-001', createdAt: '2024-01-01T00:00:00.000Z' },
+    ]);
+    // Even if no TeamAssignment exists, a createdBy mismatch means it is team-managed.
+    mockedHasAnyTeamAssignment.mockResolvedValue(false);
+    mockedDeleteReviewAssignment.mockResolvedValue(undefined);
+
+    await removeMemberFromTeam(adminUser, 'team-001', 'user-001');
+
+    expect(mockedDeleteReviewAssignment).toHaveBeenCalledWith('user-001', 'session-granted');
+  });
+
+  // Quadrant 4: user still belongs to at least one team (teamIds non-empty) → NO-OP.
+  // Early return: neither delete nor the TeamAssignment probe should run (Req 3.2).
+  it('Quadrant 4: does nothing when user still has a team (early return)', async () => {
+    mockedRequireTeamAccess.mockResolvedValue(undefined);
+    mockedRemoveTeamMember.mockResolvedValue(undefined);
+    mockedGetUserTeamIds.mockResolvedValue(['team-002']); // still a member somewhere
+
+    await removeMemberFromTeam(adminUser, 'team-001', 'user-001');
+
+    expect(mockedGetReviewAssignmentsByUser).not.toHaveBeenCalled();
+    expect(mockedHasAnyTeamAssignment).not.toHaveBeenCalled();
+    expect(mockedDeleteReviewAssignment).not.toHaveBeenCalled();
+  });
+
+  // Mixed set: a single user holds owner-retained + team-granted + transferred
+  // assignments. Only the owner-retained one survives; the other two are deleted.
+  it('selectively deletes in a mixed set: keeps owner-retained, deletes team-granted and transferred', async () => {
+    mockedRequireTeamAccess.mockResolvedValue(undefined);
+    mockedRemoveTeamMember.mockResolvedValue(undefined);
+    mockedGetUserTeamIds.mockResolvedValue([]);
+    mockedGetReviewAssignmentsByUser.mockResolvedValue([
+      // owner-retained: createdBy === userId, no TeamAssignment → KEEP
+      { userId: 'user-001', sessionId: 'session-own', createdBy: 'user-001', createdAt: '2024-01-01T00:00:00.000Z' },
+      // team-granted: createdBy !== userId → DELETE
+      { userId: 'user-001', sessionId: 'session-granted', createdBy: 'leader-001', createdAt: '2024-01-01T00:00:00.000Z' },
+      // transferred: createdBy === userId but TeamAssignment exists → DELETE
+      { userId: 'user-001', sessionId: 'session-transferred', createdBy: 'user-001', createdAt: '2024-01-01T00:00:00.000Z' },
+    ]);
+    mockedHasAnyTeamAssignment.mockImplementation(async (sessionId: string) => {
+      // only the transferred session has a TeamAssignment
+      return sessionId === 'session-transferred';
+    });
+    mockedDeleteReviewAssignment.mockResolvedValue(undefined);
+
+    await removeMemberFromTeam(adminUser, 'team-001', 'user-001');
+
+    // owner-retained kept
+    expect(mockedDeleteReviewAssignment).not.toHaveBeenCalledWith('user-001', 'session-own');
+    // team-granted and transferred deleted
+    expect(mockedDeleteReviewAssignment).toHaveBeenCalledWith('user-001', 'session-granted');
+    expect(mockedDeleteReviewAssignment).toHaveBeenCalledWith('user-001', 'session-transferred');
+    expect(mockedDeleteReviewAssignment).toHaveBeenCalledTimes(2);
+  });
+
+  // Cascade via deleteExistingTeam → revokeOrphanedReviewAssignments →
+  // revokeReviewAssignmentsIfOrphaned applies the same selection (Req 3.5).
+  it('applies the same selection through the deleteExistingTeam cascade', async () => {
+    mockedGetTeamById.mockResolvedValue(sampleTeam);
+    mockedGetTeamMembers.mockResolvedValue([
+      { teamId: 'team-001', userId: 'user-001', createdAt: '2024-01-01T00:00:00.000Z' },
+    ]);
+    mockedDeleteAllTeamAssignments.mockResolvedValue(undefined);
+    mockedDeleteAllTeamMembers.mockResolvedValue(undefined);
+    mockedDeleteTeam.mockResolvedValue(undefined);
+    mockedGetUserTeamIds.mockResolvedValue([]); // member orphaned by team deletion
+    mockedGetReviewAssignmentsByUser.mockResolvedValue([
+      // owner-retained → KEEP
+      { userId: 'user-001', sessionId: 'session-own', createdBy: 'user-001', createdAt: '2024-01-01T00:00:00.000Z' },
+      // team-granted → DELETE
+      { userId: 'user-001', sessionId: 'session-granted', createdBy: 'admin-001', createdAt: '2024-01-01T00:00:00.000Z' },
+    ]);
+    mockedHasAnyTeamAssignment.mockResolvedValue(false); // deleted team's TeamAssignments already gone
+    mockedDeleteReviewAssignment.mockResolvedValue(undefined);
+
+    await deleteExistingTeam(adminUser, 'team-001');
+
+    expect(mockedDeleteReviewAssignment).not.toHaveBeenCalledWith('user-001', 'session-own');
+    expect(mockedDeleteReviewAssignment).toHaveBeenCalledWith('user-001', 'session-granted');
+    expect(mockedDeleteReviewAssignment).toHaveBeenCalledTimes(1);
   });
 });

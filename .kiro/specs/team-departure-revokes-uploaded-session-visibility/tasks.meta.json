@@ -1,0 +1,147 @@
+{
+  "pbtResults": {
+    "1. バグ条件の探索テストを書く（修正前に FAIL）": {
+      "status": "passed",
+      "failingExample": "Property failed after 1 test (removeMemberFromTeam path), seed -1654647182, path 0:0:0:0.\nCounterexample: [[{\"sessionId\":\"owned- \",\"ownedByUser\":true,\"hasTeamAssignment\":false},{\"sessionId\":\" \",\"ownedByUser\":false,\"hasTeamAssignment\":false}]]\nAssertionError: expected true to be false — deleted.has(\"owned- \") was true.\nMeaning: the owner-retained ReviewAssignment (createdBy === userId AND no TeamAssignment) was collaterally deleted by the unfixed revokeReviewAssignmentsIfOrphaned, which deletes every assignment unconditionally. The deleteExistingTeam cascade path fails identically (seed -842345099, path 0:0:0:0:0:0, same counterexample). This confirms the bug exists on both entry points.",
+      "lastRunTimestamp": 1794736379053
+    },
+    "3.3 バグ条件探索テストが PASS に転じることを確認する": {
+      "status": "passed",
+      "lastRunTimestamp": 1794736659627
+    },
+    "3.4 Preservation / 所有権移転テストが維持されることを確認する": {
+      "status": "passed",
+      "lastRunTimestamp": 1794736660901
+    }
+  },
+  "executionHistory": {
+    "1. バグ条件の探索テストを書く（修正前に FAIL）": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736222295
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736230687
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736401827
+      }
+    ],
+    "2. Preservation / 所有権移転プロパティテストを書く（修正前に PASS）": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736222343
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736408987
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736541297
+      }
+    ],
+    "3.1 hasAnyTeamAssignment を Repository に追加する": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736222379
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736551423
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736692322
+      }
+    ],
+    "3.2 revokeReviewAssignmentsIfOrphaned に所有権移転ロジックを実装する": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736222398
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736693241
+      }
+    ],
+    "3.3 バグ条件探索テストが PASS に転じることを確認する": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736222420
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736695128
+      }
+    ],
+    "3.4 Preservation / 所有権移転テストが維持されることを確認する": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736222470
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736696020
+      }
+    ],
+    "4. revokeReviewAssignmentsIfOrphaned の 4 象限を網羅する単体テストを追加する": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736222487
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736704608
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736850458
+      }
+    ],
+    "5. Checkpoint - 全テストが PASS することを確認する": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736222503
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736857596
+      },
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794737319359
+      }
+    ],
+    "3. 所有権移転モデルの revoke 保護を実装する": [
+      {
+        "executionId": "1118a4cc-3326-4e14-97aa-3428da19768e",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794736696044
+      }
+    ]
+  }
+}
