@@ -94,6 +94,47 @@ export async function addTeamMember(
 }
 
 /**
+ * Admin API でチームからメンバーを削除する。
+ *
+ * `DELETE /admin/teams/{teamId}/members/{userId}`（`removeTeamMemberHandler`
+ * → `removeMemberFromTeam` → `revokeReviewAssignmentsIfOrphaned`）をトリガーする。
+ * 対象ユーザーが最後のチームから外れて全チーム離脱状態になると revoke が発火する
+ * （team-departure-revokes-uploaded-session-visibility bugfix の実コード経路）。
+ */
+export async function removeTeamMember(
+  token: string,
+  teamId: string,
+  userId: string
+): Promise<void> {
+  await apiRequest({
+    method: 'DELETE',
+    path: `/admin/teams/${teamId}/members/${userId}`,
+    token,
+  });
+}
+
+/**
+ * Admin API でセッションをチームにアサインする（TeamAssignment を作成する）。
+ *
+ * `POST /admin/teams/{teamId}/assignments`（body `{ sessionId }`,
+ * `createTeamAssignmentHandler` → `createAssignment` → `createTeamAssignment`）。
+ * これによりセッションの所有権がチームへ移り、以後そのセッションの
+ * ReviewAssignment は全チーム離脱時に revoke される（所有権移転モデル）。
+ */
+export async function createTeamAssignment(
+  token: string,
+  teamId: string,
+  sessionId: string
+): Promise<void> {
+  await apiRequest({
+    method: 'POST',
+    path: `/admin/teams/${teamId}/assignments`,
+    token,
+    body: { sessionId },
+  });
+}
+
+/**
  * Admin API でチームを削除する
  */
 export async function deleteTeam(

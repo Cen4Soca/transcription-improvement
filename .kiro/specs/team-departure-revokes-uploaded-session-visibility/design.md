@@ -350,3 +350,57 @@ END FOR
 - 「旧チーム削除 → 新チーム追加」の過渡で全チーム離脱 revoke が走っても、チーム未アサインのアップロード由来セッションの可視性が移動完了後に維持されることを検証。
 - チームへアサイン済み（`TeamAssignment` 存在）のセッションは、全チーム離脱 revoke で `ReviewAssignment` が削除され可視性を失うことを検証（所有権移転）。
 - `deleteExistingTeam` カスケードで、チーム未アサインの本人所有は残り、チーム管理下は削除される end-to-end を検証。
+
+### E2E Verification (Playwright, デプロイ済み dev 環境での実機確認)
+
+ユニット/プロパティ/Integration テストは `revokeReviewAssignmentsIfOrphaned` の挙動を関数・リポジトリ単位で検証する。これに加えて、所有権移転モデルの修正が **UI から観測可能なセッション一覧の可視性** として正しく反映されることを、デプロイ済み dev 環境（Cognito + 実 DynamoDB + API Gateway + CloudFront）に対する Playwright E2E で実機確認する。LocalStack は不要（dev 実機）。本検証は `reviewer-uploaded-session-not-visible` の E2E（`e2e/tests/sessions/reviewer-uploaded-session-visibility.spec.ts`）と同じ運用方針（CI 非前提 / ローカル運用、実トランスクリプションを待たず DynamoDB へ直接投入した COMPLETED セッションで検証）に従う。
+
+**新規 spec**: `e2e/tests/sessions/team-departure-visibility.spec.ts`
+
+**検証シナリオ（UI で観測可能、`sessionOpenButtonByName` 的なヘルパで「校閲画面を開く」ボタンの有無を確認）**:
+
+1. **所有権保持（owner-retained, bugfix 2.1 / 2.2 / 2.3, Property 1）**: Reviewer がアップロードしたセッション（TeamAssignment 無し＝未アサイン、`seedUploadOriginSession({ uploaderId: reviewer.userId })` で投入）がセッション一覧に出る（`toBeVisible`）→ 管理者がその Reviewer を最後のチームから外す（全チーム離脱 = orphan）→ 離脱後も同セッションが一覧に出続ける（`toBeVisible`）。`createdBy === userId` かつ TeamAssignment 不在のため revoke 対象外 = 保持。
+2. **所有権移転（ownership transfer, bugfix 3.6, Property 3）**: Reviewer がアップロードしたセッションを、管理者が `POST /admin/teams/{teamId}/assignments`（`createAssignment` → `createTeamAssignment`）でテスト専用チームにアサイン（TeamAssignment を付与）→ その Reviewer を最後のチームから外す → 離脱後は同セッションが一覧から消える（`toHaveCount(0)`）。`createdBy === userId` でも TeamAssignment ありのため離脱で revoke = 可視性喪失（所有権がチームへ移転）。
+
+**チーム離脱の起こし方（実コード経路に一致）**: `DELETE /admin/teams/{teamId}/members/{userId}`（`removeTeamMemberHandler` → `removeMemberFromTeam` → `revokeReviewAssignmentsIfOrphaned`）を管理者トークンでトリガーする。`e2e/helpers/cognito-helper.ts` の `adminAuth(ADMIN_EMAIL, ADMIN_PASSWORD)` で `idToken` を取得し `apiRequest` に渡す。
+
+**orphan 状態の確実な作成（固定ユーザー・他テストと非干渉）**: 固定 Reviewer（`testUsers.reviewer`）は seed チーム `e2e-team-001`（メンバーは seed ユーザー `e2e-reviewer-001/002/003` のみ）に属さない。`beforeAll` でテスト専用チーム（例 `e2e-td-vis-team-${Date.now()}`）を作成し Reviewer を追加、各シナリオでそのチームから外して全チーム離脱を作る。テスト専用セッション ID は `e2e-td-vis-*`（既存 `e2e-uploaded-*` と別系統）を使う。`afterAll` でテスト専用チームを削除し、固定ユーザーと seed チームは改変しない（`global-teardown.ts` の方針に従い固定ユーザーは保持）。
+
+**再利用ヘルパ / 追加ヘルパ**: `helpers/dynamodb-helper.ts` の `seedUploadOriginSession`（ReviewSession + SessionParticipant + `createdBy === uploaderId` の ReviewAssignment を投入、冪等）、`fixtures/auth.ts` の `loginAsReviewer` / `loginAsAdmin` / `testUsers`、`helpers/api-helper.ts`（`apiRequest`, `createTeam`, `addTeamMember`, `deleteTeam`）、`helpers/ui-helper.ts`、`helpers/cognito-helper.ts`（`adminAuth`）を再利用する。`api-helper.ts` に未存在の `removeTeamMember(token, teamId, userId)`（`DELETE /admin/teams/{teamId}/members/{userId}`）と `createTeamAssignment(token, teamId, sessionId)`（`POST /admin/teams/{teamId}/assignments`, body `{ sessionId }`）を追加する。
+
+**実行手順（`e2e/SETUP.md` 準拠）**:
+- 前提: デプロイ済み dev 環境 + `e2e/.env`（`BASE_URL`, `API_ENDPOINT`, `COGNITO_*`, `ADMIN_EMAIL`/`ADMIN_PASSWORD`, `TEST_USER_PASSWORD`, `AWS_REGION`, `DYNAMODB_TABLE_NAME`）。
+- `cd e2e && npm run seed && npx playwright test tests/sessions/team-departure-visibility.spec.ts`
+- 環境依存のため、環境未整備時は収集確認のみ（`cd e2e && npx playwright test tests/sessions/team-departure-visibility.spec.ts --list`）でテストが正しく登録されることを確認できればよい。
+
+**位置づけ**: この E2E は所有権移転モデル（owner-retained の保持 / 移管済みの revoke）を UI 観測で裏付ける受け入れ確認であり、関数レベルの Fix/Preservation/Ownership Transfer プロパティ（Property 1〜3）を実機環境で end-to-end に補強する。
+
+## Known Issue（後日対処 / Deferred）
+
+E2E 実機確認タスク6（`e2e/tests/sessions/team-departure-visibility.spec.ts` の所有権移転シナリオ）の実行中に、プロダクトコードに潜在的な結果整合レースが存在することが判明した。本節は発見事項の記録であり、本スペックでは実装・既存設計の変更は行わない（後日の別スペック／改善で検討する）。
+
+### 事象
+
+チームにアサイン（`createTeamAssignment`, `POST /admin/teams/{teamId}/assignments`）した直後に、同じユーザーを最後のチームから離脱させる（`DELETE /admin/teams/{teamId}/members/{userId}` → `removeMemberFromTeam` → `revokeReviewAssignmentsIfOrphaned`）と、所有権移転の判定に使う `hasAnyTeamAssignment(sessionId)` が **DynamoDB GSI1（`SESSION#{sessionId}` + `begins_with 'TEAM#'`）** を引くため、直前に作成した `TeamAssignment` が **GSI1 にまだ反映されておらず（結果整合の遅延）**、「TeamAssignment 無し＝アップローダー所有（owner-retained）」と誤判定して `ReviewAssignment` を保持してしまう。
+
+### 影響
+
+本来「チームに移管済み → 離脱で可視性喪失（所有権移転）」であるべきセッションが、アサイン直後離脱のタイミングでは revoke されず一時的に残る（可視性が過剰になる方向）。可視性が失われる方向ではないためセキュリティ的影響は軽度だが、所有権移転モデルの意図（Property 3 / bugfix 3.6）からは外れる。
+
+### 再現性
+
+GSI1 の結果整合が追いつく前（通常数百 ms〜）に離脱操作が連続した場合のみ発生する。実運用では稀。E2E 実機で確認済み（spec 側はポーリング `waitForTeamAssignmentVisible` で回避したが、プロダクトのレース自体は残存する）。
+
+### 根本原因
+
+`hasAnyTeamAssignment` が GSI（結果整合、`ConsistentRead` 不可）を参照しているため、`TeamAssignment` 作成直後は存在判定が偽になりうる。
+
+### 後日対処の候補（記録のみ、本スペックでは実装しない）
+
+(a) `TeamAssignment` の存在判定をベーステーブルの強整合読み取りで行う設計に変える（例: `PK=TEAM#{teamId}, SK=ASSIGNMENT#{sessionId}` を `ConsistentRead` で引く経路。ただし sessionId 起点で teamId を知る必要があり、設計変更が要る）。
+
+(b) revoke のタイミング／順序を見直す。
+
+(c) アサインと離脱の操作順序に関する運用上の注意、またはアサイン直後の短時間の整合待ち。
+
+これらのトレードオフは後日の別スペック／改善で検討する。

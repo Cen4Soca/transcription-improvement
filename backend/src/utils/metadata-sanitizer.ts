@@ -4,7 +4,8 @@
  * Sanitizes AuditLog metadata to only allow specific keys
  * and truncates values to a maximum length.
  *
- * Allowed keys: resourceName, previousValue, newValue, count, reason
+ * Allowed keys: resourceName, previousValue, newValue, count, reason,
+ * sessionInvalidated
  * Values are converted to strings and truncated to 1000 characters.
  */
 
@@ -14,6 +15,10 @@ const ALLOWED_KEYS: ReadonlySet<string> = new Set([
   'newValue',
   'count',
   'reason',
+  // Recorded on role-change audit entries when the change forced a sign-out
+  // of the target's existing sessions (role-change-session-invalidation).
+  // Stored as the string 'true'.
+  'sessionInvalidated',
 ]);
 
 const MAX_VALUE_LENGTH = 1000;

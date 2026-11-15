@@ -103,3 +103,27 @@
   - `cd backend && npx vitest --run`（関連範囲: `team-service.property.test.ts` / `team-service.test.ts`）を実行する
   - Property 1（Bug Condition / Expected Behavior）が修正後に PASS、Property 2（Preservation）と Property 3（Ownership Transfer）が修正前後で PASS、単体テスト（4 象限）が PASS することを確認する
   - 疑問が生じた場合はユーザーに確認する
+- [x] 6. E2E 実機確認（デプロイ済み dev 環境 + Playwright）で所有権移転モデルの修正を検証する
+  - **目的**: 所有権移転モデルの revoke 保護（タスク 3）を、ユニット/プロパティテスト（タスク 1〜5, LocalStack 不要のモック）とは別に、デプロイ済み dev 環境（Cognito + 実 DynamoDB + API Gateway + CloudFront）に対する Playwright E2E で UI 観測可能な形で実機確認する。LocalStack は不要（dev 実機）
+  - **新規 spec ファイル**: `e2e/tests/sessions/team-departure-visibility.spec.ts`（既存 `e2e/tests/sessions/` 配下。`fixtures/auth.ts` の `test` / `expect` を使用）
+  - **検証シナリオ（UI で観測可能、`reviewer-uploaded-session-visibility.spec.ts` の `sessionOpenButtonByName` 的なヘルパで「校閲画面を開く」ボタンの有無を確認）**:
+    - **シナリオ 1: 所有権保持（owner-retained）** — Reviewer がアップロードしたセッション（TeamAssignment 無し＝未アサイン、`seedUploadOriginSession({ uploaderId: reviewer.userId })` で投入）がセッション一覧に出ることを `toBeVisible` で確認 → 管理者トークンで当該 Reviewer を最後のチームから外す（全チーム離脱 = orphan）→ 離脱後に `loginAsReviewer` で再ログインし、同セッションが一覧に出続けること（`sessionOpenButtonByName(...).first()` が `toBeVisible`）を確認。`createdBy === userId` かつ TeamAssignment 不在のため revoke 対象外 = 保持（design Correctness Properties Property 1 / bugfix 2.1, 2.2, 2.3）
+    - **シナリオ 2: 所有権移転（ownership transfer）** — Reviewer がアップロードしたセッション（`seedUploadOriginSession` で投入）を、管理者トークンで `POST /admin/teams/{teamId}/assignments`（body `{ sessionId }`, `createAssignment` → `createTeamAssignment`）によりテスト専用チームにアサイン（TeamAssignment を付与）→ その Reviewer を最後のチームから外す → 離脱後は同セッションが一覧から消えること（`sessionOpenButtonByName(...)` が `toHaveCount(0)`）を確認。`createdBy === userId` でも TeamAssignment ありのため離脱で revoke = 可視性喪失（design Correctness Properties Property 3 / bugfix 3.6）
+  - **チーム離脱の起こし方（実コードの経路に一致）**: 実コードでは `DELETE /admin/teams/{teamId}/members/{userId}`（`removeTeamMemberHandler` → `removeMemberFromTeam` → `revokeReviewAssignmentsIfOrphaned`）がトリガー。`e2e/helpers/api-helper.ts` に `removeTeamMember(token, teamId, userId)`（`apiRequest({ method: 'DELETE', path: '/admin/teams/{teamId}/members/{userId}', token })`）が無いため追加する。あわせてシナリオ 2 用に `createTeamAssignment(token, teamId, sessionId)`（`POST /admin/teams/{teamId}/assignments`, body `{ sessionId }`）を追加する（既存 `createTeam` / `addTeamMember` / `deleteTeam` と同じ流儀）
+  - **管理者トークンの取得**: `e2e/helpers/cognito-helper.ts` の `adminAuth(ADMIN_EMAIL, ADMIN_PASSWORD)` で `idToken` を取得し、`api-helper` の `token` 引数に渡す（既存ヘルパ再利用。`loginAsAdmin` はブラウザ UI 用なので API 操作にはトークンを別途取得する）
+  - **「最後のチームから外す」＝確実に orphan 状態を作る手順（固定ユーザー・他テストと非干渉）**:
+    - 固定 Reviewer（`testUsers.reviewer`、`e2e-reviewer@test.example.com`）は seed チーム `e2e-team-001`（メンバーは `e2e-reviewer-001/002/003` の seed ユーザーのみ）には属さない。とはいえ他テストの残存メンバーシップに依存しないため、テスト専用チームを 1 つだけ作って Reviewer を所属させ、そのチームからのみ外す構成にする（＝そのチームが Reviewer の唯一の所属なら removeMember で全離脱 = orphan になる）
+    - 前提として、テスト開始時点で Reviewer が他チームに属さないことを `GET /admin/teams`（admin 権限）配下のメンバー確認、または既存状態の前提（固定ユーザーは seed チーム非所属）に依拠する。確実性のため `beforeAll` でテスト専用チームを作成（`createTeam`）→ Reviewer を追加（`addTeamMember`）してから各シナリオで外す。他チーム所属が疑わしい場合に備え、設計時に Reviewer の所属確認ロジック（`GET /admin/teams` → 各チームの members）を入れるか、前提をコメントで明記する
+    - テスト専用チーム名は `e2e-td-vis-team-${Date.now()}` 等のプレフィックスで既存 UI チーム（`e2e-ui-team-`）や seed チームと衝突させない。テスト専用セッション ID は `e2e-td-vis-*`（`reviewer-uploaded-session-visibility.spec.ts` の `e2e-uploaded-*` と別系統）を使う
+  - **検証の観測点**: `reviewer-uploaded-session-visibility.spec.ts` の `sessionOpenButtonByName(page, name)`（`getByRole('list', { name: 'セッション一覧' }).getByRole('button', { name: /^校閲画面を開く（<name> - (未着手|進行中|完了)）$/ })`）と同等のローカルヘルパを定義し、保持は `toBeVisible`、喪失は `toHaveCount(0)` でアサートする
+  - **データ戦略・再利用ヘルパ**: `e2e/helpers/dynamodb-helper.ts` の `seedUploadOriginSession`（ReviewSession + SessionParticipant + ReviewAssignment を投入、`createdBy === uploaderId` のアップロード由来 ReviewAssignment を作る）、`fixtures/auth.ts` の `loginAsReviewer` / `loginAsAdmin` / `testUsers`、`helpers/api-helper.ts`（`apiRequest`, `createTeam`, `addTeamMember`, `deleteTeam`, 追加する `removeTeamMember` / `createTeamAssignment`）、`helpers/ui-helper.ts` を最大限再利用する（新規 DynamoDB 投入は `seedUploadOriginSession` の既存シグネチャで賄える。TeamAssignment はシナリオ 2 で API 経由で付けるため seed では付けない）
+  - **teardown / 非干渉**: `afterAll`（または各シナリオ後）でテスト専用チームを削除（`deleteTeam`）し、Reviewer を元の非所属状態へ戻す。`seedUploadOriginSession` は固定キー PUT で冪等のため再実行安全。固定ユーザー（`e2e-leader@` / `e2e-reviewer@`）と seed チーム `e2e-team-001` は削除・改変しない（`global-teardown.ts` の方針に従い固定ユーザーは保持）。既存 `global-setup`/`global-teardown`（固定ユーザー）前提に沿う
+  - **実行手順（CI 非前提 / ローカル運用、`e2e/SETUP.md` 準拠）**:
+    - 前提: デプロイ済み dev 環境 + `e2e/.env`（`BASE_URL`, `API_ENDPOINT`, `COGNITO_*`, `ADMIN_EMAIL`/`ADMIN_PASSWORD`, `TEST_USER_PASSWORD`, `AWS_REGION`, `DYNAMODB_TABLE_NAME`）
+    - シード: `cd e2e && npm run seed`（固定ユーザー・seed チームを用意。メディア実体は本 spec では不要）
+    - 実行: `cd e2e && npx playwright test tests/sessions/team-departure-visibility.spec.ts`
+    - 環境依存のため、環境が未整備でも収集確認（`cd e2e && npx playwright test tests/sessions/team-departure-visibility.spec.ts --list`）でテストが正しく登録されることを確認できればよい
+  - **アクセシビリティ**: セッション一覧を観測する画面では既存 spec の方針に合わせ、必要に応じて `expectNoAxeViolations`（`helpers/axe-helper.ts`）を用いてもよい（本 spec の主眼は可視性のため必須ではない）
+  - _Bug_Condition: isBugCondition(X) := LENGTH(getUserTeamIds(userId)) = 0 AND EXISTS A WHERE isOwnerRetained(A)（design）。シナリオ 1 がバグ条件下の保持、シナリオ 2 が移管済みの revoke を実機で検証する_
+  - _Expected_Behavior: owner-retained（createdBy === userId かつ TeamAssignment 不在）は保持・可視性維持、移管済み（TeamAssignment あり）は離脱で削除（design Correctness Properties Property 1 / Property 3）_
+  - _Requirements: 2.1, 2.2, 2.3, 3.6_

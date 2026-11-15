@@ -2,14 +2,21 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { sanitizeMetadata } from './metadata-sanitizer.js';
 
-const ALLOWED_KEYS = ['resourceName', 'previousValue', 'newValue', 'count', 'reason'] as const;
+const ALLOWED_KEYS = [
+  'resourceName',
+  'previousValue',
+  'newValue',
+  'count',
+  'reason',
+  'sessionInvalidated',
+] as const;
 const MAX_VALUE_LENGTH = 1000;
 
 describe('Feature: metadata-sanitization, Property 46: メタデータフィールドのサニタイズ', () => {
   /**
    * **Validates: Requirements 14.22**
    * For any AuditLog metadata with arbitrary key-value pairs,
-   * only allowed keys (resourceName, previousValue, newValue, count, reason) pass through,
+   * only allowed keys (resourceName, previousValue, newValue, count, reason, sessionInvalidated) pass through,
    * disallowed keys are removed, all values are converted to string type,
    * and values are truncated to max 1000 characters.
    */

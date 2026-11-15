@@ -146,6 +146,47 @@
         "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
         "timestamp": 1794740394805
       }
+    ],
+    "6.1 監査ログによる実機確認（自動化できる範囲）": [
+      {
+        "executionId": "48a4c687-78a3-4f3b-b46b-2b35aa0b0da7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794754965644
+      },
+      {
+        "executionId": "48a4c687-78a3-4f3b-b46b-2b35aa0b0da7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794754972784
+      },
+      {
+        "executionId": "33027e81-bf63-4716-9f1e-7ed098e2f4d4",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794756095924
+      }
+    ],
+    "6.2 手動確認手順書（セッション無効化の実体）": [
+      {
+        "executionId": "48a4c687-78a3-4f3b-b46b-2b35aa0b0da7",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794754965701
+      },
+      {
+        "executionId": "33027e81-bf63-4716-9f1e-7ed098e2f4d4",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794756103998
+      },
+      {
+        "executionId": "33027e81-bf63-4716-9f1e-7ed098e2f4d4",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794756122327
+      }
+    ],
+    "6. 実機確認（監査ログ + 手動）": [
+      {
+        "executionId": "33027e81-bf63-4716-9f1e-7ed098e2f4d4",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794756122349
+      }
     ]
   }
 }

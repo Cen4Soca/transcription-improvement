@@ -93,3 +93,26 @@
   - `cd backend && npx vitest --run src/handlers/admin-users.test.ts src/handlers/admin-users.property.test.ts` を実行する（関連範囲）
   - 探索テスト（Property 1）が PASS、Preservation テスト（Property 2）が PASS、単体テストが全て PASS であることを確認する
   - 疑問が生じた場合はユーザーに確認する
+
+- [x] 6. 実機確認（監査ログ + 手動）
+  - **GOAL**: 修正の実機動作を確認する。確認対象を 2 つに役割分担する: (a) 監査ログに `sessionInvalidated: true` が記録されることは **自動化対象**（API/画面/軽量 Playwright で観測可能）、(b) 既存 JWT セッションの強制サインアウトの実体（対象ユーザーが再ログインを求められる / 401）は UI 操作だけでは観測しにくく 2 ブラウザコンテキストの 401 再現が E2E として不安定なため **手動確認対象**
+  - **E2E spec は新規作成を必須としない**。セッション無効化そのものの UI 観測は手動確認（6.2）に委ね、自動化は監査ログ観測（6.1）に限定する
+  - _Requirements: 2.1, 2.2, 2.4_
+
+  - [x] 6.1 監査ログによる実機確認（自動化できる範囲）
+    - **確認内容**: 修正により、ロール変更（`roleChanged && body.isActive !== false`）時に `recordAuditLog` の `metadata` に `sessionInvalidated: true` が記録される（`operationType = USER_MANAGEMENT`、既存の `previousValue` / `newValue` 併記）。これは admin の監査ログ API / 画面で観測可能
+    - **確認方法（2 通り。実施しやすい方を採る）**:
+      - (i) **API（推奨・自動化対象）**: 管理者トークンで `PATCH /admin/users/{userId}` にロール変更を投げ、その後 `GET /admin/audit-logs`（`operationType=USER_MANAGEMENT` でフィルタ）で当該ログの `metadata` に `sessionInvalidated: true` と `previousValue` / `newValue` が含まれることを確認する。`e2e/helpers/api-helper.ts` の `apiRequest` と `e2e/helpers/cognito-helper.ts` の `adminAuth` を使ったスクリプト、または軽量 Playwright test で確認できる
+      - (ii) **UI**: admin の監査ログ画面（`e2e/tests/admin/audit-logs.spec.ts` が参照する画面）で `USER_MANAGEMENT` を絞り込み、該当エントリの `metadata` を確認する
+    - **任意の確認 spec**: 必要なら最小の確認 spec（例: `e2e/tests/admin/role-change-session-invalidation.spec.ts`）を 1 本だけ置いてもよい。ただし **目的を監査ログに `sessionInvalidated: true` が出ることの確認に限定** し、UI でのセッション無効化そのものの観測は目的にしない。環境依存のため `npx playwright test --list`（収集確認）+ 可能なら実行、で可
+    - **固定ユーザー保護（必須）**: テスト用ユーザーのロールを変更するとそのユーザーに影響が出るため、**テスト専用ユーザーを作って変更する / 変更後に元のロールへ戻す** などで、`e2e/global-setup.ts` の固定ユーザー（`teamLeader` = `e2e-leader@test.example.com` / `reviewer` = `e2e-reviewer@test.example.com`）のロール前提を壊さないこと。固定ユーザーのロールを直接変更しない
+    - _Requirements: 2.1, 2.4_
+
+  - [x] 6.2 手動確認手順書（セッション無効化の実体）
+    - **目的**: 強制サインアウトの実体（既存 JWT が無効化され、対象ユーザーが次の API / 画面操作で再ログインを求められる）を人手で確認する。以下の手順で実施する:
+      1. 対象ユーザー U で dev 環境にログインし、セッションを保持する（ブラウザ A）
+      2. 別ブラウザ / 別セッションで管理者が U のロールを変更する（昇格 or 降格）
+      3. ブラウザ A で U が次の操作（ページ遷移 / API 呼び出し）を行うと、セッションが無効化され再ログインを求められる（または 401 が返る）ことを確認する
+      4. 降格の場合、再ログイン後は新しい（低い）ロールの権限に制限されることを確認する
+    - **挙動の注意（手順に補記）**: Cognito の global sign-out（`AdminUserGlobalSignOut`）はリフレッシュトークンを即時無効化するが、既発行のアクセストークンは短期の有効期限が切れた時点で弾かれる。したがって手順 3 の拒否は **即時 401 とは限らず、アクセストークンの有効期限に依存しうる**（リフレッシュ時 / トークン失効後に確実に再ログインが要求される）
+    - _Requirements: 2.1, 2.2_

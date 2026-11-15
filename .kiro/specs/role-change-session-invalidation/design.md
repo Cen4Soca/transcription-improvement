@@ -216,3 +216,24 @@ END FOR
 
 - `backend/src/__tests__/integration/` にて、ロール変更 PATCH 後に対象ユーザーの旧トークンで保護 API を呼ぶと拒否される（再ログインが必要になる）ことを LocalStack で確認する。
 - 無効化フローとロール変更を組み合わせた PATCH で Cognito 側の状態（サインアウト・無効化）が期待どおりになることを確認する。
+
+### 実機確認（監査ログ + 手動）
+
+この修正の核心である「既存 JWT セッションの強制サインアウト」は UI 操作だけでは観測しにくく、2 ブラウザコンテキストでの 401 再現は E2E として不安定になりやすい。そのため **E2E spec は新規作成を必須とせず**、確認対象を次の 2 つに役割分担する。
+
+- **監査ログでの観測（自動化対象）**: ロール変更（`roleChanged && body.isActive !== false`）時に監査ログ（`operationType = USER_MANAGEMENT`）の `metadata` に `sessionInvalidated: true` が `previousValue` / `newValue` と併記されることを確認する。これは admin の監査ログ API / 画面で観測でき、自動化できる。
+- **セッション無効化の実体（手動確認対象）**: 既存 JWT が無効化され、対象ユーザーが次の操作で再ログインを求められる（または 401）という強制サインアウトの実体は、手動確認手順書で人手で検証する。UI での観測は手動に委ねる。
+
+**監査ログによる確認（自動化できる範囲）**:
+- **API（推奨）**: 管理者トークンで `PATCH /admin/users/{userId}` にロール変更を投げ、`GET /admin/audit-logs`（`operationType=USER_MANAGEMENT` でフィルタ）の当該ログに `sessionInvalidated: true` と `previousValue` / `newValue` が含まれることを確認する。`e2e/helpers/api-helper.ts` の `apiRequest` と `e2e/helpers/cognito-helper.ts` の `adminAuth` を使ったスクリプト、または軽量 Playwright test で確認できる。
+- **UI**: admin の監査ログ画面（`e2e/tests/admin/audit-logs.spec.ts` が参照する画面）で `USER_MANAGEMENT` を絞り込み、該当エントリの `metadata` を確認する。
+- 任意で最小の確認 spec（例: `e2e/tests/admin/role-change-session-invalidation.spec.ts`）を 1 本置いてもよいが、目的は監査ログに `sessionInvalidated: true` が出ることの確認に限定し、UI でのセッション無効化そのものの観測は目的にしない。環境依存のため `--list` による収集確認 + 可能なら実行、で可。
+- **固定ユーザー保護**: テスト専用ユーザーを作って変更する / 変更後に元のロールへ戻すなどで、`e2e/global-setup.ts` の固定ユーザー（`teamLeader` / `reviewer`）のロール前提を壊さないこと。
+
+**手動確認（セッション無効化の実体）**:
+1. 対象ユーザー U で dev にログインし、セッションを保持する（ブラウザ A）。
+2. 別ブラウザ / 別セッションで管理者が U のロールを変更する（昇格 or 降格）。
+3. ブラウザ A で U が次の操作（ページ遷移 / API 呼び出し）を行うと、セッションが無効化され再ログインを求められる（または 401）ことを確認する。
+4. 降格の場合、再ログイン後は新しい（低い）ロールの権限に制限されることを確認する。
+
+**挙動の注意**: Cognito の global sign-out（`AdminUserGlobalSignOut`）はリフレッシュトークンを即時無効化するが、既発行のアクセストークンは短期の有効期限が切れた時点で弾かれる。したがって手順 3 の拒否は即時 401 とは限らず、アクセストークンの有効期限に依存しうる（リフレッシュ時 / トークン失効後に確実に再ログインが要求される）。

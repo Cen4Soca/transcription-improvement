@@ -32,6 +32,19 @@ describe('sanitizeMetadata', () => {
     });
   });
 
+  it('passes sessionInvalidated through, stringified', () => {
+    const result = sanitizeMetadata({
+      previousValue: 'ADMIN',
+      newValue: 'REVIEWER',
+      sessionInvalidated: true,
+    } as Record<string, unknown>);
+    expect(result).toEqual({
+      previousValue: 'ADMIN',
+      newValue: 'REVIEWER',
+      sessionInvalidated: 'true',
+    });
+  });
+
   it('removes disallowed keys', () => {
     const input = {
       resourceName: 'test',
