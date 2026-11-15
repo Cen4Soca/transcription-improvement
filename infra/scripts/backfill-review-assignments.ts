@@ -32,9 +32,15 @@
  * Target scope (strict):
  *   - Only sessions that have NEITHER a ReviewAssignment NOR a TeamAssignment
  *     (i.e. genuinely orphaned uploads).
- *   - Only when the participant (uploader) is NOT an ADMIN. ADMIN uploads are
- *     excluded because getAccessibleSessionIds() returns null (all sessions) for
- *     ADMIN, so no assignment is needed.
+ *   - The uploader's role does NOT matter: ADMIN uploads are backfilled too.
+ *     Rationale: this mirrors createSessionForJob, which creates a
+ *     ReviewAssignment for the uploader regardless of role, so a later role
+ *     downgrade (ADMIN -> non-ADMIN) keeps the uploaded session visible. While
+ *     the user is still ADMIN, getAccessibleSessionIds() returns null (all
+ *     sessions), so the extra ReviewAssignment is harmless; it only takes effect
+ *     after a downgrade to a non-ADMIN role.
+ *   - The uploader must be resolvable (a User record must exist). Participants
+ *     whose user record cannot be resolved are still skipped.
  *   - A ReviewAssignment is only created for the uploader themselves (the
  *     SessionParticipant userId). No assignment is ever created for another user.
  *
@@ -106,7 +112,11 @@ export interface BackfillPlan {
   skippedExistingAssignment: number;
   /** Sessions skipped because the session already has a TeamAssignment. */
   skippedHasTeamAssignment: number;
-  /** Sessions skipped because the uploader is an ADMIN. */
+  /**
+   * Always 0. ADMIN uploaders are no longer skipped (they are backfilled like
+   * any other role to survive a later role downgrade). Retained for backward
+   * compatibility with the dry-run output shape.
+   */
   skippedAdminUploader: number;
   /** Participants skipped because the user record could not be resolved. */
   skippedUnknownUser: number;
@@ -124,7 +134,9 @@ export interface BackfillPlan {
  *   1. The session exists (has a METADATA row).
  *   2. The session has NO TeamAssignment (would already be visible via the team).
  *   3. The uploader has NO existing ReviewAssignment for the session (idempotency).
- *   4. The uploader's role is resolvable and is NOT ADMIN (ADMIN sees all sessions).
+ *   4. The uploader is resolvable (a User record exists). The uploader's role
+ *      does NOT matter — ADMIN uploads are backfilled too, mirroring
+ *      createSessionForJob, so visibility survives a later role downgrade.
  *
  * The uploader is the SessionParticipant. When a session has multiple
  * participants (later reviewers joined), the earliest-joined participant is
@@ -186,14 +198,15 @@ export function selectBackfillTargets(input: {
       continue;
     }
 
-    // 4. Resolve the uploader's role; exclude ADMIN and unknown users.
+    // 4. The uploader must be resolvable; skip unknown users. Role is NOT a
+    //    filter: ADMIN uploaders are backfilled too, matching
+    //    createSessionForJob, so the session stays visible after a later
+    //    downgrade (ADMIN -> non-ADMIN). While still ADMIN,
+    //    getAccessibleSessionIds returns null (all sessions) so the extra
+    //    ReviewAssignment is harmless.
     const role = roleByUserId.get(uploaderId);
     if (role === undefined) {
       plan.skippedUnknownUser += 1;
-      continue;
-    }
-    if (role === 'ADMIN') {
-      plan.skippedAdminUploader += 1;
       continue;
     }
 
@@ -450,6 +463,8 @@ function printPlanSummary(plan: BackfillPlan): void {
   logInfo(`ReviewAssignments to create: ${plan.targets.length}`);
   logInfo(`  Skipped (already assigned):     ${plan.skippedExistingAssignment}`);
   logInfo(`  Skipped (has team assignment):  ${plan.skippedHasTeamAssignment}`);
+  // Always 0: ADMIN uploaders are backfilled like any other role (kept for
+  // backward-compatible output).
   logInfo(`  Skipped (ADMIN uploader):       ${plan.skippedAdminUploader}`);
   logInfo(`  Skipped (unknown user):         ${plan.skippedUnknownUser}`);
 

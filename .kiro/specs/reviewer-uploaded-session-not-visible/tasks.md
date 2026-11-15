@@ -232,3 +232,37 @@ design.md「テスト見逃し分析と再発防止」節に基づく追加タ�
   - **検証内容**: Admin アップロード由来セッションが `loginAsAdmin` のセッション一覧（`校閲セッション一覧`）に表示される（`getAccessibleSessionIds` が `null` 全件を返す ADMIN パスの維持 = bugfix 3.2）
   - **運用注記**: 実行は `cd e2e && npx playwright test tests/sessions/reviewer-uploaded-session-visibility.spec.ts`。CI 不在でもローカルから動く形にする
   - _Requirements: 3.2, 2.1_
+
+## ロール変更・降格の限定エッジ対応タスク（タスク 14）
+
+design.md「ロール変更・降格に関する追加考慮」節に基づく追加タスク。追加調査により、新規作成（`createSessionForJob`）はロール非依存で `ReviewAssignment` を張り降格に強い一方、バックフィル（`selectBackfillTargets`）だけが ADMIN を除外しており非対称で、限定エッジ（修正前に ADMIN がアップロードしバックフィル時も ADMIN だった古いセッションが、後に降格されると一覧から消える）を生んでいることが判明した。バックフィルを新規作成と同じ挙動に揃えて塞ぐ。タスク 1〜13・既存プロパティ番号・採用案（案 A / 案 D）は変更しない。
+
+- [x] 14. バックフィルの ADMIN 除外を撤廃し、新規作成と挙動を揃える（降格エッジを塞ぐ）
+  - **目的**: `createSessionForJob` はロール非依存で `ReviewAssignment` を張るのに、バックフィルだけが `role === 'ADMIN'` を除外しており非対称。「修正前に ADMIN がアップロードし、バックフィル実行時も ADMIN だった古いセッション」は `ReviewAssignment` を持たず、後で非 ADMIN に降格されると `getAccessibleSessionIds` の非 ADMIN 経路で一覧から消える。この限定エッジを、バックフィルを新規作成と同じ挙動（ロール非依存で対象化）に揃えて塞ぐ
+
+  - [x] 14.1 `selectBackfillTargets` から ADMIN 除外ロジックを撤廃する
+    - `infra/scripts/backfill-review-assignments.ts` の `selectBackfillTargets` から「`role === 'ADMIN'` を除外する」分岐を削除し、**アップローダーのロールに関わらず `ReviewAssignment` を backfill 対象にする**（`createSessionForJob` と同じ挙動）
+    - 他の条件は維持する: (1) セッションが存在する（METADATA 行あり）、(2) `TeamAssignment` が無い、(3) 既存 `ReviewAssignment` が無い（冪等）、(4) ユーザーが解決できる（unknown user は除外のまま）
+    - role の解決自体（`roleByUserId` による unknown user 判定 = `skippedUnknownUser`）は残す。削除するのは `role === 'ADMIN'` の分岐のみ
+    - `BackfillPlan.skippedAdminUploader` の扱い: 後方互換・出力整合のため **最小変更で整合する方**を実装者が選ぶ。(a) フィールドを残して常に 0 にする場合はコメントで「常に 0（ADMIN も対象化したため）」と明記、(b) 削除する場合は `printPlanSummary` の `Skipped (ADMIN uploader)` 行・型（`BackfillPlan`）・テストも合わせて整合させる。どちらでも可だが、**ドライラン出力・型・テストの整合を必ず取る**
+    - ヘッダコメント（`Target scope` ブロック）とインラインコメント（条件 4 周辺）を新しい挙動に更新する: 「ADMIN も対象。理由: `createSessionForJob` と挙動を揃え、将来の降格時も可視性を維持する」旨を記述
+    - 冪等性は維持する（固定キー PUT、既存 `ReviewAssignment` はスキップ）
+    - レイヤリング/配置は変えない（`infra/scripts/`、純粋関数 + I/O 分離の構造を維持）
+    - _Requirements: 2.1, 2.2, 2.3_
+    - _Preservation: 3.2 — ADMIN 全件パスは変えない。ADMIN に ReviewAssignment を張っても ADMIN のままなら getAccessibleSessionIds は null（全件）で一覧結果に影響なく、効くのは降格後のみ_
+
+  - [x] 14.2 ユニットテストを更新する（挙動変更の反映 + 降格エッジの意図）
+    - `infra/test/backfill-review-assignments.test.ts` を更新する
+    - 既存の `'excludes ADMIN uploaders (ADMIN sees all sessions)'` テストは挙動が変わるため、**「ADMIN アップローダーも backfill 対象になる（`ReviewAssignment` を張る）」検証に書き換える**（`plan.targets` に admin のターゲットが含まれ、`skippedAdminUploader` は 0 もしくは撤廃）。テスト名/コメントに「降格時に可視性を維持するため ADMIN も対象化する」意図を反映する
+    - mixed dataset テスト `'counts a representative mixed dataset correctly'` の `adminUp` ケースの期待値を更新する: `admin1` のセッション（`adminUp`）も `plan.targets` に含まれ、`skippedAdminUploader` は 0（フィールドを残す場合）になるようにする。`skippedHasTeamAssignment` / `skippedExistingAssignment` の期待は維持
+    - フィールドを撤廃した場合は、`skippedAdminUploader` を参照する全アサーションを整合させる（削除 or 0 期待）
+    - 他の既存テスト（reviewer / team-leader 対象化、TeamAssignment スキップ、既存 ReviewAssignment スキップ、unknown user スキップ、uploader-only、決定的ソート、冪等性）はそのまま PASS すること
+    - _Requirements: 2.1, 2.2, 2.3_
+    - _Preservation: 3.2_
+
+  - [x] 14.3 検証する
+    - `cd infra && npx vitest --run test/backfill-review-assignments.test.ts` を実行し、更新後のユニットテストが全て PASS することを確認する
+    - `cd infra && npx tsc --noEmit` を実行し、型エラーが無いことを確認する（特に `BackfillPlan` の型変更・`printPlanSummary` の整合）
+    - ドライラン出力（`printPlanSummary`）・型・テストの 3 者が整合していることを確認する
+    - _Requirements: 2.1, 2.2, 2.3_
+    - _Preservation: 3.2_

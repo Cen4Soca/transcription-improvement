@@ -16,8 +16,10 @@ import {
  *
  * Unit tests for the pure core logic of the visibility backfill script.
  * AWS I/O is not exercised here (the core functions are I/O-free); these tests
- * verify the dry-run decision logic: target extraction, ADMIN exclusion,
- * idempotent skip, team-assignment skip, and uploader-only assignment.
+ * verify the dry-run decision logic: target extraction (role-independent, so
+ * ADMIN uploaders are backfilled too — keeping visibility across a later role
+ * downgrade), idempotent skip, team-assignment skip, unknown-user skip, and
+ * uploader-only assignment.
  */
 
 const sessions = (...ids: string[]): SessionRow[] =>
@@ -63,7 +65,12 @@ describe('selectBackfillTargets', () => {
     ]);
   });
 
-  it('excludes ADMIN uploaders (ADMIN sees all sessions)', () => {
+  it('includes ADMIN uploaders so visibility survives a later role downgrade', () => {
+    // Mirrors createSessionForJob, which creates a ReviewAssignment regardless
+    // of uploader role. Backfilling ADMIN uploads is harmless while the user is
+    // still ADMIN (getAccessibleSessionIds returns null = all sessions) and
+    // keeps the uploaded session visible if the user is later downgraded to a
+    // non-ADMIN role.
     const plan = selectBackfillTargets({
       sessions: sessions('s1'),
       participants: [participant('s1', 'admin1')],
@@ -72,8 +79,10 @@ describe('selectBackfillTargets', () => {
       users: [user('admin1', 'ADMIN')],
     });
 
-    expect(plan.targets).toHaveLength(0);
-    expect(plan.skippedAdminUploader).toBe(1);
+    expect(plan.targets).toEqual([
+      { userId: 'admin1', sessionId: 's1', createdBy: 'admin1' },
+    ]);
+    expect(plan.skippedAdminUploader).toBe(0);
   });
 
   it('skips sessions that already have a ReviewAssignment (idempotency)', () => {
@@ -198,7 +207,7 @@ describe('selectBackfillTargets', () => {
     expect(second.skippedExistingAssignment).toBe(1);
   });
 
-  it('counts a representative mixed dataset correctly', () => {
+  it('counts a representative mixed dataset correctly (ADMIN uploads are targeted, closing the downgrade edge)', () => {
     const plan = selectBackfillTargets({
       sessions: sessions('orphan', 'adminUp', 'hasTeam', 'alreadyAssigned'),
       participants: [
@@ -217,10 +226,14 @@ describe('selectBackfillTargets', () => {
       ],
     });
 
+    // The ADMIN upload (adminUp) is now a target too, so its uploaded session
+    // stays visible if admin1 is later downgraded. Targets are sorted by
+    // sessionId ('adminUp' < 'orphan').
     expect(plan.targets).toEqual([
+      { userId: 'admin1', sessionId: 'adminUp', createdBy: 'admin1' },
       { userId: 'reviewer1', sessionId: 'orphan', createdBy: 'reviewer1' },
     ]);
-    expect(plan.skippedAdminUploader).toBe(1);
+    expect(plan.skippedAdminUploader).toBe(0);
     expect(plan.skippedHasTeamAssignment).toBe(1);
     expect(plan.skippedExistingAssignment).toBe(1);
   });

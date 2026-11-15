@@ -353,3 +353,27 @@ END FOR
 | タスク 13（P4）Admin アップロードの回帰 | E2E | ADMIN 全件パスの退行を見張る層が弱かった | `getAccessibleSessionIds` の ADMIN=null 全件パスが本修正で壊れていないことを E2E で確認 |
 
 これらにより、今後 (1) 生成経路が `ReviewAssignment` / メディアリンクを作らなくなる退行、(2) 可視性を緩めすぎる逆方向退行、(3) 縦貫フローの破断、(4) ADMIN 全件パスの退行、のいずれも検出可能になる。
+
+## ロール変更・降格に関する追加考慮
+
+追加質問「アップロード → セッション作成後にアップローダーのロールを変更したら可視性に反映されるか」を実コードで裏取り調査した結果を記録する。本節は 2 つの論点からなり、論点 1 は設計判断であり本タスクのスコープ外（記録のみ）、論点 2 がタスク 14 で塞ぐ限定エッジである。
+
+### 論点 1: ロール解決とロール変更時の権限反映遅延（スコープ外・記録のみ）
+
+- `extractUser`（`backend/src/utils/auth-middleware.ts`）のロール解決順は **JWT の `custom:role` を優先し、無い場合のみ DynamoDB の User レコードへフォールバック**する。したがって JWT にロールが埋まっているセッション中はトークンの値が優先される。
+- ロール変更時には `globalSignOutCognitoUser` を **呼ばない**（グローバルサインアウトは `isActive=false`（無効化）時のみ実行する）。このため専用 User Pool 運用では、ロール変更後も当該ユーザーが再ログインして新しい JWT を取得するまで、`custom:role` ベースの権限反映が遅延する。
+- これは意図された設計判断（無効化時のみ強制サインアウト）であり、**本タスク（タスク 14）のスコープ外**。ここでは事実として記録するにとどめ、挙動は変更しない。
+
+### 論点 2: 可視性と降格の非対称（タスク 14 で塞ぐ限定エッジ）
+
+可視性（`ReviewAssignment` の有無）の観点では、**新規作成経路は降格に強い**一方、**バックフィル経路だけが ADMIN を除外しており非対称**で、限定的なエッジを生んでいる。
+
+- **新規作成（降格に強い）**: `createSessionForJob`（`backend/src/services/session-service.ts`）は `assignedUserId`（アップローダー）が渡れば **ロール非依存で無条件に** `createReviewAssignment` を呼ぶ。よって修正後に作られたセッションは ADMIN アップロードであっても `ReviewAssignment` が張られる。ADMIN のままなら `getAccessibleSessionIds` は `null`（全件）を返すため割り当ては一覧結果に影響しないが、その人が後で非 ADMIN に降格されても、`getAccessibleSessionIds` の非 ADMIN 経路（直接割り当て `PK=USER#{userId}, SK begins_with ASSIGNMENT#`）で当該セッションが一覧に残る。つまり **新規作成分は降格に対して安全**。
+- **バックフィル（非対称で限定エッジを生む）**: バックフィルスクリプト（`infra/scripts/backfill-review-assignments.ts` の純粋関数 `selectBackfillTargets`）は条件 4 で `role === 'ADMIN'` のアップローダーを除外する（`skippedAdminUploader`）。これは「ADMIN は `getAccessibleSessionIds` が `null`＝全件を返すのでバックフィル不要」という前提に基づく。
+- **限定エッジ**: 「修正前に ADMIN がアップロードし、かつバックフィル実行時点でもまだ ADMIN だった古いセッション」は、ADMIN 除外により `ReviewAssignment` を持たないまま残る。この人が後で非 ADMIN に降格されると、`getAccessibleSessionIds` の非 ADMIN 経路に入り、`ReviewAssignment` が無いため **自分がアップロードしたセッションが一覧から消える**。
+- **非対称の是正方針（タスク 14）**: 新規作成（`createSessionForJob`）はロール非依存で `ReviewAssignment` を張るのに、バックフィルだけが ADMIN を除外している。この非対称が限定エッジの原因なので、**バックフィルを新規作成と同じ挙動に揃える** — `selectBackfillTargets` から `role === 'ADMIN'` を除外するロジックを撤廃し、アップローダーのロールに関わらず `ReviewAssignment` を backfill 対象にする。他の条件（セッション存在、TeamAssignment 不在、既存 ReviewAssignment 不在＝冪等、ユーザー解決可能）は維持し、冪等性（固定キー PUT）も変えない。
+
+### タスク 14 が検証・保持する Requirement
+
+- **検証**: 2.1, 2.2, 2.3（可視性 — 降格後もアップローダーが自分のアップロード由来セッションを一覧で見られる）。
+- **Preservation 3.2**: ADMIN 全件パスは変えない。ADMIN に `ReviewAssignment` を張っても、ADMIN のままなら `getAccessibleSessionIds` は `null`（全件）を返すため一覧結果に影響はなく、効くのは降格後（非 ADMIN 経路）のみ。

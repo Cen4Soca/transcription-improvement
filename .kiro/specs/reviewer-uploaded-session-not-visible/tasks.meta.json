@@ -332,6 +332,54 @@
         "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
         "timestamp": 1794642514939
       }
+    ],
+    "14.1 `selectBackfillTargets` から ADMIN 除外ロジックを撤廃する": [
+      {
+        "executionId": "bd2b18c4-9b0e-4216-81d7-bf44da703982",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794725386893
+      },
+      {
+        "executionId": "bd2b18c4-9b0e-4216-81d7-bf44da703982",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794725394566
+      },
+      {
+        "executionId": "bd2b18c4-9b0e-4216-81d7-bf44da703982",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794725617917
+      }
+    ],
+    "14.2 ユニットテストを更新する（挙動変更の反映 + 降格エッジの意図）": [
+      {
+        "executionId": "bd2b18c4-9b0e-4216-81d7-bf44da703982",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794725386920
+      },
+      {
+        "executionId": "bd2b18c4-9b0e-4216-81d7-bf44da703982",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794725619815
+      }
+    ],
+    "14.3 検証する": [
+      {
+        "executionId": "bd2b18c4-9b0e-4216-81d7-bf44da703982",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794725386971
+      },
+      {
+        "executionId": "bd2b18c4-9b0e-4216-81d7-bf44da703982",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794725620514
+      }
+    ],
+    "14. バックフィルの ADMIN 除外を撤廃し、新規作成と挙動を揃える（降格エッジを塞ぐ）": [
+      {
+        "executionId": "bd2b18c4-9b0e-4216-81d7-bf44da703982",
+        "chatSessionId": "sess_d42d7fc4-9111-4f53-817e-fc4d733cab7d",
+        "timestamp": 1794725620538
+      }
     ]
   }
 }
