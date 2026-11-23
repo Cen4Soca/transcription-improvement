@@ -141,7 +141,7 @@
   - 変更は 1 つの PR にまとめられる単位になっていること（ランタイム定数を 24 に戻せば元に戻せること）を確認する
   - _Requirements: 6.2_
 
-- [ ]* 8. 手動検証と展開（ユーザーが実施する。サブエージェントは実行しない）
+- [-]* 8. 手動検証と展開（ユーザーが実施する。サブエージェントは実行しない）
   - AWS への実デプロイと実環境の操作を伴うため、オプション扱いにしている。自動実行の対象外
 
   - [ ]* 8.1 変更をマージし、`deploy.sh` を反映する
@@ -155,18 +155,18 @@
     - `-c ~/cdk.json` を付け忘れると、リポジトリ同梱の `cdk.json`（`basePath` 空）で合成されるので注意する
     - _Requirements: 6.3_
 
-  - [ ]* 8.3 dev 環境へデプロイし、ランタイムを確認する
+  - [x]* 8.3 dev 環境へデプロイし、ランタイムを確認する
     - `./deploy.sh -c ~/cdk.json` を実行する
     - `nodejs26.x` が ap-northeast-1 で使えない場合は CloudFormation がエラーを返してロールバックされる。その場合は本番へ進まず、原因を確認する
     - デプロイ後、このアプリのスタックが作成した関数の Runtime がすべて `nodejs26.x` であることを AWS CLI で確認する（同じアカウントの別アプリの関数は対象外）
     - _Requirements: 1.2, 2.1_
 
-  - [ ]* 8.4 dev 環境で主要 API のスモークテストを行う
+  - [x]* 8.4 dev 環境で主要 API のスモークテストを行う
     - 認証（`GET /me`）、セッション一覧、メディア URL 取得、アップロード URL 発行、Bedrock 候補取得を実行し、正常応答を確認する
     - Bedrock 候補取得が失敗する場合は、ランタイム同梱の AWS SDK が `backend/package.json` の版より古い可能性がある。`externalModules` から `@aws-sdk/client-bedrock-runtime` を外してバンドルに含めることを検討する
     - _Requirements: 4.5, 4.6_
 
-  - [ ]* 8.5 Custom Resource ハンドラーを疑似呼び出しで確認する
+  - [x]* 8.5 Custom Resource ハンドラーを疑似呼び出しで確認する
     - design.md の「Custom Resource ハンドラーの検証方法」に従う
     - テスト用の S3 署名付き PUT URL（有効期限 5 分）を発行し、`SeedAdmin` と `UpdateDistribution` のハンドラーを `RequestType: "Delete"` の疑似イベントで `aws lambda invoke` する。`ResponseURL` に署名付き URL を指定する
     - S3 に `Status: SUCCESS` の応答 JSON が書き込まれれば正常。書き込まれない場合は、各ハンドラーのインラインコードに Promise を返す `send` 関数を自前で定義し、`cfn-response` への依存を外す

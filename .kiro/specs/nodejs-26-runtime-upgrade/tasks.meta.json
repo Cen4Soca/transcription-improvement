@@ -358,6 +358,49 @@
         "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
         "timestamp": 1795429087376
       }
+    ],
+    "8.3 dev 環境へデプロイし、ランタイムを確認する": [
+      {
+        "executionId": "51172b13-cc8f-4fd8-8491-bf021501349c",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795436292620
+      }
+    ],
+    "8. 手動検証と展開（ユーザーが実施する。サブエージェントは実行しない）": [
+      {
+        "executionId": "51172b13-cc8f-4fd8-8491-bf021501349c",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795436292705
+      },
+      {
+        "executionId": "51172b13-cc8f-4fd8-8491-bf021501349c",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795436303858
+      },
+      {
+        "executionId": "ed22b2e4-285e-453b-99e1-0dd333599597",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795436852061
+      },
+      {
+        "executionId": "ed22b2e4-285e-453b-99e1-0dd333599597",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795436858307
+      }
+    ],
+    "8.5 Custom Resource ハンドラーを疑似呼び出しで確認する": [
+      {
+        "executionId": "51172b13-cc8f-4fd8-8491-bf021501349c",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795436292874
+      }
+    ],
+    "8.4 dev 環境で主要 API のスモークテストを行う": [
+      {
+        "executionId": "ed22b2e4-285e-453b-99e1-0dd333599597",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795436852008
+      }
     ]
   }
 }
