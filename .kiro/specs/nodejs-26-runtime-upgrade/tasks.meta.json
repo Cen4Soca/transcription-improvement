@@ -386,6 +386,11 @@
         "executionId": "ed22b2e4-285e-453b-99e1-0dd333599597",
         "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
         "timestamp": 1795436858307
+      },
+      {
+        "executionId": "327f0ba5-ebd4-4af1-a95c-ec622168653e",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795444835674
       }
     ],
     "8.5 Custom Resource ハンドラーを疑似呼び出しで確認する": [
@@ -400,6 +405,13 @@
         "executionId": "ed22b2e4-285e-453b-99e1-0dd333599597",
         "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
         "timestamp": 1795436852008
+      }
+    ],
+    "8.6 staging、prod の順に適用する": [
+      {
+        "executionId": "327f0ba5-ebd4-4af1-a95c-ec622168653e",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795444835629
       }
     ]
   }
