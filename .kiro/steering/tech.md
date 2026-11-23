@@ -15,6 +15,7 @@ inclusion: always
 
 ### Backend
 - AWS Lambda (TypeScript, ESM — `.js` extensions required in imports)
+- Lambda runtime: Node.js 26 (`nodejs26.x`). The runtime constant lives in `infra/lib/constructs/lambda-runtime.ts`; the Node.js major version is declared in `.nvmrc`
 - API Gateway HTTP API + JWT Authorizer (`APIGatewayProxyEventV2WithJWTAuthorizer`)
 - DynamoDB single-table (on-demand), S3 + CloudFront (signed URLs)
 - Bedrock (Claude) + Comprehend, EventBridge → Lambda

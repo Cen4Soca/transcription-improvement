@@ -7,6 +7,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { WafIpAllowlist } from '../constructs/waf-ip-allowlist';
 import { WafRateLimit } from '../constructs/waf-rate-limit';
+import { APP_LAMBDA_RUNTIME } from '../constructs/lambda-runtime';
 
 export interface CdnStackProps extends cdk.StackProps {
   /** S3 bucket name for static files (React SPA) */
@@ -164,7 +165,7 @@ function handler(event) {
         );
 
         const updateDistributionHandler = new cdk.aws_lambda.Function(this, 'UpdateDistributionHandler', {
-          runtime: cdk.aws_lambda.Runtime.NODEJS_24_X,
+          runtime: APP_LAMBDA_RUNTIME,
           handler: 'index.handler',
           role: updateDistributionRole,
           timeout: cdk.Duration.seconds(120),
@@ -761,7 +762,7 @@ exports.handler = async (event, context) => {
       );
 
       const callbackUrlHandler = new cdk.aws_lambda.Function(this, 'CallbackUrlHandler', {
-        runtime: cdk.aws_lambda.Runtime.NODEJS_24_X,
+        runtime: APP_LAMBDA_RUNTIME,
         handler: 'index.handler',
         role: callbackUrlRole,
         timeout: cdk.Duration.seconds(30),

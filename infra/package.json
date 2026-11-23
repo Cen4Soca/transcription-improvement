@@ -17,13 +17,13 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.600.0",
     "@aws-sdk/lib-dynamodb": "^3.600.0",
-    "aws-cdk-lib": "^2.150.0",
+    "aws-cdk-lib": "^2.277.0",
     "constructs": "^10.3.0",
     "source-map-support": "^0.5.21"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "aws-cdk": "^2.150.0",
+    "@types/node": "^26.6.0",
+    "aws-cdk": "^2.1149.0",
     "esbuild": "^0.28.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.0",

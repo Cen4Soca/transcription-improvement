@@ -1,0 +1,363 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. ベースラインを記録する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421502899
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421517233
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421610929
+      }
+    ],
+    "2.1 infra の依存を更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503025
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421627249
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424895759
+      }
+    ],
+    "2.2 backend の依存を更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503050
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421627500
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424896082
+      }
+    ],
+    "2.3 frontend の依存を更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503097
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421627658
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424896729
+      }
+    ],
+    "3.1 ランタイムの検証テストを先に書く": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503116
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424915300
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425114072
+      }
+    ],
+    "3.2 ランタイム定数ファイルを作成する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503135
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425128157
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425179710
+      }
+    ],
+    "3.3 全 Lambda 定義を定数参照に置き換える": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503156
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425185647
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425248560
+      }
+    ],
+    "3.4 既存テストのランタイム期待値を更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503174
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425256108
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425292240
+      }
+    ],
+    "3.5 テストを実行し、スナップショットを更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503194
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425298214
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425378045
+      }
+    ],
+    "4.1 `.nvmrc` を作成する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503257
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421628328
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424897792
+      }
+    ],
+    "4.2 バージョン検査スクリプトとテストを作成する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503275
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424916042
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425114344
+      }
+    ],
+    "4.3 `deploy.sh` に検査を組み込む": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503292
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425186014
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425248661
+      }
+    ],
+    "5.1 steering の技術スタックを更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503307
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421628951
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424898433
+      }
+    ],
+    "5.2 README の前提条件を更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503324
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424899465
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424929344
+      }
+    ],
+    "5.3 ソリューションマニュアルを確認する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503341
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424899790
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424930156
+      }
+    ],
+    "6.1 旧バージョンの残存を確認する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503358
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425389811
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795428627169
+      }
+    ],
+    "6.2 実バンドルで合成できることを確認する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503375
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425390357
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795428627247
+      }
+    ],
+    "6.3 全パッケージのビルドとテストを実行する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503397
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795428634616
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795429087324
+      }
+    ],
+    "7. Checkpoint - 自動検証の完了を確認する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795421503415
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795429092956
+      },
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795429168064
+      }
+    ],
+    "2. 依存バージョンを更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424896757
+      }
+    ],
+    "5. ドキュメントを更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795424930183
+      }
+    ],
+    "4. Node.js バージョンの宣言と検査を追加する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425248691
+      }
+    ],
+    "3. Lambda ランタイムを定数に集約し、26 へ更新する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795425378067
+      }
+    ],
+    "6. 全体を検証する": [
+      {
+        "executionId": "b08ae40d-3019-4ca7-abc3-1ae6b253f412",
+        "chatSessionId": "sess_c65d9fc8-71ef-4ba6-b61d-67f2fffe6597",
+        "timestamp": 1795429087376
+      }
+    ]
+  }
+}

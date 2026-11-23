@@ -48,6 +48,9 @@ rm -rf transcription-improvement
 git clone --depth 1 https://github.com/Cen4Soca/transcription-improvement
 pushd transcription-improvement
 
+# Fail fast when the deploy machine's Node.js major version differs from .nvmrc.
+bash infra/scripts/check-node-version.sh .nvmrc
+
 # If cdk.json is specified, overwrite it
 if [[ -n "$cdk_context_path" ]]; then
     echo "Overwrite the cdk.json by $cdk_context_path"

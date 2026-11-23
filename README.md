@@ -56,7 +56,7 @@ transcription-improvement/
 
 ## 前提条件
 
-- Node.js 20 以上（CDK は Node 20 系推奨）
+- Node.js 26（バージョンは `.nvmrc` を参照）
 - npm
 - AWS アカウントと認証情報（AWS CLI プロファイル等）
 - デプロイ先リージョンでの Amazon Bedrock モデルアクセスの有効化

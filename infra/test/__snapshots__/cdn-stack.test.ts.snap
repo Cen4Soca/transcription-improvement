@@ -48,9 +48,12 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
         "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
       ],
       "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
-          "S3Key": "3423a042b818e31c1e34a19d6689ab2e5f9b70fcbe9e71df66f241b20a200bd9.zip",
+          "S3Key": "a12efc822af4855efaddc35cac5d42dfa7a132ded579c17dbca95a4a89d0db43.zip",
         },
         "Environment": {
           "Variables": {
@@ -63,6 +66,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
             "Ref": "DeployFrontendAwsCliLayerD774ED8F",
           },
         ],
+        "MemorySize": 1024,
         "Role": {
           "Fn::GetAtt": [
             "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
@@ -186,7 +190,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
       "Properties": {
         "Content": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
-          "S3Key": "e2659170a0721541efa761a8d5d04d5e36cbbf691c4b15a9053002b7c825055d.zip",
+          "S3Key": "fa8e14e761e0a29058a42409f160eea065c3dd13909951db47e4a0f1c44f01aa.zip",
         },
         "Description": "/opt/awscli/aws",
       },
@@ -213,7 +217,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
           "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
         ],
         "SourceObjectKeys": [
-          "ac3c55f2584c48a703c04c8b1cf28d036e557681a7f6ab6c1d59c0011ef85933.zip",
+          "0a736e52d7e4f68d38c187224906a8f348266a97d6537998023bcd43083bfff5.zip",
         ],
         "WaitForDistributionInvalidation": true,
       },
@@ -557,7 +561,7 @@ exports.handler = async (event, context) => {
             "Arn",
           ],
         },
-        "Runtime": "nodejs24.x",
+        "Runtime": "nodejs26.x",
         "Timeout": 120,
       },
       "Type": "AWS::Lambda::Function",
@@ -786,9 +790,12 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
         "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
       ],
       "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
-          "S3Key": "3423a042b818e31c1e34a19d6689ab2e5f9b70fcbe9e71df66f241b20a200bd9.zip",
+          "S3Key": "a12efc822af4855efaddc35cac5d42dfa7a132ded579c17dbca95a4a89d0db43.zip",
         },
         "Environment": {
           "Variables": {
@@ -801,6 +808,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
             "Ref": "DeployFrontendAwsCliLayerD774ED8F",
           },
         ],
+        "MemorySize": 1024,
         "Role": {
           "Fn::GetAtt": [
             "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
@@ -924,7 +932,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
       "Properties": {
         "Content": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
-          "S3Key": "e2659170a0721541efa761a8d5d04d5e36cbbf691c4b15a9053002b7c825055d.zip",
+          "S3Key": "fa8e14e761e0a29058a42409f160eea065c3dd13909951db47e4a0f1c44f01aa.zip",
         },
         "Description": "/opt/awscli/aws",
       },
@@ -952,7 +960,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
           "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
         ],
         "SourceObjectKeys": [
-          "ac3c55f2584c48a703c04c8b1cf28d036e557681a7f6ab6c1d59c0011ef85933.zip",
+          "0a736e52d7e4f68d38c187224906a8f348266a97d6537998023bcd43083bfff5.zip",
         ],
         "WaitForDistributionInvalidation": true,
       },

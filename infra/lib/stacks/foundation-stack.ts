@@ -5,6 +5,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+import { APP_LAMBDA_RUNTIME } from '../constructs/lambda-runtime';
 
 export class FoundationStack extends cdk.Stack {
   public readonly kmsKey: kms.Key;
@@ -334,7 +335,7 @@ export class FoundationStack extends cdk.Stack {
       );
 
       const seedAdminHandler = new cdk.aws_lambda.Function(this, 'SeedAdminHandler', {
-        runtime: cdk.aws_lambda.Runtime.NODEJS_24_X,
+        runtime: APP_LAMBDA_RUNTIME,
         handler: 'index.handler',
         role: seedAdminRole,
         timeout: cdk.Duration.seconds(30),

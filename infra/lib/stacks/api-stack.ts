@@ -14,6 +14,7 @@ import { Construct } from 'constructs';
 import { LambdaFunction } from '../constructs/lambda-function';
 import { BedrockComprehend } from '../constructs/bedrock-comprehend';
 import { MalwareScan } from '../constructs/malware-scan';
+import { APP_LAMBDA_RUNTIME } from '../constructs/lambda-runtime';
 
 export interface ApiStackProps extends cdk.StackProps {
   /** DynamoDB table */
@@ -164,7 +165,7 @@ export class ApiStack extends cdk.Stack {
       }));
 
       const keyPairHandler = new cdk.aws_lambda.Function(this, 'CloudFrontKeyPairHandler', {
-        runtime: cdk.aws_lambda.Runtime.NODEJS_24_X,
+        runtime: APP_LAMBDA_RUNTIME,
         handler: 'index.handler',
         role: keyPairRole,
         timeout: cdk.Duration.seconds(60),
@@ -1063,7 +1064,7 @@ exports.handler = async (event, context) => {
     );
 
     const notificationHandler = new cdk.aws_lambda.Function(this, 'S3NotificationHandler', {
-      runtime: cdk.aws_lambda.Runtime.NODEJS_24_X,
+      runtime: APP_LAMBDA_RUNTIME,
       handler: 'index.handler',
       role: notificationRole,
       code: cdk.aws_lambda.Code.fromInline(`
