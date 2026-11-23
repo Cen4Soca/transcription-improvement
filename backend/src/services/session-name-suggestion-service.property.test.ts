@@ -13,7 +13,7 @@ vi.mock('../utils/dynamodb-client.js', () => ({
 }));
 
 vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
-  BedrockRuntimeClient: vi.fn(() => ({ send: vi.fn() })),
+  BedrockRuntimeClient: vi.fn(function () { return { send: vi.fn() }; }),
   InvokeModelCommand: vi.fn(),
 }));
 

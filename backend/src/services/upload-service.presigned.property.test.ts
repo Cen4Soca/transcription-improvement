@@ -8,8 +8,8 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
 }));
 
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn().mockImplementation(() => ({})),
-  PutObjectCommand: vi.fn().mockImplementation((params) => params),
+  S3Client: vi.fn().mockImplementation(function () { return {}; }),
+  PutObjectCommand: vi.fn().mockImplementation(function (params) { return params; }),
 }));
 
 const { PRESIGNED_URL_EXPIRY_SECONDS, generatePresignedUrl } = await import('./upload-service.js');

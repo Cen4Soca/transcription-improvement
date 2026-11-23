@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { filterSessionsByAssignment, reconcileSelection } from './LanguageModelPage';
+import { filterSessionsByAssignment, reconcileSelection } from '../utils/language-model-selection';
 import type { ReviewSession } from '../types/session';
 
 /**

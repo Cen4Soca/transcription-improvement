@@ -18,7 +18,7 @@ vi.mock('../utils/dynamodb-client.js', () => ({
 
 vi.mock('@aws-sdk/client-s3', () => ({
   S3Client: vi.fn(),
-  GetObjectCommand: vi.fn().mockImplementation((params) => params),
+  GetObjectCommand: vi.fn().mockImplementation(function (params) { return params; }),
 }));
 
 import * as transcriptionJobRepository from '../repositories/transcription-job-repository.js';

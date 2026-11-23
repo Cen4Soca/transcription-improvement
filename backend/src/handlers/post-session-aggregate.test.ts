@@ -31,9 +31,9 @@ vi.mock('../utils/auth-middleware.js', async (importOriginal) => {
 const mockSend = vi.hoisted(() => vi.fn());
 
 vi.mock('@aws-sdk/lib-dynamodb', () => ({
-  PutCommand: vi.fn().mockImplementation((params) => ({ __type: 'Put', ...params })),
-  QueryCommand: vi.fn().mockImplementation((params) => ({ __type: 'Query', ...params })),
-  UpdateCommand: vi.fn().mockImplementation((params) => ({ __type: 'Update', ...params })),
+  PutCommand: vi.fn().mockImplementation(function (params) { return { __type: 'Put', ...params }; }),
+  QueryCommand: vi.fn().mockImplementation(function (params) { return { __type: 'Query', ...params }; }),
+  UpdateCommand: vi.fn().mockImplementation(function (params) { return { __type: 'Update', ...params }; }),
 }));
 
 vi.mock('../utils/dynamodb-client.js', () => ({

@@ -130,4 +130,41 @@ describe('useIdleTimeout', () => {
     expect(result.current.showWarning).toBe(false);
     expect(onTimeout).not.toHaveBeenCalled();
   });
+
+  it('clears the warning when disabled mid-warning and restarts tracking when re-enabled', () => {
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useIdleTimeout({ idleMs: IDLE_MS, warningMs: WARNING_MS, enabled }),
+      { initialProps: { enabled: true } }
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(26_000);
+    });
+    expect(result.current.showWarning).toBe(true);
+
+    // Disabling hides the warning and reports the full idle time again.
+    rerender({ enabled: false });
+    expect(result.current.showWarning).toBe(false);
+    expect(result.current.remainingMs).toBe(IDLE_MS);
+
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(result.current.showWarning).toBe(false);
+
+    // Re-enabling starts from a clean state (no stale warning) ...
+    rerender({ enabled: true });
+    expect(result.current.showWarning).toBe(false);
+    expect(result.current.remainingMs).toBe(IDLE_MS);
+
+    // ... and the idle clock restarts from the moment of re-enabling.
+    act(() => {
+      vi.advanceTimersByTime(24_000);
+    });
+    expect(result.current.showWarning).toBe(false);
+    act(() => {
+      vi.advanceTimersByTime(2_000);
+    });
+    expect(result.current.showWarning).toBe(true);
+  });
 });

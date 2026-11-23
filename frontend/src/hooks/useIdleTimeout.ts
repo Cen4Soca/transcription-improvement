@@ -95,7 +95,19 @@ export function useIdleTimeout(options: UseIdleTimeoutOptions = {}): UseIdleTime
   const [showWarning, setShowWarning] = useState(false);
   const [remainingMs, setRemainingMs] = useState(idleMs);
 
-  const lastActivityRef = useRef<number>(Date.now());
+  // Reset the countdown whenever `enabled` flips. Adjusting state while rendering
+  // (the pattern recommended by React) avoids calling setState synchronously in an
+  // effect and avoids one render with stale values.
+  const [prevEnabled, setPrevEnabled] = useState(enabled);
+  if (prevEnabled !== enabled) {
+    setPrevEnabled(enabled);
+    setShowWarning(false);
+    setRemainingMs(idleMs);
+  }
+
+  // Initialised by the tracking effect below: Date.now() is impure and must not
+  // run during render. Nothing reads this ref before that effect has run.
+  const lastActivityRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTimeoutRef = useRef(options.onTimeout);
   const timedOutRef = useRef(false);
@@ -113,11 +125,7 @@ export function useIdleTimeout(options: UseIdleTimeoutOptions = {}): UseIdleTime
   }, [idleMs]);
 
   useEffect(() => {
-    if (!enabled) {
-      setShowWarning(false);
-      setRemainingMs(idleMs);
-      return;
-    }
+    if (!enabled) return;
 
     // (Re)start tracking from "now" whenever thresholds or enablement change.
     lastActivityRef.current = Date.now();
@@ -167,5 +175,10 @@ export function useIdleTimeout(options: UseIdleTimeoutOptions = {}): UseIdleTime
     };
   }, [enabled, idleMs, warningMs]);
 
-  return { showWarning, remainingMs, reset };
+  // While disabled, expose the idle state directly (no warning, full time remaining).
+  return {
+    showWarning: enabled && showWarning,
+    remainingMs: enabled ? remainingMs : idleMs,
+    reset,
+  };
 }

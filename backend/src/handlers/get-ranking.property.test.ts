@@ -3,9 +3,9 @@ import fc from 'fast-check';
 import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
 
 vi.mock('@aws-sdk/lib-dynamodb', () => ({
-  QueryCommand: vi.fn().mockImplementation((params) => params),
-  GetCommand: vi.fn().mockImplementation((params) => params),
-  UpdateCommand: vi.fn().mockImplementation((params) => params),
+  QueryCommand: vi.fn().mockImplementation(function (params) { return params; }),
+  GetCommand: vi.fn().mockImplementation(function (params) { return params; }),
+  UpdateCommand: vi.fn().mockImplementation(function (params) { return params; }),
 }));
 
 const mockSend = vi.fn();

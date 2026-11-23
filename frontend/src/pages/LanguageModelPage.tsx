@@ -14,22 +14,10 @@ import type { AppError } from '../types/api';
 import { SessionNameEditor } from '../components/SessionNameEditor';
 import { describeLanguageModelError } from '../utils/language-model-error';
 import { translateError } from '../utils/translateError';
+import { filterSessionsByAssignment, reconcileSelection } from '../utils/language-model-selection';
 
-/** 選択チームに割り当てられた sessionId 集合で候補を絞る（Req 2.1） */
-export function filterSessionsByAssignment(
-  sessions: ReviewSession[],
-  assignedSessionIds: Set<string>
-): ReviewSession[] {
-  return sessions.filter((s) => assignedSessionIds.has(s.sessionId));
-}
-
-/** 前回の選択を新しい割り当て集合に整合させる（= 積集合、Req 2.3） */
-export function reconcileSelection(
-  prevSelected: string[],
-  assignedSessionIds: Set<string>
-): string[] {
-  return prevSelected.filter((id) => assignedSessionIds.has(id));
-}
+/** Shared empty set used when no team (or no loaded assignment) is selected. Never mutated. */
+const NO_ASSIGNED_SESSION_IDS: Set<string> = new Set();
 
 export interface LanguageModelPageProps {
   languageModelApi: LanguageModelApi;
@@ -117,8 +105,16 @@ export function LanguageModelPage({
   // to the selected TargetTeam are offered as candidates. This mirrors the
   // backend `hasTeamAssignment` gate so the frontend candidates and the
   // backend-accepted set stay in sync (Req 2.1).
-  const [assignedSessionIds, setAssignedSessionIds] = useState<Set<string>>(new Set());
-  const [isLoadingAssignments, setIsLoadingAssignments] = useState(false);
+  //
+  // `assignments` records which team the loaded set belongs to. The "assigned"
+  // set and the loading flag are derived from it, so no state has to be set
+  // synchronously inside an effect when the team changes.
+  const [assignments, setAssignments] = useState<{ teamId: string; ids: Set<string> } | null>(null);
+  const isLoadingAssignments = Boolean(teamId) && assignments?.teamId !== teamId;
+  const assignedSessionIds = useMemo(
+    () => (teamId && assignments?.teamId === teamId ? assignments.ids : NO_ASSIGNED_SESSION_IDS),
+    [teamId, assignments]
+  );
 
   // Teams for the required create-form selector.
   const [teams, setTeams] = useState<Team[]>([]);
@@ -163,24 +159,37 @@ export function LanguageModelPage({
   }, []);
 
   // Re-fetch the selected team's TeamAssignment set whenever the team changes.
-  // Empty team -> empty set. Fetch failure -> empty set fallback (the backend
-  // remains the authoritative final validator). Guarded against races with
-  // `cancelled` (Req 2.2).
+  // Empty team -> nothing to fetch (the assigned set is derived as empty).
+  // Fetch failure -> empty set fallback (the backend remains the authoritative
+  // final validator). Guarded against races with `cancelled` (Req 2.2).
   useEffect(() => {
-    if (!teamId) {
-      setAssignedSessionIds(new Set());
-      return;
-    }
+    if (!teamId) return;
     let cancelled = false;
-    setIsLoadingAssignments(true);
     (async () => {
       const result = await languageModelApi.listTeamAssignments(teamId);
       if (cancelled) return;
       const ids = result.ok
         ? new Set(result.value.data.map((a) => a.sessionId))
         : new Set<string>();
-      setAssignedSessionIds(ids);
-      setIsLoadingAssignments(false);
+      setAssignments({ teamId, ids });
+      // Reconcile the prior selection against the new assignment set, dropping any
+      // selected session that is not assigned to the newly selected team (Req 2.3).
+      //
+      // ★ Single extension point for cascading resets of inputs that depend on the
+      //   SourceReviewSession selection (Req 2.4). This is the one place that reacts
+      //   to a *shrinking* of the session selection. The current create form has no
+      //   companion inputs that depend on which source sessions are selected, so for
+      //   now we only reconcile `selectedSessionIds`. When such derived state is
+      //   added later (e.g. per-session companion settings), reset the derived state
+      //   tied to the sessionIds removed by `reconcileSelection` here — on the same
+      //   trigger, in the same place — so the reconciliation responsibility stays
+      //   consolidated rather than scattered.
+      setSelectedSessionIds((prev) => {
+        const next = reconcileSelection(prev, ids);
+        // If the selection shrank (next ⊊ prev), compute removed = prev - next and
+        // reconcile derived state here once such inputs exist.
+        return next.length === prev.length ? prev : next;
+      });
     })();
     return () => {
       cancelled = true;
@@ -192,28 +201,6 @@ export function LanguageModelPage({
     () => filterSessionsByAssignment(sessions, assignedSessionIds),
     [sessions, assignedSessionIds]
   );
-
-  // Reconcile the prior selection against the new assignment set, dropping any
-  // selected session that is not assigned to the newly selected team (Req 2.3).
-  //
-  // ★ Single extension point for cascading resets of inputs that depend on the
-  //   SourceReviewSession selection (Req 2.4). This is the one place that reacts
-  //   to a *shrinking* of the session selection. The current create form has no
-  //   companion inputs that depend on which source sessions are selected, so for
-  //   now we only reconcile `selectedSessionIds`. When such derived state is
-  //   added later (e.g. per-session companion settings), reset the derived state
-  //   tied to the sessionIds removed by `reconcileSelection` here — on the same
-  //   trigger, in the same place — so the reconciliation responsibility stays
-  //   consolidated rather than scattered.
-  useEffect(() => {
-    setSelectedSessionIds((prev) => {
-      const next = reconcileSelection(prev, assignedSessionIds);
-      // If the selection shrank (next ⊊ prev), this branch is the future starting
-      // point for dependent-input resets: compute removed = prev - next and
-      // reconcile derived state here once such inputs exist.
-      return next.length === prev.length ? prev : next;
-    });
-  }, [assignedSessionIds]);
 
   const validateForm = useCallback((): boolean => {
     if (!modelName.trim()) {
@@ -442,6 +429,8 @@ export function LanguageModelPage({
                     value={teamId}
                     onChange={(e) => {
                       setTeamId(e.target.value);
+                      // No team means no assigned sessions, so nothing can stay selected.
+                      if (!e.target.value) setSelectedSessionIds([]);
                       setValidationError(null);
                     }}
                     disabled={isCreating}

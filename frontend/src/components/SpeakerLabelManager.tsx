@@ -178,7 +178,7 @@ export function SpeakerLabelManager({
     } finally {
       setIsAdding(false);
     }
-  }, [onAddLabel, addLabelName, uniqueLabels]);
+  }, [onAddLabel, addLabelName, uniqueLabels, t]);
 
   const handleAddKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {

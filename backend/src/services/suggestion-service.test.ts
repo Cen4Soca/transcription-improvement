@@ -38,8 +38,8 @@ vi.mock('../repositories/session-repository.js', () => ({
 // assert the prompt carries the surrounding context.
 const bedrockSendMock = vi.fn();
 vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
-  BedrockRuntimeClient: vi.fn(() => ({ send: bedrockSendMock })),
-  InvokeModelCommand: vi.fn((input) => ({ input })),
+  BedrockRuntimeClient: vi.fn(function () { return { send: bedrockSendMock }; }),
+  InvokeModelCommand: vi.fn(function (input) { return { input }; }),
 }));
 
 describe('mergeSuggestions', () => {

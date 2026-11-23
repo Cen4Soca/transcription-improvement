@@ -5,9 +5,9 @@ const mockSend = vi.hoisted(() => vi.fn());
 const mockEventBridgeSend = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 
 vi.mock('@aws-sdk/lib-dynamodb', () => ({
-  PutCommand: vi.fn().mockImplementation((params) => params),
-  QueryCommand: vi.fn().mockImplementation((params) => params),
-  UpdateCommand: vi.fn().mockImplementation((params) => params),
+  PutCommand: vi.fn().mockImplementation(function (params) { return params; }),
+  QueryCommand: vi.fn().mockImplementation(function (params) { return params; }),
+  UpdateCommand: vi.fn().mockImplementation(function (params) { return params; }),
 }));
 
 vi.mock('@aws-sdk/client-eventbridge', () => {
@@ -15,7 +15,7 @@ vi.mock('@aws-sdk/client-eventbridge', () => {
     EventBridgeClient: class {
       send = mockEventBridgeSend;
     },
-    PutEventsCommand: vi.fn().mockImplementation((params) => params),
+    PutEventsCommand: vi.fn().mockImplementation(function (params) { return params; }),
   };
 });
 

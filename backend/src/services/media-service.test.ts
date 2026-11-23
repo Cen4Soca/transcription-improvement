@@ -30,8 +30,8 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
 }));
 
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn().mockImplementation(() => ({})),
-  GetObjectCommand: vi.fn().mockImplementation((input) => ({ input })),
+  S3Client: vi.fn().mockImplementation(function () { return {}; }),
+  GetObjectCommand: vi.fn().mockImplementation(function (input) { return { input }; }),
 }));
 
 import { getMediaUrl, getMediaFileForSession, generateSignedUrl } from './media-service.js';

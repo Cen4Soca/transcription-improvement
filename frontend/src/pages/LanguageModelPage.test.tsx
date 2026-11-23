@@ -555,6 +555,31 @@ describe('LanguageModelPage', () => {
       expect(results).toHaveNoViolations();
     });
 
+    // Resetting the team selector to the placeholder leaves no assigned sessions,
+    // so the previous selection and the candidate list must both be cleared.
+    it('clears the selection and candidates when the team is reset to the placeholder', async () => {
+      render(
+        <LanguageModelPage
+          languageModelApi={mockApi}
+          useLanguageModelsHook={mockHook}
+          sessions={mockSessions}
+          userRole="ADMIN"
+        />,
+      );
+
+      await screen.findByLabelText(/チーム/);
+      await user.selectOptions(screen.getByLabelText(/チーム/), 'team-1');
+      await user.click(await screen.findByRole('checkbox', { name: /会議セッション A/ }));
+      expect(screen.getByText(t('form.selectedCount', { count: 1 }))).toBeInTheDocument();
+
+      await user.selectOptions(screen.getByLabelText(/チーム/), '');
+
+      await waitFor(() => {
+        expect(screen.queryByText(/件選択中/)).not.toBeInTheDocument();
+      });
+      expect(screen.queryByRole('checkbox', { name: /会議セッション A/ })).not.toBeInTheDocument();
+    });
+
     // Error handling (design "Error Handling"): a failed TeamAssignment fetch
     // falls back to an empty candidate set and the UI does not crash. The
     // backend remains the authoritative validator.

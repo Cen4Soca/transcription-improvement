@@ -43,8 +43,8 @@ vi.mock('../services/audit-service.js', () => ({
 
 const mockEventBridgeSend = vi.hoisted(() => vi.fn());
 vi.mock('@aws-sdk/client-eventbridge', () => ({
-  EventBridgeClient: vi.fn(() => ({ send: mockEventBridgeSend })),
-  PutEventsCommand: vi.fn((input) => ({ input })),
+  EventBridgeClient: vi.fn(function () { return { send: mockEventBridgeSend }; }),
+  PutEventsCommand: vi.fn(function (input) { return { input }; }),
 }));
 
 import { checkSessionAccess } from '../services/access-control-service.js';

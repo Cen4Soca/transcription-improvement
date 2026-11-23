@@ -31,6 +31,7 @@
   "USER_DEACTIVATION_FAILED": "Failed to deactivate the user.",
   "USER_ACTIVATION_FAILED": "Failed to activate the user.",
   "ROLE_UPDATE_FAILED": "Failed to change the role.",
+  "ROLE_CHANGE_SESSION_INVALIDATION_FAILED": "Failed to sign out the user's existing sessions after the role change. Please retry the same operation.",
   "USER_UPDATE_FAILED": "Failed to update the user information.",
   "SESSION_NOT_FOUND": "Session not found.",
   "SESSION_NOT_EDITABLE": "This session is already completed and cannot be edited.",

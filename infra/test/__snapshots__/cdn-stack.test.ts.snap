@@ -53,7 +53,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
         ],
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
-          "S3Key": "a12efc822af4855efaddc35cac5d42dfa7a132ded579c17dbca95a4a89d0db43.zip",
+          "S3Key": "<asset-hash>.zip",
         },
         "Environment": {
           "Variables": {
@@ -190,7 +190,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
       "Properties": {
         "Content": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
-          "S3Key": "fa8e14e761e0a29058a42409f160eea065c3dd13909951db47e4a0f1c44f01aa.zip",
+          "S3Key": "<asset-hash>.zip",
         },
         "Description": "/opt/awscli/aws",
       },
@@ -217,7 +217,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for import distribution mode
           "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
         ],
         "SourceObjectKeys": [
-          "0161da987951aa5000d47b39beb96cdbf9b23358dcb86fe6b8dec4db81568560.zip",
+          "<asset-hash>.zip",
         ],
         "WaitForDistributionInvalidation": true,
       },
@@ -795,7 +795,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
         ],
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
-          "S3Key": "a12efc822af4855efaddc35cac5d42dfa7a132ded579c17dbca95a4a89d0db43.zip",
+          "S3Key": "<asset-hash>.zip",
         },
         "Environment": {
           "Variables": {
@@ -932,7 +932,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
       "Properties": {
         "Content": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
-          "S3Key": "fa8e14e761e0a29058a42409f160eea065c3dd13909951db47e4a0f1c44f01aa.zip",
+          "S3Key": "<asset-hash>.zip",
         },
         "Description": "/opt/awscli/aws",
       },
@@ -960,7 +960,7 @@ exports[`CdnStack - Snapshot > matches the snapshot for new distribution mode 1`
           "cdk-hnb659fds-assets-123456789012-ap-northeast-1",
         ],
         "SourceObjectKeys": [
-          "0161da987951aa5000d47b39beb96cdbf9b23358dcb86fe6b8dec4db81568560.zip",
+          "<asset-hash>.zip",
         ],
         "WaitForDistributionInvalidation": true,
       },

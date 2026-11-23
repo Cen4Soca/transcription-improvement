@@ -11,8 +11,8 @@ vi.mock('../utils/dynamodb-client.js', () => ({
 }));
 
 vi.mock('@aws-sdk/client-eventbridge', () => ({
-  EventBridgeClient: vi.fn(() => ({ send: (...args: unknown[]) => mockEventBridgeSend(...args) })),
-  PutEventsCommand: vi.fn((input) => ({ ...input, _type: 'PutEvents' })),
+  EventBridgeClient: vi.fn(function () { return { send: (...args: unknown[]) => mockEventBridgeSend(...args) }; }),
+  PutEventsCommand: vi.fn(function (input) { return { ...input, _type: 'PutEvents' }; }),
 }));
 
 describe('process-upload handler', () => {

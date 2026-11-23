@@ -8,6 +8,30 @@ import { WafRateLimit } from '../lib/constructs/waf-rate-limit';
  * **Validates: Requirements 22.2, 22.3**
  */
 
+/**
+ * Replace asset content hashes ("<64 hex chars>.zip") with a stable placeholder.
+ *
+ * The template embeds the hash of every CDK asset, e.g. the BucketDeployment
+ * `SourceObjectKeys` entry, which is the hash of `../frontend/dist` (gitignored build
+ * output), plus the hashes of CDK-managed handler/layer assets that change with the
+ * aws-cdk-lib version. Snapshotting them makes the test depend on the machine's last
+ * frontend build and on the CDK version, not on the stack definition.
+ */
+function maskAssetHashes(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return value.replace(/\b[0-9a-f]{64}\.zip\b/g, '<asset-hash>.zip');
+  }
+  if (Array.isArray(value)) {
+    return value.map(maskAssetHashes);
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, maskAssetHashes(v)]),
+    );
+  }
+  return value;
+}
+
 describe('CdnStack - Snapshot', () => {
   it('matches the snapshot for new distribution mode', () => {
     const app = new cdk.App();
@@ -21,7 +45,7 @@ describe('CdnStack - Snapshot', () => {
       wafRegionalIpRateLimitPerFiveMinutes: 2000,
     });
     const template = Template.fromStack(stack);
-    expect(template.toJSON()).toMatchSnapshot();
+    expect(maskAssetHashes(template.toJSON())).toMatchSnapshot();
   });
 
   it('matches the snapshot for import distribution mode with basePath', () => {
@@ -37,7 +61,7 @@ describe('CdnStack - Snapshot', () => {
       basePath: 'review-app',
     });
     const template = Template.fromStack(stack);
-    expect(template.toJSON()).toMatchSnapshot();
+    expect(maskAssetHashes(template.toJSON())).toMatchSnapshot();
   });
 });
 
