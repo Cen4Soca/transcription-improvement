@@ -5216,6 +5216,160 @@ exports.handler = async (event, context) => {
       },
       "Type": "AWS::IAM::Policy",
     },
+    "GetSessionMonitoringLambdaFunction4DA383D5": {
+      "DependsOn": [
+        "GetSessionMonitoringLambdaRoleDefaultPolicyB36D2A56",
+        "GetSessionMonitoringLambdaRoleCB0D1E96",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({statusCode:200})",
+        },
+        "Description": "GET /sessions/monitoring - Assignment/status overview for ADMIN and TEAM_LEADER",
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefUserPool6BA7E5F296FD7236",
+            },
+            "DATA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefDataBucketE3889A50250F5285",
+            },
+            "DYNAMODB_TABLE_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefTranscriptionReviewApp385243817DCB972D",
+            },
+            "EVENT_BUS_NAME": {
+              "Ref": "AppEventBusAEEA9E1B",
+            },
+            "MEDIA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefMediaBucketBCBB02BA270A7AEB",
+            },
+            "STALLED_THRESHOLD_DAYS": "7",
+          },
+        },
+        "FunctionName": "transcription-review-get-session-monitoring",
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "GetSessionMonitoringLambdaRoleCB0D1E96",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs26.x",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "GetSessionMonitoringLambdaLogGroup8CF231A4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/transcription-review-get-session-monitoring",
+        "RetentionInDays": 30,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "GetSessionMonitoringLambdaRoleCB0D1E96": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for transcription-review-get-session-monitoring",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "RoleName": "transcription-review-get-session-monitoring-role",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GetSessionMonitoringLambdaRoleDefaultPolicyB36D2A56": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttAppKey51DFC408Arn13873993",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "GetSessionMonitoringLambdaRoleDefaultPolicyB36D2A56",
+        "Roles": [
+          {
+            "Ref": "GetSessionMonitoringLambdaRoleCB0D1E96",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
     "GetSessionNameSuggestionLambdaFunction2B661B10": {
       "DependsOn": [
         "GetSessionNameSuggestionLambdaRoleDefaultPolicy26278A46",
@@ -5393,6 +5547,160 @@ exports.handler = async (event, context) => {
         "RoleName": "transcription-review-get-session-name-suggestion-role",
       },
       "Type": "AWS::IAM::Role",
+    },
+    "GetSessionProgressLambdaFunction3B6A8147": {
+      "DependsOn": [
+        "GetSessionProgressLambdaRoleDefaultPolicyE9D660F1",
+        "GetSessionProgressLambdaRoleD35ADAC2",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({statusCode:200})",
+        },
+        "Description": "GET /sessions/{sessionId}/progress - Per-reviewer progress",
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefUserPool6BA7E5F296FD7236",
+            },
+            "DATA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefDataBucketE3889A50250F5285",
+            },
+            "DYNAMODB_TABLE_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefTranscriptionReviewApp385243817DCB972D",
+            },
+            "EVENT_BUS_NAME": {
+              "Ref": "AppEventBusAEEA9E1B",
+            },
+            "MEDIA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefMediaBucketBCBB02BA270A7AEB",
+            },
+            "STALLED_THRESHOLD_DAYS": "7",
+          },
+        },
+        "FunctionName": "transcription-review-get-session-progress",
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "GetSessionProgressLambdaRoleD35ADAC2",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs26.x",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "GetSessionProgressLambdaLogGroup3A38A83F": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/transcription-review-get-session-progress",
+        "RetentionInDays": 30,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "GetSessionProgressLambdaRoleD35ADAC2": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for transcription-review-get-session-progress",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "RoleName": "transcription-review-get-session-progress-role",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GetSessionProgressLambdaRoleDefaultPolicyE9D660F1": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttAppKey51DFC408Arn13873993",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "GetSessionProgressLambdaRoleDefaultPolicyE9D660F1",
+        "Roles": [
+          {
+            "Ref": "GetSessionProgressLambdaRoleD35ADAC2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
     "GetSessionsLambdaFunctionBD6EEFA2": {
       "DependsOn": [
@@ -6026,6 +6334,314 @@ exports.handler = async (event, context) => {
         "Roles": [
           {
             "Ref": "GetTeamMembersLambdaRole944C3D50",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "GetUserSessionsLambdaFunction92AA9A2C": {
+      "DependsOn": [
+        "GetUserSessionsLambdaRoleDefaultPolicyFE1A1DAC",
+        "GetUserSessionsLambdaRole76D9A914",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({statusCode:200})",
+        },
+        "Description": "GET /monitoring/users/{userId}/sessions - A user's sessions with progress",
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefUserPool6BA7E5F296FD7236",
+            },
+            "DATA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefDataBucketE3889A50250F5285",
+            },
+            "DYNAMODB_TABLE_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefTranscriptionReviewApp385243817DCB972D",
+            },
+            "EVENT_BUS_NAME": {
+              "Ref": "AppEventBusAEEA9E1B",
+            },
+            "MEDIA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefMediaBucketBCBB02BA270A7AEB",
+            },
+            "STALLED_THRESHOLD_DAYS": "7",
+          },
+        },
+        "FunctionName": "transcription-review-get-user-sessions",
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "GetUserSessionsLambdaRole76D9A914",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs26.x",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "GetUserSessionsLambdaLogGroup4576CA7C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/transcription-review-get-user-sessions",
+        "RetentionInDays": 30,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "GetUserSessionsLambdaRole76D9A914": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for transcription-review-get-user-sessions",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "RoleName": "transcription-review-get-user-sessions-role",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GetUserSessionsLambdaRoleDefaultPolicyFE1A1DAC": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttAppKey51DFC408Arn13873993",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "GetUserSessionsLambdaRoleDefaultPolicyFE1A1DAC",
+        "Roles": [
+          {
+            "Ref": "GetUserSessionsLambdaRole76D9A914",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "GetUserWorkloadLambdaFunction0E750BC6": {
+      "DependsOn": [
+        "GetUserWorkloadLambdaRoleDefaultPolicy487A5BEE",
+        "GetUserWorkloadLambdaRole0D24BCA2",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({statusCode:200})",
+        },
+        "Description": "GET /monitoring/users - Per-user assigned/in-progress/stalled counts",
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefUserPool6BA7E5F296FD7236",
+            },
+            "DATA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefDataBucketE3889A50250F5285",
+            },
+            "DYNAMODB_TABLE_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefTranscriptionReviewApp385243817DCB972D",
+            },
+            "EVENT_BUS_NAME": {
+              "Ref": "AppEventBusAEEA9E1B",
+            },
+            "MEDIA_BUCKET_NAME": {
+              "Fn::ImportValue": "TestFoundationStack:ExportsOutputRefMediaBucketBCBB02BA270A7AEB",
+            },
+            "STALLED_THRESHOLD_DAYS": "7",
+          },
+        },
+        "FunctionName": "transcription-review-get-user-workload",
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "GetUserWorkloadLambdaRole0D24BCA2",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs26.x",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "GetUserWorkloadLambdaLogGroup2CB18E9C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/transcription-review-get-user-workload",
+        "RetentionInDays": 30,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "GetUserWorkloadLambdaRole0D24BCA2": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for transcription-review-get-user-workload",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "RoleName": "transcription-review-get-user-workload-role",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GetUserWorkloadLambdaRoleDefaultPolicy487A5BEE": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttTranscriptionReviewApp38524381ArnA9694EA5",
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestFoundationStack:ExportsOutputFnGetAttAppKey51DFC408Arn13873993",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "GetUserWorkloadLambdaRoleDefaultPolicy487A5BEE",
+        "Roles": [
+          {
+            "Ref": "GetUserWorkloadLambdaRole0D24BCA2",
           },
         ],
       },
@@ -7615,6 +8231,144 @@ exports.handler = async (event, context) => {
       },
       "Type": "AWS::Lambda::Permission",
     },
+    "HttpApiGETmonitoringusersB1A79FF5": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "HttpApiCognitoAuthorizer935FA0F6",
+        },
+        "RouteKey": "GET /monitoring/users",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "HttpApiGETmonitoringusersGETmonitoringusersIntegration30790D18",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "HttpApiGETmonitoringusersGETmonitoringusersIntegration30790D18": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "GetUserWorkloadLambdaFunction0E750BC6",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "HttpApiGETmonitoringusersGETmonitoringusersIntegrationPermission9EC82D6C": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GetUserWorkloadLambdaFunction0E750BC6",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:ap-northeast-1:123456789012:",
+              {
+                "Ref": "HttpApiF5A9A8A7",
+              },
+              "/*/*/monitoring/users",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "HttpApiGETmonitoringusersuserIdsessionsAFE01BBF": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "HttpApiCognitoAuthorizer935FA0F6",
+        },
+        "RouteKey": "GET /monitoring/users/{userId}/sessions",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "HttpApiGETmonitoringusersuserIdsessionsGETmonitoringusersuserIdsessionsIntegration344C0209",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "HttpApiGETmonitoringusersuserIdsessionsGETmonitoringusersuserIdsessionsIntegration344C0209": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "GetUserSessionsLambdaFunction92AA9A2C",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "HttpApiGETmonitoringusersuserIdsessionsGETmonitoringusersuserIdsessionsIntegrationPermission5DDA0200": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GetUserSessionsLambdaFunction92AA9A2C",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:ap-northeast-1:123456789012:",
+              {
+                "Ref": "HttpApiF5A9A8A7",
+              },
+              "/*/*/monitoring/users/{userId}/sessions",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
     "HttpApiGETranking82CB61E8": {
       "Properties": {
         "ApiId": {
@@ -7885,6 +8639,75 @@ exports.handler = async (event, context) => {
                 "Ref": "HttpApiF5A9A8A7",
               },
               "/*/*/sessions/joinable",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "HttpApiGETsessionsmonitoringEDF4D0A0": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "HttpApiCognitoAuthorizer935FA0F6",
+        },
+        "RouteKey": "GET /sessions/monitoring",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "HttpApiGETsessionsmonitoringGETsessionsmonitoringIntegrationD756AD74",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "HttpApiGETsessionsmonitoringGETsessionsmonitoringIntegrationD756AD74": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "GetSessionMonitoringLambdaFunction4DA383D5",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "HttpApiGETsessionsmonitoringGETsessionsmonitoringIntegrationPermissionFB4FFA19": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GetSessionMonitoringLambdaFunction4DA383D5",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:ap-northeast-1:123456789012:",
+              {
+                "Ref": "HttpApiF5A9A8A7",
+              },
+              "/*/*/sessions/monitoring",
             ],
           ],
         },
@@ -8230,6 +9053,75 @@ exports.handler = async (event, context) => {
                 "Ref": "HttpApiF5A9A8A7",
               },
               "/*/*/sessions/{sessionId}/name-suggestion",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "HttpApiGETsessionssessionIdprogressFA8B1A04": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "HttpApiCognitoAuthorizer935FA0F6",
+        },
+        "RouteKey": "GET /sessions/{sessionId}/progress",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "HttpApiGETsessionssessionIdprogressGETsessionssessionIdprogressIntegrationA78BF68E",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "HttpApiGETsessionssessionIdprogressGETsessionssessionIdprogressIntegrationA78BF68E": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApiF5A9A8A7",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "GetSessionProgressLambdaFunction3B6A8147",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "HttpApiGETsessionssessionIdprogressGETsessionssessionIdprogressIntegrationPermission3B50F2EB": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GetSessionProgressLambdaFunction3B6A8147",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:ap-northeast-1:123456789012:",
+              {
+                "Ref": "HttpApiF5A9A8A7",
+              },
+              "/*/*/sessions/{sessionId}/progress",
             ],
           ],
         },

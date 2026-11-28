@@ -42,6 +42,7 @@
     "alarm4xxRatePercent": 10,
     "alarm5xxRatePercent": 1,
     "cloudFrontGeoAllowlist": ["JP"],
-    "minReviewersForAutoConsensus": 3
+    "minReviewersForAutoConsensus": 3,
+    "stalledThresholdDays": 7
   }
 }

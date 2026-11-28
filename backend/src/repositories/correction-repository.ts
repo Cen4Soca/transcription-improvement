@@ -140,6 +140,32 @@ export async function hasExistingCorrections(
 }
 
 /**
+ * Get the createdAt of a user's most recent correction in a session, or null
+ * when the user has made none. Single-item descending query (SK embeds
+ * createdAt, so newest sorts last), i.e. ~1 read unit.
+ */
+export async function getLastCorrectionAt(
+  sessionId: string,
+  userId: string
+): Promise<string | null> {
+  const result = await docClient.send(
+    new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+      ExpressionAttributeValues: {
+        ':pk': `SESSION#${sessionId}#USER#${userId}`,
+        ':prefix': 'CORRECTION#',
+      },
+      ScanIndexForward: false,
+      Limit: 1,
+    })
+  );
+
+  const item = result.Items?.[0];
+  return item ? (item['createdAt'] as string) : null;
+}
+
+/**
  * Get all corrections for a user in a session.
  * Queries by PK=SESSION#{sessionId}#USER#{userId} and SK begins_with CORRECTION#.
  * Results are sorted by SK ascending (chronological order since SK includes createdAt).

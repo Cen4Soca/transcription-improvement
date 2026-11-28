@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User, UserRole } from '../types/user';
 import type { AppError } from '../types/api';
+import type { Result } from '../types/api';
+import type { UserWorkloadItem, UserSessionItem } from '../types/monitoring';
 import { translateError } from '../utils/translateError';
+import { UserSessionsPanel } from './UserSessionsPanel';
 
 export interface UserManagementProps {
   users: User[];
@@ -20,6 +23,15 @@ export interface UserManagementProps {
   ) => Promise<AppError | null>;
   /** 現在ログイン中のユーザー ID（自己ロール降格ガード用）。 */
   currentUserId?: string;
+  /**
+   * ユーザー別の担当数 / 進行中数 / 滞留数（userId -> 集計）。
+   * 指定時のみ「担当数・進行中・滞留」列と担当セッションの行展開を表示する。
+   */
+  workload?: Record<string, UserWorkloadItem>;
+  /** 行展開時にユーザーの担当セッションと進捗を取得する（workload と併せて指定）。 */
+  loadUserSessions?: (
+    userId: string
+  ) => Promise<Result<{ data: { items: UserSessionItem[] } }, AppError>>;
 }
 
 const ROLE_BADGE_COLORS: Record<UserRole, string> = {
@@ -41,6 +53,8 @@ export function UserManagement({
   onEnableUser,
   onEditUser,
   currentUserId,
+  workload,
+  loadUserSessions,
 }: UserManagementProps) {
   const { t } = useTranslation('admin');
   const roleLabel = (role: UserRole) => t(`user.role.${role}`);
@@ -54,6 +68,9 @@ export function UserManagement({
     role: 'REVIEWER' as UserRole,
   });
   const [editError, setEditError] = useState<string | null>(null);
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const showWorkload = workload !== undefined;
+  const columnCount = showWorkload ? 8 : 5;
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -242,6 +259,19 @@ export function UserManagement({
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   {t('user.column.status')}
                 </th>
+                {showWorkload && (
+                  <>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                      {t('monitoring:user.column.assigned')}
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                      {t('monitoring:user.column.inProgress')}
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                      {t('monitoring:user.column.stalled')}
+                    </th>
+                  </>
+                )}
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                   {t('user.column.actions')}
                 </th>
@@ -250,9 +280,11 @@ export function UserManagement({
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user) => {
                 const isSelfAdmin = currentUserId === user.userId && user.role === 'ADMIN';
+                const userWorkload = workload?.[user.userId];
+                const expanded = expandedUserId === user.userId;
                 return editUserId === user.userId ? (
                   <tr key={user.userId} className="bg-blue-50">
-                    <td className="px-4 py-3" colSpan={5}>
+                    <td className="px-4 py-3" colSpan={columnCount}>
                       <form
                         onSubmit={(e) => handleEditSubmit(e, user)}
                         className="space-y-3"
@@ -343,7 +375,8 @@ export function UserManagement({
                     </td>
                   </tr>
                 ) : (
-                  <tr key={user.userId}>
+                  <Fragment key={user.userId}>
+                  <tr>
                     <td className="px-4 py-3 text-sm text-gray-900">{user.displayName}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{user.email}</td>
                     <td className="px-4 py-3">
@@ -364,8 +397,45 @@ export function UserManagement({
                         {user.isActive ? t('user.status.active') : t('user.status.inactive')}
                       </span>
                     </td>
+                    {showWorkload && (
+                      <>
+                        <td className="px-4 py-3 text-right text-sm text-gray-900">
+                          {userWorkload?.assignedCount ?? 0}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-900">
+                          {userWorkload?.inProgressCount ?? 0}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm">
+                          <span
+                            className={
+                              (userWorkload?.stalledCount ?? 0) > 0
+                                ? 'font-semibold text-amber-700'
+                                : 'text-gray-900'
+                            }
+                          >
+                            {userWorkload?.stalledCount ?? 0}
+                          </span>
+                        </td>
+                      </>
+                    )}
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {showWorkload && loadUserSessions && (
+                          <button
+                            type="button"
+                            aria-expanded={expanded}
+                            aria-label={t(
+                              expanded
+                                ? 'monitoring:user.collapseAriaLabel'
+                                : 'monitoring:user.expandAriaLabel',
+                              { name: user.displayName }
+                            )}
+                            onClick={() => setExpandedUserId(expanded ? null : user.userId)}
+                            className="text-sm text-blue-700 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                          >
+                            {t(expanded ? 'monitoring:user.collapse' : 'monitoring:user.expand')}
+                          </button>
+                        )}
                         {onEditUser && (
                           <button
                             type="button"
@@ -398,6 +468,14 @@ export function UserManagement({
                       </div>
                     </td>
                   </tr>
+                  {expanded && loadUserSessions && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={columnCount} className="px-4 py-3">
+                        <UserSessionsPanel userId={user.userId} loadUserSessions={loadUserSessions} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>

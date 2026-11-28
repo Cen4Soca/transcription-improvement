@@ -22,6 +22,8 @@ import jaProfile from './locales/ja/profile.json';
 import enProfile from './locales/en/profile.json';
 import jaTranscriptionJob from './locales/ja/transcriptionJob.json';
 import enTranscriptionJob from './locales/en/transcriptionJob.json';
+import jaMonitoring from './locales/ja/monitoring.json';
+import enMonitoring from './locales/en/monitoring.json';
 import jaErrors from './locales/ja/errors.json';
 import enErrors from './locales/en/errors.json';
 import {
@@ -57,6 +59,7 @@ export const resources = {
     languageModel: jaLanguageModel,
     profile: jaProfile,
     transcriptionJob: jaTranscriptionJob,
+    monitoring: jaMonitoring,
     errors: jaErrors,
   },
   en: {
@@ -70,6 +73,7 @@ export const resources = {
     languageModel: enLanguageModel,
     profile: enProfile,
     transcriptionJob: enTranscriptionJob,
+    monitoring: enMonitoring,
     errors: enErrors,
   },
 } as const;
@@ -86,6 +90,7 @@ export const NAMESPACES = [
   'languageModel',
   'profile',
   'transcriptionJob',
+  'monitoring',
   'errors',
 ] as const;
 

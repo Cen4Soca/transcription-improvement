@@ -9,7 +9,8 @@ import type { User, UserRole } from '../types/user';
 import type { Team, TeamAssignment } from '../types/team';
 import type { ReviewSession } from '../types/session';
 import type { IPAllowlistEntry, AuditLog } from '../types/audit';
-import type { AppError } from '../types/api';
+import type { AppError, Result } from '../types/api';
+import type { UserWorkloadItem, UserSessionItem } from '../types/monitoring';
 
 export interface AdminPageProps {
   users: User[];
@@ -42,6 +43,12 @@ export interface AdminPageProps {
   onAuditLogFilterChange?: (filters: AuditLogFilters) => void;
   onAuditLogPageChange?: (page: number) => void;
   onDeleteAuditLogs?: (filters: AuditLogFilters) => void;
+  /** ユーザー別の担当数 / 進行中数 / 滞留数（userId -> 集計）。ユーザー管理タブに列を追加する。 */
+  userWorkload?: Record<string, UserWorkloadItem>;
+  /** ユーザーの担当セッションと進捗を取得する（ユーザー管理タブの行展開用）。 */
+  onLoadUserSessions?: (
+    userId: string
+  ) => Promise<Result<{ data: { items: UserSessionItem[] } }, AppError>>;
 }
 
 type AdminTab = 'users' | 'teams' | 'ip-allowlist' | 'audit-logs';
@@ -86,6 +93,8 @@ export function AdminPage({
   onAuditLogFilterChange,
   onAuditLogPageChange,
   onDeleteAuditLogs,
+  userWorkload,
+  onLoadUserSessions,
 }: AdminPageProps) {
   const { t } = useTranslation('admin');
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
@@ -149,6 +158,8 @@ export function AdminPage({
               onEnableUser={onEnableUser}
               onEditUser={onEditUser}
               currentUserId={currentUserId}
+              workload={userWorkload}
+              loadUserSessions={onLoadUserSessions}
             />
           )}
           {activeTab === 'teams' && (

@@ -836,3 +836,81 @@ describe('BedrockComprehend construct', () => {
     });
   });
 });
+
+describe('ApiStack - session monitoring', () => {
+  function buildApiStack(extraContext: Record<string, unknown> = {}): Template {
+    const app = new cdk.App({
+      context: {
+        kmsKeyAdminArns: ['arn:aws:iam::123456789012:root'],
+        bedrockModelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+        ...extraContext,
+      },
+    });
+    const foundationStack = new FoundationStack(app, 'TestFoundationStack', {
+      env: { account: '123456789012', region: 'ap-northeast-1' },
+    });
+    const apiStack = new ApiStack(app, 'TestApiStack', {
+      env: { account: '123456789012', region: 'ap-northeast-1' },
+      table: foundationStack.table,
+      mediaBucket: foundationStack.mediaBucket,
+      dataBucket: foundationStack.dataBucket,
+      kmsKey: foundationStack.kmsKey,
+      userPool: foundationStack.userPool,
+      userPoolClient: foundationStack.userPoolClient,
+    });
+    return Template.fromStack(apiStack);
+  }
+
+  const MONITORING_FUNCTIONS = [
+    'transcription-review-get-session-monitoring',
+    'transcription-review-get-session-progress',
+    'transcription-review-get-user-workload',
+    'transcription-review-get-user-sessions',
+  ];
+
+  it('registers the monitoring routes', () => {
+    const template = buildApiStack();
+    for (const routeKey of [
+      'GET /sessions/monitoring',
+      'GET /sessions/{sessionId}/progress',
+      'GET /monitoring/users',
+      'GET /monitoring/users/{userId}/sessions',
+    ]) {
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', { RouteKey: routeKey });
+    }
+  });
+
+  it('passes the default threshold (7) to every monitoring Lambda', () => {
+    const template = buildApiStack();
+    for (const functionName of MONITORING_FUNCTIONS) {
+      template.hasResourceProperties('AWS::Lambda::Function', {
+        FunctionName: functionName,
+        Environment: { Variables: Match.objectLike({ STALLED_THRESHOLD_DAYS: '7' }) },
+      });
+    }
+  });
+
+  it('uses the stalledThresholdDays context value', () => {
+    const template = buildApiStack({ stalledThresholdDays: 14 });
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      FunctionName: 'transcription-review-get-session-monitoring',
+      Environment: { Variables: Match.objectLike({ STALLED_THRESHOLD_DAYS: '14' }) },
+    });
+  });
+
+  it('does not pass the threshold to unrelated Lambdas', () => {
+    const template = buildApiStack();
+    const functions = template.findResources('AWS::Lambda::Function', {
+      Properties: { FunctionName: 'transcription-review-get-sessions' },
+    });
+    const [fn] = Object.values(functions) as Array<{
+      Properties: { Environment?: { Variables?: Record<string, string> } };
+    }>;
+    expect(fn).toBeDefined();
+    expect(fn?.Properties.Environment?.Variables).not.toHaveProperty('STALLED_THRESHOLD_DAYS');
+  });
+
+  it.each([0, 91, 1.5, 'abc'])('fails synth for invalid stalledThresholdDays %p', (value) => {
+    expect(() => buildApiStack({ stalledThresholdDays: value })).toThrow(/stalledThresholdDays/);
+  });
+});

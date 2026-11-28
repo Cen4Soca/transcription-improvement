@@ -9,6 +9,7 @@ import type { FilterStatus, PaginationInfo } from './pages/SessionListPage';
 import { SessionAssignmentControls } from './components/SessionAssignmentControls';
 import { SessionAggregateControls } from './components/SessionAggregateControls';
 import { SessionReopenControls } from './components/SessionReopenControls';
+import { SessionMonitoringPanel } from './components/SessionMonitoringPanel';
 import { ReviewPage } from './pages/ReviewPage';
 import { AdminPage } from './pages/AdminPage';
 import { RankingPage } from './pages/RankingPage';
@@ -20,6 +21,7 @@ import { LanguageModelPage } from './pages/LanguageModelPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { useAuth } from './hooks/useAuth';
 import { useAdmin } from './hooks/useAdmin';
+import { useUserWorkload } from './hooks/useUserWorkload';
 import { useLanguageModels } from './hooks/useLanguageModels';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
@@ -28,6 +30,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiClient } from './services/api-client';
 import { AdminApi } from './services/admin-api';
 import { SessionApi } from './services/session-api';
+import { MonitoringApi } from './services/monitoring-api';
 import { RankingApi } from './services/ranking-api';
 import { ConsensusApi } from './services/consensus-api';
 import { TranscriptionApi } from './services/transcription-api';
@@ -100,10 +103,19 @@ export function SessionListPageWrapper({
   const [pagination, setPagination] = useState<PaginationInfo | undefined>();
 
   const canManage = userRole === 'ADMIN' || userRole === 'TEAM_LEADER';
+  const { t: tMonitoring } = useTranslation('monitoring');
+  // ADMIN / TEAM_LEADER の 'all' スコープのみ、一覧と「割当・進捗」を切り替えられる。
+  const showMonitoringSwitch = canManage && scope === 'all';
+  const [view, setView] = useState<'list' | 'monitoring'>('list');
 
   const sessionApi = useMemo(() => {
     const client = new ApiClient({ baseUrl: getApiBaseUrl(), getToken });
     return new SessionApi(client);
+  }, [getToken]);
+
+  const monitoringApi = useMemo(() => {
+    const client = new ApiClient({ baseUrl: getApiBaseUrl(), getToken });
+    return new MonitoringApi(client);
   }, [getToken]);
 
   const adminApi = useMemo(() => {
@@ -308,7 +320,7 @@ export function SessionListPageWrapper({
   // これらを undefined のままにして非制御フォールバック（ローカルフィルター／ページ UI 非表示）にする。
   const isAllScope = scope === 'all';
 
-  return (
+  const listPage = (
     <SessionListPage
       title={title}
       sessions={sessions}
@@ -322,6 +334,50 @@ export function SessionListPageWrapper({
       pagination={isAllScope ? pagination : undefined}
       onPageChange={isAllScope ? handlePageChange : undefined}
     />
+  );
+
+  if (!showMonitoringSwitch) {
+    return listPage;
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div
+        role="group"
+        aria-label={tMonitoring('view.ariaLabel')}
+        className="flex gap-2 border-b border-gray-200 bg-white px-4 py-2"
+      >
+        {(['list', 'monitoring'] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={view === value}
+            onClick={() => setView(value)}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              view === value
+                ? 'bg-gray-800 text-white'
+                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            {tMonitoring(`view.${value}`)}
+          </button>
+        ))}
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        {view === 'monitoring' ? (
+          <div className="p-4">
+            <SessionMonitoringPanel
+              api={monitoringApi}
+              teams={teams}
+              loadTeamMembers={loadTeamMembers}
+              onOpenSession={handleSessionSelect}
+            />
+          </div>
+        ) : (
+          listPage
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -754,6 +810,15 @@ function AdminPageWrapper({ user, getToken }: { user: AuthUser | null; getToken:
 
   const admin = useAdmin(adminApi, sessionApi);
 
+  const monitoringApi = useMemo(() => {
+    const client = new ApiClient({ baseUrl: getApiBaseUrl(), getToken });
+    return new MonitoringApi(client);
+  }, [getToken]);
+  const { workload, loadUserSessions } = useUserWorkload(
+    monitoringApi,
+    user?.role === 'ADMIN'
+  );
+
   // Route guard: only ADMIN can access
   if (user && user.role !== 'ADMIN') {
     return <Navigate to="/" replace />;
@@ -788,6 +853,8 @@ function AdminPageWrapper({ user, getToken }: { user: AuthUser | null; getToken:
       onAuditLogFilterChange={admin.onAuditLogFilterChange}
       onAuditLogPageChange={admin.onAuditLogPageChange}
       onDeleteAuditLogs={admin.deleteAuditLogs}
+      userWorkload={workload}
+      onLoadUserSessions={loadUserSessions}
     />
   );
 }

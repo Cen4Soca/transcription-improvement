@@ -1,0 +1,115 @@
+{
+  "view": {
+    "ariaLabel": "Switch view",
+    "list": "Session list",
+    "monitoring": "Assignment & progress"
+  },
+  "subview": {
+    "ariaLabel": "Assignment and progress grouping",
+    "bySession": "By session",
+    "byUser": "By user"
+  },
+  "status": {
+    "PENDING": "Pending",
+    "IN_PROGRESS": "In progress",
+    "COMPLETED": "Completed"
+  },
+  "session": {
+    "heading": "Session assignment & progress",
+    "tableAriaLabel": "Session assignment and progress list",
+    "loading": "Loading...",
+    "loadingAriaLabel": "Loading assignment and progress",
+    "empty": "No sessions match the filters.",
+    "filter": {
+      "ariaLabel": "Filter sessions",
+      "status": "Status",
+      "statusAll": "All",
+      "team": "Team",
+      "teamAll": "All",
+      "reviewer": "Reviewer",
+      "reviewerAll": "All",
+      "unassignedOnly": "Unassigned only",
+      "stalledOnly": "Stalled only"
+    },
+    "column": {
+      "name": "Session name",
+      "status": "Status",
+      "team": "Assigned team",
+      "assignee": "Assigned user",
+      "participants": "Participants",
+      "flags": "Alerts",
+      "lastActivity": "Last activity",
+      "actions": "Actions"
+    },
+    "noTeam": "—",
+    "noAssignee": "—",
+    "badge": {
+      "unassigned": "Unassigned",
+      "stalled": "Stalled"
+    },
+    "expandAriaLabel": "Show per-reviewer progress for {{name}}",
+    "collapseAriaLabel": "Hide per-reviewer progress for {{name}}",
+    "expand": "Progress",
+    "collapse": "Close",
+    "openReview": "Review",
+    "openReviewAriaLabel": "Open the review screen for {{name}}",
+    "notComputed": "—",
+    "pagination": {
+      "ariaLabel": "Pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "pageInfo": "{{current}} / {{total}}"
+    }
+  },
+  "progress": {
+    "heading": "Progress by reviewer",
+    "loading": "Loading progress...",
+    "loadingAriaLabel": "Loading progress",
+    "empty": "No reviewers have joined this session.",
+    "noSegments": "This session has no segments.",
+    "summary": "{{total}} segments in total",
+    "column": {
+      "reviewer": "Reviewer",
+      "progress": "Progress",
+      "segments": "Reviewed / total",
+      "lastActivity": "Last activity"
+    },
+    "barAriaLabel": "{{name}} progress: {{corrected}} of {{total}} segments",
+    "neverActive": "No activity",
+    "tableAriaLabel": "Progress by reviewer"
+  },
+  "user": {
+    "heading": "Workload by user",
+    "tableAriaLabel": "User workload list",
+    "loading": "Loading...",
+    "loadingAriaLabel": "Loading workload",
+    "empty": "There are no users to show.",
+    "column": {
+      "name": "User",
+      "role": "Role",
+      "assigned": "Assigned",
+      "inProgress": "In progress",
+      "stalled": "Stalled",
+      "actions": "Actions"
+    },
+    "expandAriaLabel": "Show sessions for {{name}}",
+    "collapseAriaLabel": "Hide sessions for {{name}}",
+    "expand": "Sessions",
+    "collapse": "Close",
+    "sessions": {
+      "heading": "Sessions and progress",
+      "loading": "Loading sessions...",
+      "loadingAriaLabel": "Loading sessions",
+      "empty": "No sessions assigned.",
+      "tableAriaLabel": "Assigned sessions",
+      "column": {
+        "name": "Session name",
+        "status": "Status",
+        "team": "Assigned team",
+        "progress": "Progress",
+        "lastActivity": "Last activity"
+      },
+      "barAriaLabel": "{{name}} progress: {{corrected}} of {{total}} segments"
+    }
+  }
+}

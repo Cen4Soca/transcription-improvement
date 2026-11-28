@@ -1,0 +1,115 @@
+{
+  "view": {
+    "ariaLabel": "表示の切り替え",
+    "list": "セッション一覧",
+    "monitoring": "割当・進捗"
+  },
+  "subview": {
+    "ariaLabel": "割当・進捗の表示単位",
+    "bySession": "セッション別",
+    "byUser": "ユーザー別"
+  },
+  "status": {
+    "PENDING": "未着手",
+    "IN_PROGRESS": "進行中",
+    "COMPLETED": "完了"
+  },
+  "session": {
+    "heading": "セッションの割当・進捗",
+    "tableAriaLabel": "セッションの割当・進捗一覧",
+    "loading": "読み込み中...",
+    "loadingAriaLabel": "割当・進捗を読み込み中",
+    "empty": "条件に一致するセッションがありません。",
+    "filter": {
+      "ariaLabel": "セッションの絞り込み",
+      "status": "ステータス",
+      "statusAll": "すべて",
+      "team": "チーム",
+      "teamAll": "すべて",
+      "reviewer": "Reviewer",
+      "reviewerAll": "すべて",
+      "unassignedOnly": "未割当のみ",
+      "stalledOnly": "滞留のみ"
+    },
+    "column": {
+      "name": "セッション名",
+      "status": "ステータス",
+      "team": "割当チーム",
+      "assignee": "割当ユーザー",
+      "participants": "参加人数",
+      "flags": "注意",
+      "lastActivity": "最終活動",
+      "actions": "操作"
+    },
+    "noTeam": "—",
+    "noAssignee": "—",
+    "badge": {
+      "unassigned": "未割当",
+      "stalled": "滞留"
+    },
+    "expandAriaLabel": "{{name}} の Reviewer 別進捗を表示",
+    "collapseAriaLabel": "{{name}} の Reviewer 別進捗を閉じる",
+    "expand": "進捗",
+    "collapse": "閉じる",
+    "openReview": "校閲",
+    "openReviewAriaLabel": "{{name}} の校閲画面を開く",
+    "notComputed": "—",
+    "pagination": {
+      "ariaLabel": "ページ送り",
+      "previous": "前へ",
+      "next": "次へ",
+      "pageInfo": "{{current}} / {{total}}"
+    }
+  },
+  "progress": {
+    "heading": "Reviewer 別の進捗",
+    "loading": "進捗を読み込み中...",
+    "loadingAriaLabel": "進捗を読み込み中",
+    "empty": "参加している Reviewer がいません。",
+    "noSegments": "このセッションにはセグメントがありません。",
+    "summary": "全 {{total}} セグメント",
+    "column": {
+      "reviewer": "Reviewer",
+      "progress": "進捗",
+      "segments": "修正済み / 全体",
+      "lastActivity": "最終活動"
+    },
+    "barAriaLabel": "{{name}} の進捗 {{corrected}} / {{total}} セグメント",
+    "neverActive": "活動なし",
+    "tableAriaLabel": "Reviewer 別進捗"
+  },
+  "user": {
+    "heading": "ユーザー別の担当状況",
+    "tableAriaLabel": "ユーザー別の担当状況一覧",
+    "loading": "読み込み中...",
+    "loadingAriaLabel": "担当状況を読み込み中",
+    "empty": "対象のユーザーがいません。",
+    "column": {
+      "name": "ユーザー",
+      "role": "ロール",
+      "assigned": "担当数",
+      "inProgress": "進行中",
+      "stalled": "滞留",
+      "actions": "操作"
+    },
+    "expandAriaLabel": "{{name}} の担当セッションを表示",
+    "collapseAriaLabel": "{{name}} の担当セッションを閉じる",
+    "expand": "担当セッション",
+    "collapse": "閉じる",
+    "sessions": {
+      "heading": "担当セッションと進捗",
+      "loading": "担当セッションを読み込み中...",
+      "loadingAriaLabel": "担当セッションを読み込み中",
+      "empty": "担当セッションがありません。",
+      "tableAriaLabel": "担当セッション一覧",
+      "column": {
+        "name": "セッション名",
+        "status": "ステータス",
+        "team": "割当チーム",
+        "progress": "進捗",
+        "lastActivity": "最終活動"
+      },
+      "barAriaLabel": "{{name}} の進捗 {{corrected}} / {{total}} セグメント"
+    }
+  }
+}

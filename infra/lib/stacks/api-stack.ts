@@ -15,6 +15,7 @@ import { LambdaFunction } from '../constructs/lambda-function';
 import { BedrockComprehend } from '../constructs/bedrock-comprehend';
 import { MalwareScan } from '../constructs/malware-scan';
 import { APP_LAMBDA_RUNTIME } from '../constructs/lambda-runtime';
+import { resolveStalledThresholdDays } from '../constructs/stalled-threshold';
 
 export interface ApiStackProps extends cdk.StackProps {
   /** DynamoDB table */
@@ -76,6 +77,13 @@ export class ApiStack extends cdk.Stack {
     const parsedMinReviewers = Number(minReviewersForAutoConsensusRaw);
     const minReviewers =
       Number.isInteger(parsedMinReviewers) && parsedMinReviewers >= 1 ? parsedMinReviewers : 3;
+
+    // Days without review activity before an IN_PROGRESS session is flagged as
+    // "stalled" in the monitoring views. Configurable via cdk.json context
+    // `stalledThresholdDays` (integer 1-90, default 7). Invalid values fail synth.
+    const stalledThresholdDays = resolveStalledThresholdDays(
+      this.node.tryGetContext('stalledThresholdDays')
+    );
 
     // --- EventBridge Custom Event Bus ---
     this.eventBus = new events.EventBus(this, 'AppEventBus', {
@@ -401,6 +409,45 @@ exports.handler = async (event, context) => {
       environment: commonEnv,
     });
     this.grantCommonPermissions(patchSessionAssignmentFn, props);
+
+    // Session assignment / progress monitoring (ADMIN + TEAM_LEADER).
+    // Only these Lambdas receive STALLED_THRESHOLD_DAYS (cdk.json `stalledThresholdDays`).
+    const monitoringEnv: Record<string, string> = {
+      ...commonEnv,
+      STALLED_THRESHOLD_DAYS: String(stalledThresholdDays),
+    };
+
+    const getSessionMonitoringFn = this.createLambda('GetSessionMonitoring', {
+      entry: handlersDir,
+      description: 'GET /sessions/monitoring - Assignment/status overview for ADMIN and TEAM_LEADER',
+      environment: monitoringEnv,
+      timeoutSeconds: 30,
+    });
+    this.grantCommonPermissions(getSessionMonitoringFn, props);
+
+    const getSessionProgressFn = this.createLambda('GetSessionProgress', {
+      entry: handlersDir,
+      description: 'GET /sessions/{sessionId}/progress - Per-reviewer progress',
+      environment: monitoringEnv,
+      timeoutSeconds: 30,
+    });
+    this.grantCommonPermissions(getSessionProgressFn, props);
+
+    const getUserWorkloadFn = this.createLambda('GetUserWorkload', {
+      entry: handlersDir,
+      description: 'GET /monitoring/users - Per-user assigned/in-progress/stalled counts',
+      environment: monitoringEnv,
+      timeoutSeconds: 30,
+    });
+    this.grantCommonPermissions(getUserWorkloadFn, props);
+
+    const getUserSessionsFn = this.createLambda('GetUserSessions', {
+      entry: handlersDir,
+      description: 'GET /monitoring/users/{userId}/sessions - A user\'s sessions with progress',
+      environment: monitoringEnv,
+      timeoutSeconds: 30,
+    });
+    this.grantCommonPermissions(getUserSessionsFn, props);
 
     const postSessionJoinFn = this.createLambda('PostSessionJoin', {
       entry: handlersDir,
@@ -1277,7 +1324,10 @@ exports.handler = async (event, context) => {
     // Static /sessions/joinable is also registered before the greedy
     // /sessions/{sessionId} so it is matched by its own handler.
     this.addRoute('GET', '/sessions/joinable', getJoinableSessionsFn, jwtAuthorizer);
+    // Static /sessions/monitoring must also precede the greedy /sessions/{sessionId}.
+    this.addRoute('GET', '/sessions/monitoring', getSessionMonitoringFn, jwtAuthorizer);
     this.addRoute('GET', '/sessions/{sessionId}', getSessionDetailFn, jwtAuthorizer);
+    this.addRoute('GET', '/sessions/{sessionId}/progress', getSessionProgressFn, jwtAuthorizer);
     this.addRoute('PATCH', '/sessions/{sessionId}/status', patchSessionStatusFn, jwtAuthorizer);
     this.addRoute('PATCH', '/sessions/{sessionId}/name', patchSessionNameFn, jwtAuthorizer);
     this.addRoute('PATCH', '/sessions/{sessionId}/assignment', patchSessionAssignmentFn, jwtAuthorizer);
@@ -1311,6 +1361,10 @@ exports.handler = async (event, context) => {
     this.addRoute('GET', '/me', getMeFn, jwtAuthorizer);
     this.addRoute('GET', '/me/teams', getMyTeamsFn, jwtAuthorizer);
     this.addRoute('PATCH', '/me', patchMeFn, jwtAuthorizer);
+
+    // Monitoring (ADMIN + TEAM_LEADER)
+    this.addRoute('GET', '/monitoring/users', getUserWorkloadFn, jwtAuthorizer);
+    this.addRoute('GET', '/monitoring/users/{userId}/sessions', getUserSessionsFn, jwtAuthorizer);
 
     // Admin - Users
     this.addRoute('GET', '/admin/users', getAdminUsersFn, jwtAuthorizer);

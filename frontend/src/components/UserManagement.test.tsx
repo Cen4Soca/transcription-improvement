@@ -286,3 +286,57 @@ describe('UserManagement', () => {
     expect(results).toHaveNoViolations();
   });
 });
+
+describe('UserManagement - workload columns', () => {
+  const workload = {
+    'user-2': {
+      userId: 'user-2', displayName: 'レビュアー花子', email: 'reviewer@example.com',
+      role: 'REVIEWER' as const, isActive: true,
+      assignedCount: 4, inProgressCount: 2, stalledCount: 1,
+    },
+  };
+
+  it('does not show workload columns when workload is not provided', () => {
+    render(<UserManagement users={mockUsers} />);
+    expect(screen.queryByText(i18n.t('monitoring:user.column.assigned'))).not.toBeInTheDocument();
+  });
+
+  it('shows assigned / in-progress / stalled columns, defaulting to 0 for users without data', () => {
+    render(<UserManagement users={mockUsers} workload={workload} />);
+    expect(screen.getByRole('columnheader', { name: i18n.t('monitoring:user.column.assigned') })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: i18n.t('monitoring:user.column.inProgress') })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: i18n.t('monitoring:user.column.stalled') })).toBeInTheDocument();
+
+    const row = screen.getByText('レビュアー花子').closest('tr')!;
+    expect(row).toHaveTextContent('4');
+    expect(row).toHaveTextContent('2');
+    expect(row).toHaveTextContent('1');
+
+    const adminRow = screen.getByText('管理者太郎').closest('tr')!;
+    // cells: email, role, status, assigned, inProgress, stalled, actions (name is a th-less td at index 0)
+    const cells = adminRow.querySelectorAll('td');
+    expect([cells[4], cells[5], cells[6]].map((c) => c?.textContent)).toEqual(['0', '0', '0']);
+  });
+
+  it('expands a user row to load that user’s sessions', async () => {
+    const loadUserSessions = vi.fn().mockResolvedValue({ ok: true, value: { data: { items: [] } } });
+    render(<UserManagement users={mockUsers} workload={workload} loadUserSessions={loadUserSessions} />);
+
+    await userEvent.click(
+      screen.getByRole('button', { name: i18n.t('monitoring:user.expandAriaLabel', { name: 'レビュアー花子' }) })
+    );
+    expect(await screen.findByText(i18n.t('monitoring:user.sessions.empty'))).toBeInTheDocument();
+    expect(loadUserSessions).toHaveBeenCalledWith('user-2');
+  });
+
+  it('has no accessibility violations with workload columns', async () => {
+    const { container } = render(
+      <UserManagement
+        users={mockUsers}
+        workload={workload}
+        loadUserSessions={vi.fn().mockResolvedValue({ ok: true, value: { data: { items: [] } } })}
+      />
+    );
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});
